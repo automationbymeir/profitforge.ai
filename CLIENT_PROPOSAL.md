@@ -1,189 +1,196 @@
 # Project Proposal: AI Data Collection & Transformation System
 
-**Client:** [Client Name]  
-**Project:** ProfitForge - AI-Ready Retail Product Database  
+**Client:** ProfitForge  
+**Project:** AI-Ready Retail Product Database  
 **Proposed Budget:** $7,500  
-**Timeline:** 5 weeks (December 15, 2025 - January 15, 2026)  
-**Date:** December 16, 2025
+**Timeline:** 5 weeks (December 20, 2025 - January 24, 2026)  
+**Date:** December 20, 2025  
+**Revision:** 2.0 (Post-Technical Discussion)
 
 ---
 
 ## Executive Summary
 
-This proposal outlines the development of a comprehensive AI-powered data collection and transformation system that will automate the ingestion, processing, and standardization of vendor product data. The system will handle hundreds to thousands of vendors, processing PDFs, catalogs, and spreadsheets with AI-powered extraction and intelligent field mapping.
+This proposal outlines the development of a containerized AI-powered data collection and transformation system that will automate the ingestion, processing, and standardization of vendor product data. The system will integrate with your existing Azure infrastructure, processing PDFs, catalogs, and spreadsheets with AI-powered extraction and intelligent field mapping.
 
 **Key Value Proposition:**
-- **Automated Processing**: Reduce manual data entry by 80-90%
-- **AI-Powered Extraction**: Extract product data from any document format
+
+- **Containerized Deployment**: Docker containers that integrate seamlessly with your Terraform infrastructure
+- **Production-Ready Quality**: Golden dataset testing with automated quality gates
+- **AI-Powered Extraction**: Extract product data from any document format with 85%+ accuracy
 - **Learning System**: Remembers vendor formats for faster repeat processing
-- **Production-Ready**: Scalable Azure infrastructure built for ongoing operations
-- **Quality Control**: Confidence scoring and review workflows ensure data accuracy
+- **Human-in-the-Loop**: Staged approval workflow ensures data quality
+- **Cost Transparency**: Complete token usage tracking and budget projections
+- **Bronze-Layer Storage**: All raw and processed files retained permanently
 
 ---
 
 ## What You Will Receive
 
-### 1. Complete Azure Cloud Infrastructure ($2,000 value)
+### 1. Azure Infrastructure Integration ($1,800 value)
 
-A fully provisioned, production-ready Azure environment including:
+**Direct development in your Azure environment for production-ready results:**
 
-#### **Storage & Data Management**
-- **Azure Data Lake Gen2**: Hierarchical storage for all raw files, processed JSON, and archives
-- **Azure Blob Storage**: High-performance storage for file uploads and working files
-- **Organized folder structure**: Automatic organization by vendor, date, and processing stage
+#### **Isolated Resource Group**
 
-#### **Database & Data Processing**
-- **Azure SQL Database (Standard S1)**: Production database with:
-  - Vendor management tables
-  - Product staging tables (for review workflow)
-  - Production product tables
-  - Batch tracking and audit logs
-  - Full schema with indexes for optimal performance
+- Dedicated Azure resource group for this project
+- Service principal access for development
+- Azure Functions deployed to your existing Functions plan
+- Integration with your existing infrastructure
 
-#### **AI & Cognitive Services**
-- **Azure Document Intelligence**: OCR and document analysis service
-  - Extract tables, text, and structured data from PDFs
-  - Handle multi-page documents and complex layouts
-  - Support for PDF, images, Excel files
+#### **Integration Points**
 
-#### **Compute & Serverless Functions**
-- **Azure Functions (Consumption Plan)**: Serverless compute for:
-  - Document processing pipeline
-  - API endpoints for frontend
-  - Automatic scaling based on demand
-  - Pay-per-use pricing model
+- New database/schema on your existing SQL Server
+- Writes to your existing Blob Storage account
+- Uses your Azure Document Intelligence instance
+- Logs to your Azure Monitor workspace
+- Infrastructure defined with SST (convertible to Terraform)
 
-#### **Security & Secrets Management**
-- **Azure Key Vault**: Secure storage for:
-  - API keys (OpenAI/Claude)
-  - Database connection strings
-  - Application secrets
-  - Managed identity integration
+#### **Development Approach**
 
-#### **Monitoring & Observability**
-- **Application Insights**: Full application monitoring with:
-  - Performance metrics
-  - Error tracking
-  - Custom dashboards
-  - Alert configuration
+- Develop directly in Azure (not local containers)
+- Production-like environment from day 1
+- No deployment surprises at handoff
+- You can test continuously throughout development
+- Clean handoff with working Azure resources + source code
 
-#### **Infrastructure as Code**
-- **SST + Pulumi**: All infrastructure defined as code
-  - Version-controlled infrastructure
-  - Reproducible deployments
-  - Easy updates and scaling
+### 2. Golden Dataset Testing Framework ($1,200 value)
 
-### 2. AI-Powered Document Processing Engine ($2,500 value)
+**Production-quality validation infrastructure:**
+
+#### **Automated Test Suite**
+
+- Golden dataset of 10-20 manually-validated vendor files
+- Automated tests run on every code change
+- Quality gates prevent deployment if accuracy drops
+- CI/CD integration with GitHub Actions
+
+#### **Test Tracking Database**
+
+```sql
+- TestRuns: Track each test execution
+- TestResults: Individual file accuracy metrics
+- ModelDrift: Detect performance degradation over time
+- TokenUsage: Complete cost tracking
+```
+
+#### **Drift Detection**
+
+- Automatic alerts when confidence scores drop
+- Baseline comparison for every model/prompt change
+- Blocks deployment if quality drops >5%
+
+### 3. AI-Powered Document Processing Engine ($2,000 value)
 
 #### **Document Intelligence Pipeline**
-- Automatic OCR extraction from PDFs, catalogs, and spreadsheets
-- Table detection and parsing
-- Key-value pair extraction
-- Multi-page document handling
-- Support for various document layouts
 
-#### **Intelligent Field Mapping**
-- **LLM-Powered Mapping**: Uses Claude/OpenAI to automatically map vendor fields to your schema
-- **Confidence Scoring**: Each field mapping includes confidence score (0-100%)
-- **Smart Recognition**: Handles variations in naming (e.g., "Item #" = SKU, "Dealer Cost" = Cost)
-- **Data Cleaning**: Automatic formatting (removes $, commas, standardizes decimals)
+- Azure Document Intelligence for OCR extraction
+- Table detection and parsing
+- Multi-page document handling
+- Support for PDF, Excel, CSV formats
+
+#### **Intelligent Field Mapping (Straight-Shot Prompting)**
+
+- **Claude 3.5 Sonnet** (or GPT-4 Turbo): Maps extracted data to your schema
+- **Confidence Scoring**: Each field includes confidence score (0-100%)
+- **Smart Recognition**: Handles naming variations ("Item #" = SKU, "Dealer Cost" = Cost)
+- **Simple & Debuggable**: Single LLM call per document (not agentic frameworks)
+- **Predictable Costs**: Token usage tracked and logged
 
 #### **Vendor Mapping Memory**
-- **Template System**: Saves field mappings for each vendor
-- **Automatic Reuse**: Future uploads from same vendor use saved mapping
-- **Version Control**: Track mapping changes over time
-- **95%+ Confidence**: Reused mappings have high confidence scores
 
-#### **Processing Workflows**
-- **Path A - CSV Template**: Direct upload of pre-formatted CSVs with instant validation
-- **Path B - AI Processing**: Upload any document format, AI extracts and maps automatically
-- **Batch Processing**: Handle multiple files simultaneously
-- **Error Handling**: Comprehensive error handling and retry logic
+- Template system saves field mappings per vendor
+- Automatic reuse for repeat uploads
+- 95%+ confidence on subsequent uploads
+- Version-controlled mapping history
 
-### 3. User Interface & Admin Portal ($2,000 value)
+#### **Bronze-Layer Data Retention**
 
-#### **Vendor Management**
-- Add, edit, and manage vendor information
-- View vendor history and upload statistics
-- Track vendor outreach and communications
-- Vendor-specific settings and defaults
+- All raw vendor files retained permanently
+- All extraction JSON retained
+- All mapped outputs retained
+- Complete audit trail
 
-#### **File Upload System**
-- **CSV Template Upload**: Upload pre-formatted CSV files with validation
-- **Document Upload**: Drag-and-drop interface for PDFs, Excel files
-- **Upload Progress**: Real-time progress tracking
-- **Batch Status**: Monitor processing status of all uploads
+### 4. Staged Approval Workflow ($900 value)
 
-#### **Field Mapping Review Interface** (Critical Feature)
-- Visual interface to review AI-suggested field mappings
-- Edit mappings before processing
-- See confidence scores for each field
-- Preview mapped data before approval
-- Save mappings as templates for future use
+#### **Simple Approval Mechanisms**
 
-#### **Product Staging & Review**
-- Browse all products awaiting approval
-- Filter by vendor, status, confidence score
-- Bulk approve/reject functionality
-- Individual product editing
-- Data preview and validation
+- All AI-processed results go to staging tables
+- No automatic production writes (human review required)
+- Multiple approval methods:
+  - REST API endpoints (batch or individual)
+  - Command-line tool (optional)
+  - SQL queries and stored procedures
+- Clear file tracking in blob storage
+- Easy re-queuing for rejected files
 
-#### **Dashboard & Analytics**
-- Processing metrics and statistics
-- Confidence score distribution
-- Vendor activity overview
-- Recent uploads and status
-- Quality metrics
+**UI can be added in Phase 2** - Initial focus on reliable processing and simple approval APIs.
 
-#### **Modern UI/UX**
-- React 18 with TypeScript
-- Responsive design (mobile-friendly)
-- Tailwind CSS for modern styling
-- Accessible components (Radix UI)
-- Fast, intuitive user experience
+### 5. Token Usage & Cost Tracking ($600 value)
 
-### 4. API & Integration Layer ($500 value)
+#### **Real-Time Cost Monitoring**
+
+- Track every LLM API call with token counts
+- Cost per document, per vendor, per batch
+- Model version tracking
+- Daily and monthly aggregations
+- Budget alerts at configurable thresholds
+
+#### **Database Tables**
+
+```sql
+- TokenUsage: Complete log of all API calls
+- Cost aggregation views for reporting
+- Monthly spend projections
+```
+
+#### **Cost Transparency**
+
+- Application Insights logging
+- Exportable cost reports
+- Budget threshold alerts
+- Per-vendor cost analysis
+
+### 6. API & Integration Layer ($600 value)
 
 #### **RESTful API**
+
 - Complete REST API for all operations
 - JWT-based authentication
 - OpenAPI/Swagger documentation
-- Rate limiting and security
+- Comprehensive error handling and retry logic
 
 #### **API Endpoints Include:**
+
 - Vendor CRUD operations
 - File upload endpoints
 - Batch status and management
 - Product staging operations
-- Mapping template management
-- Approval/rejection workflows
+- Approval/rejection workflows (batch and individual)
+- Token usage queries
 
-### 5. Data Factory Orchestration ($300 value)
-
-#### **Azure Data Factory Pipelines**
-- Automated data flow orchestration
-- File processing workflows
-- Data movement and transformation
-- Integration with Functions and Database
-
-### 6. Documentation & Training ($200 value)
+### 7. Documentation & Training ($400 value)
 
 #### **Technical Documentation**
-- Architecture diagrams
-- API documentation
+
+- Architecture diagrams with container flow
+- API documentation (OpenAPI/Swagger)
 - Database schema documentation
-- Infrastructure setup guide
-- Deployment procedures
+- Deployment guide for your Terraform
+- Integration guide for existing infrastructure
 
 #### **User Documentation**
-- User guide for admin portal
-- Upload workflow instructions
-- Field mapping best practices
+
+- API usage guide
+- Approval workflow instructions
+- Golden dataset creation guide
 - Troubleshooting guide
 
 #### **Training**
+
 - 2-hour training session for your team
-- Walkthrough of all features
+- Walkthrough of processing pipeline
+- Approval workflow demonstration
 - Q&A session
 - Recorded training video
 
@@ -194,13 +201,17 @@ A fully provisioned, production-ready Azure environment including:
 ### Technology Stack
 
 **Backend:**
+
 - Runtime: Azure Functions (Node.js 20, TypeScript)
-- Database: Azure SQL Database
-- Storage: Azure Data Lake Gen2, Blob Storage
-- AI Services: Azure Document Intelligence, Claude/OpenAI APIs
-- Infrastructure: SST v3 + Pulumi (Infrastructure as Code)
+- Database: Azure SQL Database (your existing instance)
+- Storage: Azure Blob Storage (your existing account)
+- AI Services: Azure Document Intelligence, Claude 3.5 Sonnet (or GPT-4 Turbo)
+- Infrastructure: SST v3 (you can convert to Terraform post-project)
+- Deployment: Direct to Azure Functions
+- Architecture: Straight-shot LLM prompting (not agentic frameworks)
 
 **Frontend:**
+
 - Framework: React 18 with TypeScript
 - Styling: Tailwind CSS
 - State Management: React Query + Zustand
@@ -208,6 +219,7 @@ A fully provisioned, production-ready Azure environment including:
 - Build Tool: Vite
 
 **Security:**
+
 - Azure AD authentication
 - Key Vault for secrets
 - Managed Identity
@@ -238,18 +250,21 @@ A fully provisioned, production-ready Azure environment including:
 ## Project Timeline
 
 ### Week 1: Foundation & Infrastructure (Dec 15-21)
+
 - Azure infrastructure provisioning
 - Database schema implementation
 - API endpoint definitions
 - Authentication setup
 
 ### Week 2: AI Pipeline Development (Dec 22-28)
+
 - Document Intelligence integration
 - LLM mapping implementation
 - Template storage system
 - Confidence scoring logic
 
 ### Week 3: User Interface Development (Dec 29 - Jan 4)
+
 - React application build
 - Upload interfaces
 - Field mapping review UI
@@ -257,12 +272,14 @@ A fully provisioned, production-ready Azure environment including:
 - Dashboard implementation
 
 ### Week 4: Integration & Testing (Jan 5-11)
+
 - End-to-end flow testing
 - Sample file processing (50+ files)
 - Performance optimization
 - Error handling refinement
 
 ### Week 5: Polish & Handoff (Jan 12-15)
+
 - Bug fixes and refinements
 - Documentation completion
 - User training
@@ -306,6 +323,7 @@ After deployment, you will be responsible for Azure monthly costs:
 ## Deliverables Checklist
 
 ### Infrastructure
+
 - [x] Azure Resource Group with all services
 - [x] Data Lake Gen2 with folder structure
 - [x] SQL Database with complete schema
@@ -316,6 +334,7 @@ After deployment, you will be responsible for Azure monthly costs:
 - [x] Application Insights monitoring
 
 ### Application Code
+
 - [x] Document processing functions
 - [x] API endpoints (all CRUD operations)
 - [x] Field mapping engine
@@ -324,6 +343,7 @@ After deployment, you will be responsible for Azure monthly costs:
 - [x] Validation schemas
 
 ### User Interface
+
 - [x] Vendor management screens
 - [x] File upload interface
 - [x] Field mapping review UI
@@ -332,6 +352,7 @@ After deployment, you will be responsible for Azure monthly costs:
 - [x] Responsive design
 
 ### Documentation
+
 - [x] Architecture documentation
 - [x] API documentation
 - [x] User guide
@@ -339,6 +360,7 @@ After deployment, you will be responsible for Azure monthly costs:
 - [x] Training materials
 
 ### Deployment
+
 - [x] Production environment deployed
 - [x] All services configured and tested
 - [x] Security settings applied
@@ -349,6 +371,7 @@ After deployment, you will be responsible for Azure monthly costs:
 ## Success Criteria
 
 ### Functional Requirements
+
 ✅ Users can upload CSV templates and have them validated instantly  
 ✅ Users can upload PDFs/catalogs and have them processed by AI  
 ✅ AI extracts products with >85% average confidence  
@@ -359,6 +382,7 @@ After deployment, you will be responsible for Azure monthly costs:
 ✅ All raw and processed files are retained in Data Lake
 
 ### Performance Requirements
+
 ✅ Processing time: <2 minutes for files under 10MB  
 ✅ System uptime: >99% availability  
 ✅ API response time: <500ms for standard queries  
@@ -366,6 +390,7 @@ After deployment, you will be responsible for Azure monthly costs:
 ✅ Handle 1,000+ products per batch
 
 ### Quality Requirements
+
 ✅ Accurate data collected from each vendor  
 ✅ CSV files delivered in exact required structure  
 ✅ No missing required fields (SKU, Description, Cost)  
@@ -390,11 +415,13 @@ After deployment, you will be responsible for Azure monthly costs:
 ## Support & Maintenance
 
 ### Included in Project
+
 - 2-hour training session
 - 30 days of post-deployment support for bug fixes
 - Documentation and knowledge transfer
 
 ### Optional (Not Included)
+
 - Ongoing maintenance and support: $150/hour
 - Feature enhancements: Quoted per project
 - Infrastructure scaling: Quoted as needed
@@ -413,7 +440,7 @@ After deployment, you will be responsible for Azure monthly costs:
 
 ## Terms & Conditions
 
-- **Payment Schedule**: 
+- **Payment Schedule**:
   - 50% ($3,750) upon project start
   - 50% ($3,750) upon completion and acceptance
 - **Timeline**: 5 weeks from start date
