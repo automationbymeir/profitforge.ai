@@ -6,6 +6,7 @@ node_modules/
 # SST
 .sst/
 .sst/platform/
+*-env.d.ts
 
 # Testing
 coverage/

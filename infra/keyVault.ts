@@ -1,17 +1,16 @@
-import * as pulumi from "@pulumi/pulumi";
-import * as azure from "@pulumi/azure-native";
+// Use SST's global azurenative provider
 
 export interface KeyVaultResources {
-  keyVault: azure.keyvault.Vault;
+  keyVault: azurenative.keyvault.Vault;
 }
 
 export function createKeyVaultResources(
-  resourceGroupName: pulumi.Input<string>,
+  resourceGroupName: string | $util.Output<string>,
   location: string = "eastus",
-  tenantId: pulumi.Input<string>,
-  objectId: pulumi.Input<string>
+  tenantId: string | $util.Output<string>,
+  objectId: string | $util.Output<string>
 ): KeyVaultResources {
-  const keyVault = new azure.keyvault.Vault("vendordata-kv", {
+  const keyVault = new azurenative.keyvault.Vault("vendordata-kv", {
     resourceGroupName,
     location,
     properties: {

@@ -1,114 +1,122 @@
 /// <reference path="./.sst/platform/config.d.ts" />
-
-import { Pulumi } from "sst/pulumi";
-import * as pulumi from "@pulumi/pulumi";
-import * as azure from "@pulumi/azure-native";
-import { createStorageResources } from "./infra/storage.js";
-import { createDatabaseResources } from "./infra/database.js";
-import { createKeyVaultResources } from "./infra/keyVault.js";
-import { createFunctionAppResources } from "./infra/functions.js";
-import { createCognitiveServicesResources } from "./infra/cognitiveServices.js";
-import { createApplicationInsightsResources } from "./infra/applicationInsights.js";
-
 export default $config({
   app(input) {
     return {
       name: "profitforge",
-      home: "azure",
+      removal: input?.stage === "production" ? "retain" : "remove",
+      protect: ["production"].includes(input?.stage),
+      home: "local",
+      providers: {
+        "azure-native": "3.12.0",
+      },
     };
   },
-
   async run() {
-    // Use Pulumi component for Azure infrastructure
-    const infra = new Pulumi("azure-infrastructure", async () => {
-      const config = new pulumi.Config();
-      const location = config.get("location") || "eastus";
-      const sqlAdminPassword = config.requireSecret("sqlAdminPassword");
-      
-      // Get current Azure client config
-      const clientConfig = await azure.authorization.getClientConfig();
-      const tenantId = clientConfig.tenantId;
-      const objectId = clientConfig.objectId;
+    // Import Azure configuration
+    const { azureConfig } = await import("./infra/config");
 
-      // Create resource group
-      const resourceGroup = new azure.resources.ResourceGroup("rg-vendordata-prod", {
-        location,
-      });
+    // Initialize SST Secrets for runtime use in functions
+    const documentIntelligenceKey = new sst.Secret("DOCUMENT_INTELLIGENCE_KEY");
+    const sqlAdminPassword = new sst.Secret("SqlAdminPassword");
 
-      // Create storage resources
-      const storage = createStorageResources(resourceGroup.name, location);
+    // Get stage
+    const stage = $app.stage;
+    const location = azureConfig.location;
 
-      // Create database resources
-      const database = createDatabaseResources(
-        resourceGroup.name,
-        location,
-        "sqladmin",
-        sqlAdminPassword
-      );
+    // Reference existing Azure resource group (uses az CLI credentials)
+    const existingRg = await azurenative.resources.getResourceGroup({
+      resourceGroupName: azureConfig.resourceGroup,
+    });
+    const resourceGroupName = $output(existingRg.name);
 
-      // Create Key Vault
-      const keyVault = createKeyVaultResources(
-        resourceGroup.name,
-        location,
-        tenantId,
-        objectId
-      );
+    // Create Azure SQL Database Serverless
+    // Note: When project is complete, schemas will be manually migrated to production DB
 
-      // Get storage account connection string for Functions
-      const storageKeys = azure.storage.listStorageAccountKeysOutput({
-        resourceGroupName: resourceGroup.name,
-        accountName: storage.blobStorage.name,
-      });
-      const storageConnectionString = pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${storage.blobStorage.name};AccountKey=${storageKeys.keys[0].value};EndpointSuffix=core.windows.net`;
-
-      // Create Function App
-      const functions = createFunctionAppResources(
-        resourceGroup.name,
-        location,
-        storageConnectionString,
-        keyVault.keyVault.properties.vaultUri
-      );
-
-      // Create Cognitive Services (Document Intelligence)
-      const cognitiveServices = createCognitiveServicesResources(
-        resourceGroup.name,
-        location
-      );
-
-      // Create Application Insights
-      const appInsights = createApplicationInsightsResources(
-        resourceGroup.name,
-        location
-      );
-
-      // Export outputs
-      return {
-        resourceGroupName: resourceGroup.name,
-        dataLakeAccountName: storage.dataLake.name,
-        dataLakeFilesystemName: storage.dataLakeFilesystem.name,
-        blobStorageAccountName: storage.blobStorage.name,
-        sqlServerName: database.sqlServer.name,
-        sqlDatabaseName: database.sqlDatabase.name,
-        keyVaultName: keyVault.keyVault.name,
-        keyVaultUri: keyVault.keyVault.properties.vaultUri,
-        functionAppName: functions.functionApp.name,
-        documentIntelligenceEndpoint: cognitiveServices.documentIntelligence.properties.endpoint,
-        appInsightsInstrumentationKey: appInsights.appInsights.instrumentationKey,
-      };
+    // Create SQL Server
+    const sqlServer = new azurenative.sql.Server(`${stage}-vvocr-sql`, {
+      resourceGroupName: resourceGroupName,
+      location: location,
+      administratorLogin: "sqladmin",
+      administratorLoginPassword: sqlAdminPassword.value,
+      version: "12.0",
+      minimalTlsVersion: "1.2",
+      publicNetworkAccess: azurenative.sql.ServerNetworkAccessFlag.Enabled,
     });
 
+    // Allow Azure services to access
+    new azurenative.sql.FirewallRule(`${stage}-allow-azure`, {
+      resourceGroupName: resourceGroupName,
+      serverName: sqlServer.name,
+      startIpAddress: "0.0.0.0",
+      endIpAddress: "0.0.0.0",
+    });
+
+    // Allow your current IP (update this as needed)
+    new azurenative.sql.FirewallRule(`${stage}-allow-dev`, {
+      resourceGroupName: resourceGroupName,
+      serverName: sqlServer.name,
+      startIpAddress: "5.29.14.211",
+      endIpAddress: "5.29.14.211",
+    });
+
+    // Create Serverless Database
+    const sqlDatabase = new azurenative.sql.Database(`${stage}-vvocr-db`, {
+      resourceGroupName: resourceGroupName,
+      serverName: sqlServer.name,
+      location: location,
+      sku: {
+        name: "GP_S_Gen5",
+        tier: "GeneralPurpose",
+        family: "Gen5",
+        capacity: 1, // 1 vCore
+      },
+      autoPauseDelay: 60, // Auto-pause after 60 minutes of inactivity
+      minCapacity: 0.5, // Minimum 0.5 vCore
+      maxSizeBytes: 2147483648, // 2GB
+    });
+
+    // Build connection string
+    const sqlConnectionString = $interpolate`Server=tcp:${sqlServer.fullyQualifiedDomainName},1433;Database=${sqlDatabase.name};User ID=sqladmin;Password=${sqlAdminPassword.value};Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;`;
+
+    const database = {
+      sqlServer: {
+        name: sqlServer.name,
+        fullyQualifiedDomainName: sqlServer.fullyQualifiedDomainName,
+      },
+      sqlDatabase: {
+        name: sqlDatabase.name,
+      },
+    };
+
+    // Reference existing storage account
+    const existingStorage = await azurenative.storage.getStorageAccount({
+      resourceGroupName: azureConfig.resourceGroup,
+      accountName: azureConfig.storageAccountName,
+    });
+
+    // Reference existing Key Vault
+    const existingKeyVault = await azurenative.keyvault.getVault({
+      resourceGroupName: azureConfig.resourceGroup,
+      vaultName: azureConfig.keyVaultName,
+    });
+    // Export outputs (including secrets for runtime access)
     return {
-      resourceGroupName: infra.resourceGroupName,
-      dataLakeAccountName: infra.dataLakeAccountName,
-      dataLakeFilesystemName: infra.dataLakeFilesystemName,
-      blobStorageAccountName: infra.blobStorageAccountName,
-      sqlServerName: infra.sqlServerName,
-      sqlDatabaseName: infra.sqlDatabaseName,
-      keyVaultName: infra.keyVaultName,
-      keyVaultUri: infra.keyVaultUri,
-      functionAppName: infra.functionAppName,
-      documentIntelligenceEndpoint: infra.documentIntelligenceEndpoint,
-      appInsightsInstrumentationKey: infra.appInsightsInstrumentationKey,
+      stage,
+      location,
+      resourceGroupName: resourceGroupName,
+      storageAccountName: $output(existingStorage.name),
+      keyVaultName: $output(existingKeyVault.name),
+      keyVaultUrl: $output(existingKeyVault.properties.vaultUri),
+      sqlServerName: database.sqlServer.name,
+      sqlServerFqdn: database.sqlServer.fullyQualifiedDomainName,
+      sqlDatabaseName: database.sqlDatabase.name,
+      // AI Services configuration
+      aiHubName: azureConfig.aiHubName,
+      aiProjectName: azureConfig.aiProjectName,
+      documentIntelligenceEndpoint: azureConfig.documentIntelligenceEndpoint,
+      // Secrets for runtime use in functions
+      documentIntelligenceKey: documentIntelligenceKey.value,
+      // sqlConnectionString: sqlConnectionString.value,
     };
   },
 });

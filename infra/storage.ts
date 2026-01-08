@@ -1,19 +1,18 @@
-import * as pulumi from "@pulumi/pulumi";
-import * as azure from "@pulumi/azure-native";
+// Use SST's global azurenative provider
 
 export interface StorageResources {
-  dataLake: azure.storage.StorageAccount;
-  dataLakeFilesystem: azure.storage.DataLakeGen2Filesystem;
-  blobStorage: azure.storage.StorageAccount;
-  uploadsContainer: azure.storage.BlobContainer;
+  dataLake: azurenative.storage.StorageAccount;
+  dataLakeFilesystem: azurenative.storage.BlobContainer;
+  blobStorage: azurenative.storage.StorageAccount;
+  uploadsContainer: azurenative.storage.BlobContainer;
 }
 
 export function createStorageResources(
-  resourceGroupName: pulumi.Input<string>,
+  resourceGroupName: string | $util.Output<string>,
   location: string = "eastus"
 ): StorageResources {
   // Data Lake Gen2 Storage Account
-  const dataLake = new azure.storage.StorageAccount("vendordata-datalake", {
+  const dataLake = new azurenative.storage.StorageAccount("vddatalake", {
     resourceGroupName,
     location,
     kind: "StorageV2",
@@ -26,14 +25,16 @@ export function createStorageResources(
     minimumTlsVersion: "TLS1_2",
   });
 
-  // Data Lake Gen2 Filesystem
-  const dataLakeFilesystem = new azure.storage.DataLakeGen2Filesystem("vendordata-filesystem", {
+  // Data Lake Gen2 Filesystem (using blob container)
+  const dataLakeFilesystem = new azurenative.storage.BlobContainer("vdfilesystem", {
+    resourceGroupName,
     accountName: dataLake.name,
-    filesystemName: "vendordata",
+    containerName: "vendordata",
+    publicAccess: azurenative.storage.PublicAccess.None,
   });
 
   // Blob Storage Account for uploads
-  const blobStorage = new azure.storage.StorageAccount("vendoruploads", {
+  const blobStorage = new azurenative.storage.StorageAccount("vduploads", {
     resourceGroupName,
     location,
     kind: "StorageV2",
@@ -46,10 +47,11 @@ export function createStorageResources(
   });
 
   // Uploads container
-  const uploadsContainer = new azure.storage.BlobContainer("uploads", {
+  const uploadsContainer = new azurenative.storage.BlobContainer("uploads", {
+    resourceGroupName,
     accountName: blobStorage.name,
     containerName: "uploads",
-    publicAccess: "None",
+    publicAccess: azurenative.storage.PublicAccess.None,
   });
 
   return {
