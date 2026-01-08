@@ -32,9 +32,9 @@ export interface AzureConfig {
 export const azureConfig: AzureConfig = {
   location: "eastus",
   resourceGroup: "dragonfruit-dev-3P-Meir-rg",
-  storageAccountName: "dragonfruitdevsa",
+  storageAccountName: "dragonfrstorage593005773",
   storageContainerDocuments: "df-documents",
-  keyVaultName: "dragonfruitdevkv",
+  keyVaultName: "dragonfrkeyvaulte9dc603b",
   sqlServer: "df-dev-pfsql.database.windows.net",
   sqlDatabase: "df-dev-main",
   aiHubName: "dragonfruit-dev-3P-Meir-aihub",
