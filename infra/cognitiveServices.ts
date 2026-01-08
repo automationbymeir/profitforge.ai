@@ -1,15 +1,14 @@
-import * as pulumi from "@pulumi/pulumi";
-import * as azure from "@pulumi/azure-native";
+// Use SST's global azurenative provider
 
 export interface CognitiveServicesResources {
-  documentIntelligence: azure.cognitiveservices.Account;
+  documentIntelligence: azurenative.cognitiveservices.Account;
 }
 
 export function createCognitiveServicesResources(
-  resourceGroupName: pulumi.Input<string>,
+  resourceGroupName: string | $util.Output<string>,
   location: string = "eastus"
 ): CognitiveServicesResources {
-  const documentIntelligence = new azure.cognitiveservices.Account("docintell", {
+  const documentIntelligence = new azurenative.cognitiveservices.Account("docintell", {
     resourceGroupName,
     location,
     kind: "FormRecognizer",

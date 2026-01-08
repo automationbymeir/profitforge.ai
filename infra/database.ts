@@ -1,19 +1,18 @@
-import * as pulumi from "@pulumi/pulumi";
-import * as azure from "@pulumi/azure-native";
+// Use SST's global azurenative provider
 
 export interface DatabaseResources {
-  sqlServer: azure.sql.Server;
-  sqlDatabase: azure.sql.Database;
+  sqlServer: azurenative.sql.Server;
+  sqlDatabase: azurenative.sql.Database;
 }
 
 export function createDatabaseResources(
-  resourceGroupName: pulumi.Input<string>,
+  resourceGroupName: string | $util.Output<string>,
   location: string = "eastus",
   adminLogin: string = "sqladmin",
-  adminPassword: pulumi.Input<string>
+  adminPassword: string | $util.Output<string>
 ): DatabaseResources {
   // SQL Server
-  const sqlServer = new azure.sql.Server("vendordata-sql", {
+  const sqlServer = new azurenative.sql.Server("vendordata-sql", {
     resourceGroupName,
     location,
     administratorLogin: adminLogin,
@@ -23,13 +22,14 @@ export function createDatabaseResources(
   });
 
   // SQL Database
-  const sqlDatabase = new azure.sql.Database("products-db", {
+  const sqlDatabase = new azurenative.sql.Database("products-db", {
     resourceGroupName,
     serverName: sqlServer.name,
     location,
     sku: {
-      name: "S1", // Standard S1 tier
-      tier: "Standard",
+      name: "Basic", // Basic tier (cheapest, ~$5/month)
+      tier: "Basic",
+      capacity: 5, // 5 DTUs
     },
     requestedBackupStorageRedundancy: "Local",
   });

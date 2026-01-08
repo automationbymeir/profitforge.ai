@@ -1,15 +1,14 @@
-import * as pulumi from "@pulumi/pulumi";
-import * as azure from "@pulumi/azure-native";
+// Use SST's global azurenative provider
 
 export interface ApplicationInsightsResources {
-  appInsights: azure.insights.Component;
+  appInsights: azurenative.insights.Component;
 }
 
 export function createApplicationInsightsResources(
-  resourceGroupName: pulumi.Input<string>,
+  resourceGroupName: string | $util.Output<string>,
   location: string = "eastus"
 ): ApplicationInsightsResources {
-  const appInsights = new azure.insights.Component("vendordata-insights", {
+  const appInsights = new azurenative.insights.Component("vendordata-insights", {
     resourceGroupName,
     location,
     kind: "web",
