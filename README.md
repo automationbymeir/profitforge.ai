@@ -1,60 +1,85 @@
-# ProfitForge - AI Data Collection & Transformation System
+ # Azure Native TypeScript Pulumi Template
 
-AI-Ready Retail Product Database for vendor data ingestion, processing, and standardization.
+ This template provides a minimal, ready-to-go Pulumi program for deploying Azure resources using the Azure Native provider in TypeScript. It establishes a basic infrastructure stack that you can use as a foundation for more complex deployments.
 
-## Architecture
+ ## When to Use This Template
 
-- **Infrastructure**: SST v3 with Pulumi components for Azure
-- **Backend**: Azure Functions (Node.js/TypeScript)
-- **Frontend**: React 18 with TypeScript
-- **Database**: Azure SQL Database
-- **Storage**: Azure Data Lake Gen2, Blob Storage
-- **AI Services**: Azure Document Intelligence, Claude/OpenAI
+ - You need a quick boilerplate for Azure Native deployments with Pulumi and TypeScript
+ - You want to create a Resource Group and Storage Account as a starting point
+ - You’re exploring Pulumi’s Azure Native SDK and TypeScript support
 
-## Project Structure
+ ## Prerequisites
 
-```
-profitforge/
-??? packages/
-?   ??? core/          # Shared types and utilities
-?   ??? functions/     # Azure Functions
-?   ??? frontend/      # React application
-??? infra/             # Infrastructure components (Pulumi)
-??? sst.config.ts      # SST configuration
-```
+ - An active Azure subscription
+ - Node.js (LTS) installed
+ - A Pulumi account and CLI already installed and configured
+ - Azure credentials available (e.g., via `az login` or environment variables)
 
-## Getting Started
+ ## Usage
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+ Scaffold a new project from the Pulumi registry template:
+ ```bash
+ pulumi new azure-typescript
+ ```
 
-2. Set up Azure credentials:
-   ```bash
-   az login
-   ```
+ Follow the prompts to:
+ 1. Name your project and stack
+ 2. (Optionally) override the default Azure location
 
-3. Configure environment variables (see `.env.example`)
+ Once the project is created:
+ ```bash
+ cd <your-project-name>
+ pulumi config set azure-native:location <your-region>
+ pulumi up
+ ```
 
-4. Deploy infrastructure:
-   ```bash
-   npm run deploy
-   ```
+ ## Project Layout
 
-5. Start development:
-   ```bash
-   npm run dev
-   ```
+ ```
+ .
+ ├── Pulumi.yaml       # Project metadata & template configuration
+ ├── index.ts          # Main Pulumi program defining resources
+ ├── package.json      # Node.js dependencies and project metadata
+ └── tsconfig.json     # TypeScript compiler options
+ ```
 
-## Development
+ ## Configuration
 
-- **Run tests**: `npm test`
-- **Build**: `npm run build`
-- **SST shell**: `npm run shell`
+ Pulumi configuration lets you customize deployment parameters.
 
-## Resources
+ - **azure-native:location** (string)
+   - Description: Azure region to provision resources in
+   - Default: `WestUS2`
 
-- [SST Documentation](https://sst.dev)
-- [Pulumi Azure](https://www.pulumi.com/docs/clouds/azure/)
-- [Implementation Plan](./AI_Data_Collection_Implementation_Plan.md)
+ Set a custom location before deployment:
+ ```bash
+ pulumi config set azure-native:location eastus
+ ```
+
+ ## Resources Created
+
+ 1. **Resource Group**: A container for all other resources
+ 2. **Storage Account**: A StorageV2 account with Standard_LRS SKU
+
+ ## Outputs
+
+ After `pulumi up`, the following output is exported:
+ - **storageAccountName**: The name of the created Storage Account
+
+ Retrieve it with:
+ ```bash
+ pulumi stack output storageAccountName
+ ```
+
+ ## Next Steps
+
+ - Extend this template by adding more Azure Native resources (e.g., Networking, App Services)
+ - Modularize your stack with Pulumi Components for reusable architectures
+ - Integrate with CI/CD pipelines (GitHub Actions, Azure DevOps, etc.)
+
+ ## Getting Help
+
+ If you have questions or run into issues:
+ - Explore the Pulumi docs: https://www.pulumi.com/docs/
+ - Join the Pulumi Community on Slack: https://pulumi-community.slack.com/
+ - File an issue on the Pulumi Azure Native SDK GitHub: https://github.com/pulumi/pulumi-azure-native/issues

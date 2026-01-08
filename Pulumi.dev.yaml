@@ -1,0 +1,7 @@
+encryptionsalt: v1:nhTWdPiJSvc=:v1:WIQW8VsvaZWrPxv1:kp/hcxgVftUm+MTrHejfRezZWjlYmg==
+config:
+  azure-native:location: eastus
+  profitforge-ai:documentIntelligenceKey:
+    secure: v1:TQEzK1dFW1cvLk/P:ny98C2n9LZQhZVBemWl+A4vSm0FVbFVLiQVDPAA5EMSyjDumFOZEJdSXORupYyTfibNY9NqKqfAP76hlb0/dDsdRdFKShkiLzABE8sUD4HhgZH0CjLGAr4QbCo98IIsCG0MuVw==
+  profitforge-ai:sqlAdminPassword:
+    secure: v1:B2UevQ64/ZUjFK8m:waw7PWo8bIc9XDpThvRcGo5+xkc2pp0vde456sR3ytcujcIZ
