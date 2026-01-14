@@ -1,4 +1,5 @@
-// Use SST's global azurenative provider
+import * as azurenative from "@pulumi/azure-native";
+import * as pulumi from "@pulumi/pulumi";
 
 export interface FunctionAppResources {
   functionApp: azurenative.web.WebApp;
@@ -6,10 +7,10 @@ export interface FunctionAppResources {
 }
 
 export function createFunctionAppResources(
-  resourceGroupName: string | $util.Output<string>,
+  resourceGroupName: pulumi.Input<string>,
   location: string = "eastus",
-  storageAccountConnectionString: string | $util.Output<string>,
-  keyVaultUri: string | $util.Output<string>
+  storageAccountConnectionString: pulumi.Input<string>,
+  keyVaultUri: pulumi.Input<string>
 ): FunctionAppResources {
   // App Service Plan (Consumption plan for serverless)
   const appServicePlan = new azurenative.web.AppServicePlan("vendordata-functions-plan", {

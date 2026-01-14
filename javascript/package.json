@@ -1,0 +1,25 @@
+{
+  "name": "azure-functions-app",
+  "version": "1.0.0",
+  "description": "Azure Functions v4 app",
+  "type": "module",
+  "main": "dist/functions/*.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "prestart": "npm run build",
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "@azure/storage-blob": "^12.19.0",
+    "@azure/ai-form-recognizer": "^4.0.0",
+    "mssql": "^10.0.1",
+    "openai": "^6.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/mssql": "^9.1.8",
+    "typescript": "^5.0.0"
+  }
+}

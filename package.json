@@ -1,12 +1,17 @@
 {
-    "name": "profitforge-ai",
-    "main": "index.ts",
-    "devDependencies": {
-        "@types/node": "^18",
-        "typescript": "^5.0.0"
-    },
-    "dependencies": {
-        "@pulumi/azure-native": "^3.0.0",
-        "@pulumi/pulumi": "^3.0.0"
-    }
+  "name": "profitforge-ai",
+  "main": "index.ts",
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/node": "^18",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@pulumi/azure-native": "^3.0.0",
+    "@pulumi/command": "^1.1.3",
+    "@pulumi/pulumi": "^3.0.0",
+    "@pulumiverse/mssql": "^0.1.0"
+  }
 }

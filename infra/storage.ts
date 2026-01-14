@@ -1,41 +1,47 @@
+import * as azurenative from "@pulumi/azure-native";
+import * as pulumi from "@pulumi/pulumi";
+
 // Use SST's global azurenative provider
 
 export interface StorageResources {
-  dataLake: azurenative.storage.StorageAccount;
-  dataLakeFilesystem: azurenative.storage.BlobContainer;
+  // dataLake: azurenative.storage.StorageAccount;
+  // dataLakeFilesystem: azurenative.storage.BlobContainer;
   blobStorage: azurenative.storage.StorageAccount;
   uploadsContainer: azurenative.storage.BlobContainer;
 }
 
 export function createStorageResources(
-  resourceGroupName: string | $util.Output<string>,
-  location: string = "eastus"
+  resourceGroupName: pulumi.Input<string>,
+  location: string,
+  stack: string
 ): StorageResources {
   // Data Lake Gen2 Storage Account
-  const dataLake = new azurenative.storage.StorageAccount("vddatalake", {
-    resourceGroupName,
-    location,
-    kind: "StorageV2",
-    sku: {
-      name: "Standard_LRS",
-    },
-    isHnsEnabled: true, // Enable hierarchical namespace for Data Lake Gen2
-    accessTier: "Hot",
-    allowBlobPublicAccess: false,
-    minimumTlsVersion: "TLS1_2",
-  });
+  // const dataLake = new azurenative.storage.StorageAccount(`${stack}-datalake`, {
+  //   resourceGroupName,
+  //   accountName: `${stack}datalake${Date.now().toString().slice(-6)}`,
+  //   location,
+  //   kind: "StorageV2",
+  //   sku: {
+  //     name: "Standard_LRS",
+  //   },
+  //   isHnsEnabled: true, // Enable hierarchical namespace for Data Lake Gen2
+  //   accessTier: "Hot",
+  //   allowBlobPublicAccess: false,
+  //   minimumTlsVersion: "TLS1_2",
+  // });
 
-  // Data Lake Gen2 Filesystem (using blob container)
-  const dataLakeFilesystem = new azurenative.storage.BlobContainer("vdfilesystem", {
-    resourceGroupName,
-    accountName: dataLake.name,
-    containerName: "vendordata",
-    publicAccess: azurenative.storage.PublicAccess.None,
-  });
+  // // Data Lake Gen2 Filesystem (using blob container)
+  // const dataLakeFilesystem = new azurenative.storage.BlobContainer(`${stack}-filesystem`, {
+  //   resourceGroupName,
+  //   accountName: dataLake.name,
+  //   containerName: `${stack}-vendordata`,
+  //   publicAccess: azurenative.storage.PublicAccess.None,
+  // });
 
   // Blob Storage Account for uploads
-  const blobStorage = new azurenative.storage.StorageAccount("vduploads", {
+  const blobStorage = new azurenative.storage.StorageAccount(`${stack}-blobstorage`, {
     resourceGroupName,
+    accountName: `${stack}pvstorage`, // Removed dash and added characters for uniqueness
     location,
     kind: "StorageV2",
     sku: {
@@ -47,7 +53,7 @@ export function createStorageResources(
   });
 
   // Uploads container
-  const uploadsContainer = new azurenative.storage.BlobContainer("uploads", {
+  const uploadsContainer = new azurenative.storage.BlobContainer(`${stack}-uploads`, {
     resourceGroupName,
     accountName: blobStorage.name,
     containerName: "uploads",
@@ -55,8 +61,8 @@ export function createStorageResources(
   });
 
   return {
-    dataLake,
-    dataLakeFilesystem,
+    // dataLake,
+    // dataLakeFilesystem,
     blobStorage,
     uploadsContainer,
   };
