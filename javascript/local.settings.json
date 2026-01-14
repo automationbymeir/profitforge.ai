@@ -1,0 +1,16 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "",
+    "AzureWebJobsSecretStorageType": "files",
+    "STORAGE_CONNECTION_STRING": "",
+    "STORAGE_ACCOUNT_NAME": "dragonfrstorage593005773",
+    "STORAGE_CONTAINER_DOCUMENTS": "df-documents",
+    "SQL_CONNECTION_STRING": "",
+    "DOCUMENT_INTELLIGENCE_ENDPOINT": "https://eastus.api.cognitive.microsoft.com/",
+    "DOCUMENT_INTELLIGENCE_KEY": "",
+    "AI_PROJECT_ENDPOINT": "",
+    "AI_PROJECT_KEY": ""
+  }
+}

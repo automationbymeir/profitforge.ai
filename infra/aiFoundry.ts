@@ -1,51 +1,46 @@
-// Use SST's global azurenative provider
+import * as azurenative from "@pulumi/azure-native";
+import * as pulumi from "@pulumi/pulumi";
+import { azureConfig } from "./config";
 
 export interface AIFoundryResources {
-  aiHub: azurenative.machinelearningservices.Workspace;
-  aiProject: azurenative.machinelearningservices.Workspace;
+  aiHub: pulumi.Output<azurenative.machinelearningservices.GetWorkspaceResult>;
+  aiProject: pulumi.Output<azurenative.machinelearningservices.GetWorkspaceResult>;
 }
 
 export function createAIFoundryResources(
-  resourceGroupName: string | $util.Output<string>,
+  resourceGroupName: string,
   location: string = "eastus",
-  keyVaultId: string | $util.Output<string>,
-  storageAccountId: string | $util.Output<string>,
-  appInsightsId: string | $util.Output<string>
+  openaiAccountName: pulumi.Input<string>
 ): AIFoundryResources {
-  // Azure AI Hub (parent workspace)
-  const aiHub = new azurenative.machinelearningservices.Workspace("aihub", {
+  // Reference existing AI Hub
+  const aiHub = azurenative.machinelearningservices.getWorkspaceOutput({
     resourceGroupName,
-    location,
-    kind: "Hub",
-    sku: {
-      name: "Basic",
-      tier: "Basic",
-    },
-    identity: {
-      type: "SystemAssigned",
-    },
-    keyVault: keyVaultId,
-    storageAccount: storageAccountId,
-    applicationInsights: appInsightsId,
-    friendlyName: "Document Intelligence AI Hub",
-    description: "Azure AI Foundry Hub for multi-model document processing",
+    workspaceName: azureConfig.aiHubName,
   });
 
-  // Azure AI Project (child workspace)
-  const aiProject = new azurenative.machinelearningservices.Workspace("aiproject", {
+  // Reference existing AI Project
+  const aiProject = azurenative.machinelearningservices.getWorkspaceOutput({
     resourceGroupName,
-    location,
-    kind: "Project",
+    workspaceName: azureConfig.aiProjectName,
+  });
+
+  // GPT-4o Deployment in the Project (OpenAI Account sub-resource)
+  // ...
+  const gpt4oDeployment = new azurenative.cognitiveservices.Deployment("gpt4o", {
+    deploymentName: "gpt-4o",
+    accountName: openaiAccountName,
+    resourceGroupName: resourceGroupName,
+    properties: {
+      model: {
+        format: "OpenAI",
+        name: "gpt-4o",
+        version: "2024-05-13",
+      },
+    },
     sku: {
-      name: "Basic",
-      tier: "Basic",
+      name: "GlobalStandard",
+      capacity: 10, // 10k TPM
     },
-    identity: {
-      type: "SystemAssigned",
-    },
-    hubResourceId: aiHub.id,
-    friendlyName: "Document Processing Project",
-    description: "POC for vendor catalog processing with multi-model comparison",
   });
 
   return {

@@ -1,0 +1,16 @@
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
+
+app.http('HelloNode', {
+    methods: ['GET', 'POST'],
+    authLevel: 'anonymous',
+    handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+        context.log('JavaScript HTTP trigger function processed a request.');
+
+        const name = request.query.get('name') || await request.text() || 'World';
+
+        return {
+            status: 200,
+            body: `Hello from Node.js, ${name}`
+        };
+    }
+});

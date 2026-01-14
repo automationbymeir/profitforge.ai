@@ -11,26 +11,31 @@ export interface AzureConfig {
   // Resource naming
   resourceGroup: string;
 
-  // Storage
+  // Storage (now managed by Pulumi)
   storageAccountName: string;
   storageContainerDocuments: string;
 
-  // Key Vault
+  // Key Vault (currently unused - to be added later if needed)
   keyVaultName: string;
 
-  // SQL Database (in different RG: dragonfruit-dev-rg)
+  // SQL Database (managed by Pulumi)
   sqlServer: string;
   sqlDatabase: string;
 
-  // AI Services
+  // AI Services (currently unused - commented out in index.ts)
   aiHubName: string;
   aiProjectName: string;
+  cognitiveServicesName: string;
   documentIntelligenceEndpoint: string;
+  
+  // Existing Function App Resources (Created by Client)
+  functionAppName: string;
+  functionAppPlanName: string;
 }
 
 // All stages use client's existing resources
 export const azureConfig: AzureConfig = {
-  location: "eastus",
+  location: "israelcentral", // Deploy resources closer to Israel
   resourceGroup: "dragonfruit-dev-3P-Meir-rg",
   storageAccountName: "dragonfrstorage593005773",
   storageContainerDocuments: "df-documents",
@@ -39,5 +44,8 @@ export const azureConfig: AzureConfig = {
   sqlDatabase: "df-dev-main",
   aiHubName: "dragonfruit-dev-3P-Meir-aihub",
   aiProjectName: "dragonfruit-dev-3P-Meir-project",
+  cognitiveServicesName: "dragonfruit-dev-3P-Meir-docintel",
   documentIntelligenceEndpoint: "https://eastus.api.cognitive.microsoft.com/",
+  functionAppName: "dev-meir-vvocr-functions",
+  functionAppPlanName: "EastUSLinuxDynamicPlan",
 };
