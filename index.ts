@@ -1,12 +1,13 @@
-import * as azurenative from "@pulumi/azure-native";
 import * as pulumi from "@pulumi/pulumi";
+import { createAIFoundryResources } from "./infra/aiFoundry";
+import { createCognitiveServices } from "./infra/cognitiveServices";
 import { azureConfig } from "./infra/config";
 import { createDatabaseResources } from "./infra/database";
+import { createFunctionAppResources } from "./infra/functions";
 import { createStorageResources } from "./infra/storage";
 // Unused resources commented out:
 // import { createApplicationInsightsResources } from "./infra/applicationInsights";
-// import { createCognitiveServices } from "./infra/cognitiveServices";
-// import { createAIFoundryResources } from "./infra/aiFoundry";
+// import { createKeyVaultResources } from "./infra/keyVault";
 
 // Get Pulumi configuration and stack
 const config = new pulumi.Config();
@@ -28,15 +29,32 @@ const databaseResources = createDatabaseResources(
   adminPassword
 );
 
-// --- Create Storage Resources Directly ---
-const { blobStorage, uploadsContainer } = createStorageResources(
+// --- Storage Infrastructure ---
+const { blobStorage, uploadsContainer, storageConnectionString, functionBlobUrl } =
+  createStorageResources(azureConfig.resourceGroup, azureConfig.location, stack);
+
+// --- AI Services (Document Intelligence + OpenAI) ---
+const cognitiveServices = createCognitiveServices(azureConfig.resourceGroup, azureConfig.location);
+
+// --- AI Foundry (Hub + Project + GPT-4o Deployment) ---
+const aiFoundry = createAIFoundryResources(
   azureConfig.resourceGroup,
   azureConfig.location,
-  stack
+  cognitiveServices.openAiAccountName
 );
 
-// Note: KeyVault to be created/managed later if needed
-// Using storage account as the primary storage for functions
+// --- Azure Functions Infrastructure ---
+const functionAppResources = createFunctionAppResources(
+  storageConnectionString,
+  functionBlobUrl,
+  "", // Empty KeyVault URI for now (can add later if needed)
+  cognitiveServices.docIntelEndpoint,
+  cognitiveServices.docIntelPrimaryKey,
+  pulumi.interpolate`https://${cognitiveServices.openAiAccountName}.openai.azure.com`,
+  cognitiveServices.openAiPrimaryKey,
+  databaseResources.connectionString,
+  stack
+);
 
 // Export outputs
 export const stage = stack;
@@ -46,105 +64,19 @@ export const sqlServerName = databaseResources.sqlServer.name;
 export const sqlServerFqdn = databaseResources.sqlServer.fullyQualifiedDomainName;
 export const sqlDatabaseName = databaseResources.sqlDatabase.name;
 
-// Unused AI Services (commented out):
-// export const keyVaultName = existingKeyVault.name;
-// export const keyVaultUrl = existingKeyVault.properties.vaultUri;
-// export const aiHubName = azureConfig.aiHubName;
-// export const aiProjectName = azureConfig.aiProjectName;
-// export const documentIntelligenceEndpoint = azureConfig.documentIntelligenceEndpoint;
-
 // --- Azure Functions Infrastructure ---
+export const functionAppName = functionAppResources.functionApp.name;
+export const functionAppEndpoint = pulumi.interpolate`https://${functionAppResources.functionApp.defaultHostName}`;
 
-// Unused AI Infrastructure (commented out):
-// const appInsights = createApplicationInsightsResources(resourceGroupName, location);
-// const cognitiveServices = createCognitiveServices(resourceGroupName, location);
-// const aiFoundry = createAIFoundryResources(
-//   resourceGroupName,
-//   location,
-//   cognitiveServices.openAiAccountName
-// );
+// --- AI Services Outputs ---
+export const docIntelAccountName = cognitiveServices.docIntelAccountName;
+export const docIntelEndpoint = cognitiveServices.docIntelEndpoint;
+export const openAiAccountName = cognitiveServices.openAiAccountName;
+export const aiHubName = pulumi.output(azureConfig.aiHubName);
+export const aiProjectName = pulumi.output(azureConfig.aiProjectName);
 
-// Get primary storage key for connection string
-const storageKeys = azurenative.storage.listStorageAccountKeysOutput({
-  resourceGroupName: azureConfig.resourceGroup,
-  accountName: blobStorage.name,
-});
-const storageConnectionString = pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${blobStorage.name};AccountKey=${storageKeys.keys[0].value};EndpointSuffix=core.windows.net`;
-
-// --- Create Function App Infrastructure ---
-
-// Create App Service Plan (Consumption/Dynamic)
-const plan = new azurenative.web.AppServicePlan(`${stack}-function-plan`, {
-  resourceGroupName: azureConfig.resourceGroup,
-  name: `${stack}-function-plan`,
-  kind: "functionapp",
-  sku: {
-    name: "Y1",
-    tier: "Dynamic",
-  },
-  // reserved: true, // Required for Linux
-});
-
-// --- Azure Functions Deployment ---
-
-// Create container for deployment if it doesn't exist
-const codeContainer = new azurenative.storage.BlobContainer(`${stack}-deployments`, {
-  resourceGroupName: azureConfig.resourceGroup,
-  accountName: blobStorage.name,
-  containerName: `${stack}-deployments`,
-  // publicAccess: azurenative.storage.PublicAccess.None,
-});
-
-// 1. Pack the built functions with flat structure for Azure Functions
-const codeBlob = new azurenative.storage.Blob(`${stack}-functions-zip-v2`, {
-  resourceGroupName: azureConfig.resourceGroup,
-  accountName: blobStorage.name,
-  containerName: codeContainer.name,
-  source: new pulumi.asset.FileArchive("./javascript"),
-  blobName: `${stack}-functions-v2.zip`, // Force new deployment
-  type: azurenative.storage.BlobType.Block,
-});
-
-// Get SAS token for the function app to download the zip
-const functionBlobSAS = azurenative.storage.listStorageAccountServiceSASOutput({
-  accountName: blobStorage.name,
-  protocols: azurenative.storage.HttpProtocol.Https,
-  sharedAccessStartTime: "2023-01-01",
-  sharedAccessExpiryTime: "2030-01-01",
-  resourceGroupName: azureConfig.resourceGroup,
-  resource: azurenative.storage.SignedResource.C,
-  permissions: azurenative.storage.Permissions.R,
-  canonicalizedResource: pulumi.interpolate`/blob/${blobStorage.name}/${codeContainer.name}`,
-  contentType: "application/json",
-  cacheControl: "max-age=5",
-  contentDisposition: "inline",
-  contentEncoding: "deflate",
-});
-
-const functionBlobUrl = pulumi.interpolate`https://${blobStorage.name}.blob.core.windows.net/${codeContainer.name}/${codeBlob.name}?${functionBlobSAS.serviceSasToken}`;
-
-// Create/manage the Function App with proper plan linkage (matching working example)
-const functionApp = new azurenative.web.WebApp(`${stack}-function-app`, {
-  resourceGroupName: azureConfig.resourceGroup,
-  name: `${stack}-vvocr-functions`,
-  serverFarmId: plan.id, // Link to the App Service Plan
-  kind: "functionapp",
-  siteConfig: {
-    appSettings: [
-      { name: "AzureWebJobsStorage", value: storageConnectionString },
-      { name: "FUNCTIONS_EXTENSION_VERSION", value: "~4" },
-      { name: "FUNCTIONS_WORKER_RUNTIME", value: "node" },
-      { name: "WEBSITE_NODE_DEFAULT_VERSION", value: "~20" },
-      { name: "WEBSITE_RUN_FROM_PACKAGE", value: functionBlobUrl },
-    ],
-    http20Enabled: true,
-    nodeVersion: "~20",
-  },
-});
-
-export const functionAppName = functionApp.name;
-export const functionAppEndpoint = pulumi.interpolate`https://${functionApp.defaultHostName}`;
-
-// Secrets for runtime use in functions (marked as secret outputs)
-export const outputDocumentIntelligenceKey = pulumi.secret(documentIntelligenceKey);
+// --- Secrets (marked as secret outputs for runtime use) ---
+export const outputDocumentIntelligenceKey = pulumi.secret(cognitiveServices.docIntelPrimaryKey);
+export const outputOpenAIKey = pulumi.secret(cognitiveServices.openAiPrimaryKey);
 export const outputDatabaseConnectionString = pulumi.secret(databaseResources.connectionString);
+export const outputStorageConnectionString = pulumi.secret(storageConnectionString);

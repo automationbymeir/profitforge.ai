@@ -12,7 +12,7 @@ export interface CognitiveServicesResources {
 
 export function createCognitiveServices(
   resourceGroupName: pulumi.Input<string>,
-  location: string = "eastus"
+  location: string = "eastus" // AIServices requires specific regions (not israelcentral)
 ): CognitiveServicesResources {
   // 1. Reference existing Document Intelligence (FormRecognizer) account
   const docIntel = azurenative.cognitiveservices.getAccountOutput({
@@ -26,9 +26,10 @@ export function createCognitiveServices(
   });
 
   // 2. Create a new AIServices account for OpenAI (since existing is FormRecognizer)
+  // NOTE: AIServices not available in israelcentral - using eastus (closest region with full AI services)
   const openAiAccount = new azurenative.cognitiveservices.Account("openai-account", {
     resourceGroupName,
-    location,
+    location: "eastus", // Explicitly use eastus - AIServices has limited regional availability
     kind: "AIServices",
     sku: {
       name: "S0",
