@@ -6,6 +6,6 @@ dist/
 *.log
 .pulumi/
 legacy/
-local.settings.json
+**/local.settings.json
 .vscode/
 Pulumi.dev-eitan.yaml
