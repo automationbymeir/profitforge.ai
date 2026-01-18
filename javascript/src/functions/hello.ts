@@ -7,10 +7,11 @@ app.http('HelloNode', {
         context.log('JavaScript HTTP trigger function processed a request.');
 
         const name = request.query.get('name') || await request.text() || 'World';
+        const timestamp = new Date().toISOString();
 
         return {
             status: 200,
-            body: `Hello from Node.js, ${name}`
+            body: `Hello from Node.js, ${name}! (${timestamp})`
         };
     }
 });
