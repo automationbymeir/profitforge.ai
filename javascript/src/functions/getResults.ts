@@ -1,7 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import sql from "mssql";
-
-const SQL_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING;
+import { withDatabase } from "../utils/database.js";
 
 /**
  * HTTP GET endpoint to retrieve processed document results
@@ -16,27 +15,18 @@ export async function getResults(
 ): Promise<HttpResponseInit> {
   context.log("Processing getResults request");
 
-  if (!SQL_CONNECTION_STRING) {
-    return {
-      status: 500,
-      body: JSON.stringify({ error: "Database configuration missing" }),
-    };
-  }
-
   try {
     const resultId = request.query.get("resultId");
     const vendorName = request.query.get("vendor");
     const showAllVersions = request.query.get("allVersions") === "true";
     const limit = parseInt(request.query.get("limit") || "10");
 
-    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING);
-    await pool.connect();
+    const results = await withDatabase(async (pool) => {
+      let query: string;
 
-    let query: string;
-
-    if (showAllVersions) {
-      // Show all versions (for detailed audit/comparison)
-      query = `
+      if (showAllVersions || resultId) {
+        // Show all versions (for detailed audit/comparison) OR if filtering by specific resultId
+        query = `
         SELECT TOP (@limit)
           result_id,
           document_name,
@@ -50,9 +40,12 @@ export async function getResults(
           doc_intel_page_count,
           doc_intel_table_count,
           doc_intel_cost_usd,
+          doc_intel_confidence_score,
           ai_model_analysis,
           ai_model_used,
           ai_model_cost_usd,
+          ai_confidence_score,
+          ai_completeness_score,
           llm_mapping_result,
           product_count,
           created_at,
@@ -60,10 +53,10 @@ export async function getResults(
         FROM vvocr.document_processing_results
         WHERE 1=1
       `;
-    } else {
-      // Show only LATEST version of each document (default)
-      // Use CTE to find max version per parent chain
-      query = `
+      } else {
+        // Show only LATEST version of each document (default)
+        // Use CTE to find max version per parent chain
+        query = `
         WITH LatestVersions AS (
           SELECT 
             COALESCE(parent_document_id, result_id) as root_id,
@@ -84,9 +77,12 @@ export async function getResults(
           d.doc_intel_page_count,
           d.doc_intel_table_count,
           d.doc_intel_cost_usd,
+          d.doc_intel_confidence_score,
           d.ai_model_analysis,
           d.ai_model_used,
           d.ai_model_cost_usd,
+          d.ai_confidence_score,
+          d.ai_completeness_score,
           d.llm_mapping_result,
           d.product_count,
           d.created_at,
@@ -97,31 +93,33 @@ export async function getResults(
           AND d.reprocessing_count = lv.max_version
         WHERE 1=1
       `;
-    }
+      }
 
-    const queryRequest = pool.request().input("limit", sql.Int, limit);
+      const queryRequest = pool.request().input("limit", sql.Int, limit);
 
-    if (resultId) {
-      query += " AND result_id = @resultId";
-      queryRequest.input("resultId", sql.UniqueIdentifier, resultId);
-    }
+      if (resultId) {
+        query += " AND result_id = @resultId";
+        queryRequest.input("resultId", sql.UniqueIdentifier, resultId);
+      }
 
-    if (vendorName) {
-      query += " AND vendor_name LIKE @vendorName";
-      queryRequest.input("vendorName", sql.NVarChar, `%${vendorName}%`);
-    }
+      if (vendorName) {
+        query += " AND vendor_name LIKE @vendorName";
+        queryRequest.input("vendorName", sql.NVarChar, `%${vendorName}%`);
+      }
 
-    query += " ORDER BY created_at DESC";
+      query += " ORDER BY created_at DESC";
 
-    const result = await queryRequest.query(query);
-    await pool.close();
+      const result = await queryRequest.query(query);
 
-    // Parse JSON fields
-    const records = result.recordset.map((record) => ({
-      ...record,
-      ai_model_analysis: record.ai_model_analysis ? JSON.parse(record.ai_model_analysis) : null,
-      llm_mapping_result: record.llm_mapping_result ? JSON.parse(record.llm_mapping_result) : null,
-    }));
+      // Parse JSON fields
+      return result.recordset.map((record) => ({
+        ...record,
+        ai_model_analysis: record.ai_model_analysis ? JSON.parse(record.ai_model_analysis) : null,
+        llm_mapping_result: record.llm_mapping_result
+          ? JSON.parse(record.llm_mapping_result)
+          : null,
+      }));
+    });
 
     return {
       status: 200,
@@ -129,7 +127,7 @@ export async function getResults(
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify(records),
+      body: JSON.stringify(results),
     };
   } catch (error: any) {
     context.error("Error retrieving results:", error);

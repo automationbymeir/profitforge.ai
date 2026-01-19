@@ -46,7 +46,8 @@ BEGIN
         ai_model_analysis NVARCHAR(MAX), -- JSON output (legacy field)
         llm_mapping_result NVARCHAR(MAX), -- Product mapping JSON result
         ai_prompt_used NVARCHAR(MAX), -- Exact prompt sent to LLM
-        ai_confidence_score DECIMAL(5,4),
+        ai_confidence_score DECIMAL(5,2), -- Overall confidence score (0-100)
+        ai_completeness_score DECIMAL(5,2), -- Data completeness score (0-100)
         ai_prompt_tokens INT,
         ai_completion_tokens INT,
         ai_total_tokens INT,
