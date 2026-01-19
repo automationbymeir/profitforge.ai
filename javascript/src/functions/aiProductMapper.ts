@@ -260,7 +260,54 @@ Context: ${fullText.substring(0, 2000)}`;
 
     context.log(`✅ Extracted ${products.length} products from ${tables.length} tables`);
 
-    // 5. Calculate costs
+    // 5. Calculate data quality and confidence metrics
+    let completenessScore = 0;
+    let confidenceScore = 0;
+    const qualityMetrics = {
+      productsWithSKU: 0,
+      productsWithPrice: 0,
+      productsWithValidPrice: 0,
+      productsWithName: 0,
+      productsWithUnit: 0,
+      productsWithDescription: 0,
+      emptyFields: 0,
+    };
+
+    products.forEach((p: any) => {
+      if (p.sku && p.sku.trim()) qualityMetrics.productsWithSKU++;
+      if (p.name && p.name.trim()) qualityMetrics.productsWithName++;
+      if (p.price !== undefined && p.price !== null) {
+        qualityMetrics.productsWithPrice++;
+        if (p.price > 0 && p.price < 100000) qualityMetrics.productsWithValidPrice++;
+      }
+      if (p.unit && p.unit.trim()) qualityMetrics.productsWithUnit++;
+      if (p.description && p.description.trim()) qualityMetrics.productsWithDescription++;
+
+      // Count empty/missing fields
+      if (!p.sku || !p.sku.trim()) qualityMetrics.emptyFields++;
+      if (!p.name || !p.name.trim()) qualityMetrics.emptyFields++;
+      if (p.price === undefined || p.price === null || p.price <= 0) qualityMetrics.emptyFields++;
+    });
+
+    // Completeness score: % of required fields populated (SKU, name, price)
+    const requiredFieldCount = products.length * 3; // 3 required fields per product
+    const populatedRequiredFields =
+      qualityMetrics.productsWithSKU +
+      qualityMetrics.productsWithName +
+      qualityMetrics.productsWithPrice;
+    completenessScore =
+      requiredFieldCount > 0 ? (populatedRequiredFields / requiredFieldCount) * 100 : 0;
+
+    // Confidence score: weighted by data quality indicators
+    const skuScore =
+      products.length > 0 ? (qualityMetrics.productsWithSKU / products.length) * 30 : 0;
+    const priceScore =
+      products.length > 0 ? (qualityMetrics.productsWithValidPrice / products.length) * 40 : 0;
+    const nameScore =
+      products.length > 0 ? (qualityMetrics.productsWithName / products.length) * 30 : 0;
+    confidenceScore = Math.min(100, skuScore + priceScore + nameScore);
+
+    // 6. Calculate costs
     const promptTokens = mappingResponse.usage?.prompt_tokens || 0;
     const completionTokens = mappingResponse.usage?.completion_tokens || 0;
     const totalTokens = promptTokens + completionTokens;
@@ -279,7 +326,7 @@ Context: ${fullText.substring(0, 2000)}`;
     // Use the reprocessing_count from the record (already set correctly by reprocessMapping)
     const version = document.reprocessing_count || 0;
 
-    // Store AI mapping result
+    // Store AI mapping result with quality metrics
     const mappingResultJson = {
       documentId,
       timestamp: new Date().toISOString(),
@@ -287,6 +334,17 @@ Context: ${fullText.substring(0, 2000)}`;
       products,
       productCount: products.length,
       columnMapping: mappingResult.columnMapping,
+      qualityMetrics: {
+        completenessScore: Math.round(completenessScore * 100) / 100, // Already 0-100%, just round to 2 decimals
+        confidenceScore: Math.round(confidenceScore * 100) / 100, // Already 0-100%, just round to 2 decimals
+        productsWithSKU: qualityMetrics.productsWithSKU,
+        productsWithPrice: qualityMetrics.productsWithPrice,
+        productsWithValidPrice: qualityMetrics.productsWithValidPrice,
+        productsWithName: qualityMetrics.productsWithName,
+        productsWithUnit: qualityMetrics.productsWithUnit,
+        productsWithDescription: qualityMetrics.productsWithDescription,
+        emptyFields: qualityMetrics.emptyFields,
+      },
       usage: {
         promptTokens,
         completionTokens,
@@ -312,7 +370,7 @@ Context: ${fullText.substring(0, 2000)}`;
 
     context.log(`Bronze-layer storage complete: ${mappingBlobPath}, ${promptBlobPath}`);
 
-    // 7. Update database with AI mapping results
+    // 7. Update database with AI mapping results and confidence scores
     await pool
       .request()
       .input("documentId", sql.UniqueIdentifier, documentId)
@@ -323,7 +381,9 @@ Context: ${fullText.substring(0, 2000)}`;
       .input("totalTokens", sql.Int, totalTokens)
       .input("aiCost", sql.Decimal(10, 6), aiCost)
       .input("productCount", sql.Int, products.length)
-      .input("vendorName", sql.NVarChar, mappingResult.vendor || document.vendor_name).query(`
+      .input("vendorName", sql.NVarChar, mappingResult.vendor || document.vendor_name)
+      .input("completenessScore", sql.Decimal(5, 2), completenessScore)
+      .input("confidenceScore", sql.Decimal(5, 2), confidenceScore).query(`
         UPDATE vvocr.document_processing_results 
         SET 
             llm_mapping_result = @mappingResult,
@@ -333,6 +393,8 @@ Context: ${fullText.substring(0, 2000)}`;
             ai_completion_tokens = @completionTokens,
             ai_total_tokens = @totalTokens,
             ai_model_cost_usd = @aiCost,
+            ai_completeness_score = @completenessScore,
+            ai_confidence_score = @confidenceScore,
             product_count = @productCount,
             vendor_name = @vendorName,
             processing_status = 'completed',

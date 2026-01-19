@@ -643,3 +643,389 @@ app.http("confirmMapping", {
     return confirmMappingHandler(request, context);
   },
 });
+
+/**
+ * Get Version History Handler - HTTP GET endpoint for document versions
+ *
+ * PROCESS:
+ * 1. Extract documentId from query parameters
+ * 2. Determine root parent ID (original document)
+ * 3. Query all versions in the reprocessing chain
+ * 4. Return array of all versions with metadata
+ *
+ * USE CASE:
+ * - View history of AI mapping attempts
+ * - Compare confidence scores across versions
+ * - Select previous version for export
+ */
+export async function getVersionHistoryHandler(
+  req: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
+  context.log(`Get version history request received`);
+
+  try {
+    const documentId = req.query.get("documentId");
+
+    if (!documentId) {
+      return {
+        status: 400,
+        body: JSON.stringify({ error: "Missing documentId query parameter" }),
+      };
+    }
+
+    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+    await pool.connect();
+
+    try {
+      // First, get the document to find its root parent
+      const rootResult = await pool.request().input("documentId", sql.UniqueIdentifier, documentId)
+        .query(`
+          SELECT 
+            result_id,
+            parent_document_id,
+            reprocessing_count
+          FROM vvocr.document_processing_results
+          WHERE result_id = @documentId
+        `);
+
+      if (rootResult.recordset.length === 0) {
+        await pool.close();
+        return {
+          status: 404,
+          body: JSON.stringify({ error: "Document not found" }),
+        };
+      }
+
+      const doc = rootResult.recordset[0];
+      const rootParentId = doc.parent_document_id || doc.result_id;
+
+      // Get all versions in the chain
+      const versionsResult = await pool
+        .request()
+        .input("rootParentId", sql.UniqueIdentifier, rootParentId).query(`
+          SELECT 
+            result_id,
+            document_name,
+            vendor_name,
+            processing_status,
+            export_status,
+            reprocessing_count,
+            parent_document_id,
+            product_count,
+            ai_confidence_score,
+            ai_completeness_score,
+            ai_model_cost_usd,
+            doc_intel_cost_usd,
+            created_at,
+            processing_completed_at,
+            exported_at
+          FROM vvocr.document_processing_results
+          WHERE result_id = @rootParentId OR parent_document_id = @rootParentId
+          ORDER BY reprocessing_count ASC
+        `);
+
+      await pool.close();
+
+      return {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          rootDocumentId: rootParentId,
+          currentDocumentId: documentId,
+          totalVersions: versionsResult.recordset.length,
+          versions: versionsResult.recordset,
+        }),
+      };
+    } catch (error: any) {
+      await pool.close();
+      throw error;
+    }
+  } catch (error: any) {
+    context.error(`Error getting version history: ${error.message}`);
+    return {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify({ error: error.message }),
+    };
+  }
+}
+
+app.http("getVersionHistory", {
+  methods: ["GET", "OPTIONS"],
+  authLevel: "anonymous",
+  handler: async (request: HttpRequest, context: InvocationContext) => {
+    if (request.method === "OPTIONS") {
+      return {
+        status: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      };
+    }
+    return getVersionHistoryHandler(request, context);
+  },
+});
+
+/**
+ * Delete Specific Run Handler - HTTP DELETE endpoint for single version
+ *
+ * PROCESS:
+ * 1. Extract documentId from query parameters
+ * 2. Verify it's not the root document (prevent orphaning)
+ * 3. Delete the specific run from database
+ * 4. Bronze-layer blobs are retained for audit
+ *
+ * RESTRICTIONS:
+ * - Cannot delete root/original document (use deleteDocument instead)
+ * - Only deletes the specific reprocessing run
+ */
+export async function deleteRunHandler(
+  req: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
+  context.log(`Delete run request received`);
+
+  try {
+    const documentId = req.query.get("documentId");
+
+    if (!documentId) {
+      return {
+        status: 400,
+        body: JSON.stringify({ error: "Missing documentId query parameter" }),
+      };
+    }
+
+    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+    await pool.connect();
+
+    try {
+      // Check if this is a reprocessed version (has parent_document_id)
+      const checkResult = await pool.request().input("documentId", sql.UniqueIdentifier, documentId)
+        .query(`
+          SELECT 
+            result_id,
+            parent_document_id,
+            reprocessing_count,
+            document_name
+          FROM vvocr.document_processing_results
+          WHERE result_id = @documentId
+        `);
+
+      if (checkResult.recordset.length === 0) {
+        await pool.close();
+        return {
+          status: 404,
+          body: JSON.stringify({ error: "Document not found" }),
+        };
+      }
+
+      const doc = checkResult.recordset[0];
+
+      if (!doc.parent_document_id) {
+        await pool.close();
+        return {
+          status: 400,
+          body: JSON.stringify({
+            error:
+              "Cannot delete root document. Use DELETE /api/deleteDocument to delete the entire document with all versions.",
+          }),
+        };
+      }
+
+      // Delete the specific run
+      await pool.request().input("documentId", sql.UniqueIdentifier, documentId).query(`
+          DELETE FROM vvocr.document_processing_results
+          WHERE result_id = @documentId
+        `);
+
+      await pool.close();
+
+      context.log(`✅ Deleted run version ${doc.reprocessing_count} for ${doc.document_name}`);
+
+      return {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          message: `Run version ${doc.reprocessing_count} deleted successfully`,
+          documentId,
+          version: doc.reprocessing_count,
+        }),
+      };
+    } catch (error: any) {
+      await pool.close();
+      throw error;
+    }
+  } catch (error: any) {
+    context.error(`Error deleting run: ${error.message}`);
+    return {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify({ error: error.message }),
+    };
+  }
+}
+
+app.http("deleteRun", {
+  methods: ["DELETE", "OPTIONS"],
+  authLevel: "anonymous",
+  handler: async (request: HttpRequest, context: InvocationContext) => {
+    if (request.method === "OPTIONS") {
+      return {
+        status: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      };
+    }
+    return deleteRunHandler(request, context);
+  },
+});
+
+/**
+ * Delete Document Handler - HTTP DELETE endpoint to remove document and ALL versions
+ *
+ * PROCESS:
+ * 1. Extract documentId from query parameters
+ * 2. Determine root parent ID
+ * 3. Delete blob from storage (original PDF)
+ * 4. Delete ALL database records (root + all reprocessing versions)
+ * 5. Return summary
+ *
+ * USE CASE:
+ * - Complete removal of document and processing history
+ * - Deletes all versions in the reprocessing chain
+ */
+export async function deleteDocumentHandler(
+  req: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
+  context.log(`Delete document request received`);
+
+  try {
+    const documentId = req.query.get("documentId");
+
+    if (!documentId) {
+      return {
+        status: 400,
+        body: JSON.stringify({ error: "Missing documentId query parameter" }),
+      };
+    }
+
+    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+    await pool.connect();
+
+    try {
+      // Get document info and determine root parent
+      const docResult = await pool.request().input("documentId", sql.UniqueIdentifier, documentId)
+        .query(`
+          SELECT 
+            result_id,
+            parent_document_id,
+            document_path,
+            document_name
+          FROM vvocr.document_processing_results
+          WHERE result_id = @documentId
+        `);
+
+      if (docResult.recordset.length === 0) {
+        await pool.close();
+        return {
+          status: 404,
+          body: JSON.stringify({ error: "Document not found" }),
+        };
+      }
+
+      const doc = docResult.recordset[0];
+      const rootParentId = doc.parent_document_id || doc.result_id;
+
+      // Delete blob from storage (original PDF)
+      const blobServiceClient = BlobServiceClient.fromConnectionString(
+        process.env.STORAGE_CONNECTION_STRING!
+      );
+      const containerClient = blobServiceClient.getContainerClient(STORAGE_CONTAINER_DOCUMENTS);
+
+      try {
+        const blockBlobClient = containerClient.getBlockBlobClient(doc.document_path);
+        await blockBlobClient.delete();
+        context.log(`✅ Deleted blob: ${doc.document_path}`);
+      } catch (blobError: any) {
+        context.warn(`Failed to delete blob ${doc.document_path}: ${blobError.message}`);
+      }
+
+      // Delete ALL database records (root + all versions)
+      const deleteResult = await pool
+        .request()
+        .input("rootParentId", sql.UniqueIdentifier, rootParentId).query(`
+          DELETE FROM vvocr.document_processing_results
+          WHERE result_id = @rootParentId OR parent_document_id = @rootParentId
+        `);
+
+      await pool.close();
+
+      context.log(
+        `✅ Deleted document ${doc.document_name} with ${deleteResult.rowsAffected[0]} total versions`
+      );
+
+      return {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          message: "Document and all versions deleted successfully",
+          documentName: doc.document_name,
+          versionsDeleted: deleteResult.rowsAffected[0],
+        }),
+      };
+    } catch (error: any) {
+      await pool.close();
+      throw error;
+    }
+  } catch (error: any) {
+    context.error(`Error deleting document: ${error.message}`);
+    return {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify({ error: error.message }),
+    };
+  }
+}
+
+app.http("deleteDocument", {
+  methods: ["DELETE", "OPTIONS"],
+  authLevel: "anonymous",
+  handler: async (request: HttpRequest, context: InvocationContext) => {
+    if (request.method === "OPTIONS") {
+      return {
+        status: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      };
+    }
+    return deleteDocumentHandler(request, context);
+  },
+});

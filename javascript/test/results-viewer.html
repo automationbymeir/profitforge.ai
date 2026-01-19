@@ -15,20 +15,17 @@
         color: #333;
         background: #f5f5f5;
       }
-
       h1 {
         color: #0078d4;
         border-bottom: 2px solid #0078d4;
         padding-bottom: 10px;
         margin-bottom: 30px;
       }
-
       .subtitle {
         color: #666;
         font-size: 1.1em;
         margin-bottom: 30px;
       }
-
       .controls {
         background: #f9f9f9;
         padding: 25px;
@@ -40,19 +37,16 @@
         align-items: flex-end;
         flex-wrap: wrap;
       }
-
       .form-group {
         flex: 1;
         min-width: 200px;
       }
-
       label {
         display: block;
         font-weight: 600;
         margin-bottom: 8px;
         color: #333;
       }
-
       input,
       select {
         width: 100%;
@@ -62,13 +56,11 @@
         font-size: 14px;
         box-sizing: border-box;
       }
-
       input:focus,
       select:focus {
         outline: none;
         border-color: #0078d4;
       }
-
       button {
         background: #0078d4;
         color: white;
@@ -80,49 +72,43 @@
         transition: background 0.2s;
         white-space: nowrap;
       }
-
       button:hover {
         background: #005a9e;
       }
-
       button:disabled {
         background: #ccc;
         cursor: not-allowed;
-        transform: none;
       }
-
       button.secondary {
         background: #6c757d;
       }
-
       button.secondary:hover {
         background: #5a6268;
       }
-
       button.danger {
         background: #dc3545;
       }
-
       button.danger:hover {
         background: #c82333;
       }
-
       button.success {
         background: #28a745;
       }
-
       button.success:hover {
         background: #218838;
       }
-
+      button.small {
+        padding: 6px 12px;
+        font-size: 14px;
+      }
       .action-buttons {
         display: flex;
         gap: 10px;
         margin-top: 20px;
         padding-top: 20px;
         border-top: 2px solid #f0f0f0;
+        flex-wrap: wrap;
       }
-
       .results-card {
         background: white;
         border-radius: 8px;
@@ -130,41 +116,34 @@
         overflow: hidden;
         margin-bottom: 30px;
       }
-
       .card-header {
         background: #0078d4;
         color: white;
         padding: 20px 25px;
       }
-
       .card-header h2 {
         font-size: 1.5em;
         margin-bottom: 5px;
       }
-
       .card-meta {
         opacity: 0.9;
         font-size: 0.9em;
       }
-
       .card-body {
         padding: 25px;
       }
-
       .info-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 15px;
         margin-bottom: 25px;
         padding-bottom: 25px;
         border-bottom: 2px solid #f0f0f0;
       }
-
       .info-item {
         display: flex;
         flex-direction: column;
       }
-
       .info-label {
         font-size: 0.85em;
         color: #666;
@@ -172,13 +151,11 @@
         letter-spacing: 0.5px;
         margin-bottom: 5px;
       }
-
       .info-value {
         font-size: 1.1em;
         font-weight: 600;
         color: #333;
       }
-
       .status {
         display: inline-block;
         padding: 5px 12px;
@@ -186,32 +163,114 @@
         font-size: 0.9em;
         font-weight: 600;
       }
-
       .status.completed {
         background: #d4edda;
         color: #155724;
       }
-
       .status.failed {
         background: #f8d7da;
         color: #721c24;
       }
-
-      .status.pending {
+      .status.pending,
+      .status.ocr_complete {
         background: #fff3cd;
         color: #856404;
       }
-
+      .status.confirmed {
+        background: #d4edda;
+        color: #155724;
+      }
+      /* Version Carousel */
+      .version-carousel {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .version-carousel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+      }
+      .version-carousel-title {
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #333;
+      }
+      .version-list {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 10px 0;
+      }
+      .version-card {
+        min-width: 200px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .version-card:hover {
+        border-color: #0078d4;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .version-card.active {
+        border-color: #0078d4;
+        background: #f0f7ff;
+      }
+      .version-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .version-number {
+        font-weight: 700;
+        color: #0078d4;
+        font-size: 1.1em;
+      }
+      .version-badge {
+        background: #28a745;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.75em;
+        font-weight: 600;
+      }
+      .version-stats {
+        font-size: 0.85em;
+        color: #666;
+        line-height: 1.8;
+      }
+      .confidence-bar {
+        height: 6px;
+        background: #e0e0e0;
+        border-radius: 3px;
+        margin-top: 10px;
+        overflow: hidden;
+      }
+      .confidence-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745, #20c997);
+        transition: width 0.3s;
+      }
+      .confidence-fill.medium {
+        background: linear-gradient(90deg, #ffc107, #ff9800);
+      }
+      .confidence-fill.low {
+        background: linear-gradient(90deg, #dc3545, #c82333);
+      }
       .products-table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 10px;
       }
-
       .products-table thead {
         background: #f8f9fa;
       }
-
       .products-table th {
         text-align: left;
         padding: 15px;
@@ -222,50 +281,41 @@
         letter-spacing: 0.5px;
         border-bottom: 2px solid #0078d4;
       }
-
       .products-table td {
         padding: 15px;
         border-bottom: 1px solid #e0e0e0;
       }
-
       .products-table tbody tr:hover {
         background: #f8f9ff;
       }
-
       .product-name {
         font-weight: 500;
         color: #333;
       }
-
       .product-sku {
         font-family: "Courier New", monospace;
         color: #666;
         font-size: 0.9em;
       }
-
       .product-price {
         font-weight: 600;
         color: #0078d4;
         font-size: 1.1em;
       }
-
       .product-unit {
         color: #666;
         font-size: 0.9em;
       }
-
       .loading {
         text-align: center;
         padding: 60px 20px;
         color: #666;
         font-size: 1.2em;
       }
-
       .loading:after {
         content: "...";
         animation: dots 1.5s steps(4, end) infinite;
       }
-
       @keyframes dots {
         0%,
         20% {
@@ -279,7 +329,6 @@
           content: "...";
         }
       }
-
       .error {
         background: #f8d7da;
         color: #721c24;
@@ -287,18 +336,15 @@
         border-radius: 8px;
         border-left: 4px solid #721c24;
       }
-
       .empty-state {
         text-align: center;
         padding: 60px 20px;
         color: #666;
       }
-
       .empty-state h3 {
         margin-bottom: 10px;
         color: #333;
       }
-
       .product-count {
         background: rgba(255, 255, 255, 0.3);
         color: white;
@@ -308,12 +354,25 @@
         font-weight: 600;
         margin-left: 10px;
       }
+      .confidence-score-value {
+        font-weight: 700;
+        font-size: 1.1em;
+      }
+      .confidence-score-value.high {
+        color: #28a745;
+      }
+      .confidence-score-value.medium {
+        color: #ffc107;
+      }
+      .confidence-score-value.low {
+        color: #dc3545;
+      }
     </style>
   </head>
   <body>
     <div>
       <h1>ProfitForge.ai - Results Viewer</h1>
-      <p class="subtitle">Product Catalog Extraction Results</p>
+      <p class="subtitle">Product Catalog Extraction Results with Version History</p>
 
       <div class="controls">
         <div class="form-group">
@@ -345,6 +404,8 @@
     </div>
 
     <script>
+      let currentVersions = {};
+
       async function loadResults() {
         const content = document.getElementById("content");
         const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
@@ -359,38 +420,43 @@
 
         try {
           const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
+          if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 
           const results = await response.json();
 
           if (results.length === 0) {
-            content.innerHTML = `
-              <div class="empty-state">
-                <h3>No results found</h3>
-                <p>Try adjusting your filters or upload a new document</p>
-              </div>
-            `;
+            content.innerHTML = `<div class="empty-state"><h3>No results found</h3><p>Try adjusting your filters or upload a new document</p></div>`;
             return;
           }
 
-          content.innerHTML = results.map((result) => renderResultCard(result)).join("");
+          for (const result of results) {
+            await loadVersionHistory(result.result_id, baseUrl);
+          }
+
+          content.innerHTML = results.map((result) => renderResultCard(result, baseUrl)).join("");
         } catch (error) {
-          content.innerHTML = `
-            <div class="error">
-              <strong>Error loading results:</strong><br/>
-              ${error.message}
-            </div>
-          `;
+          content.innerHTML = `<div class="error"><strong>Error loading results:</strong><br/>${error.message}</div>`;
         }
       }
 
-      function renderResultCard(result) {
-        // Try llm_mapping_result first (new format), fallback to ai_model_analysis (legacy)
+      async function loadVersionHistory(documentId, baseUrl) {
+        try {
+          const response = await fetch(`${baseUrl}/api/getVersionHistory?documentId=${documentId}`);
+          if (response.ok) {
+            const data = await response.json();
+            currentVersions[data.rootDocumentId] = data.versions;
+          }
+        } catch (error) {
+          console.error("Failed to load version history:", error);
+        }
+      }
+
+      function renderResultCard(result, baseUrl) {
+        const rootId = result.parent_document_id || result.result_id;
+        const versions = currentVersions[rootId] || [result];
+
         let mappingResult = null;
         if (result.llm_mapping_result) {
-          // If it's already an object, use it; if string, parse it
           mappingResult =
             typeof result.llm_mapping_result === "string"
               ? JSON.parse(result.llm_mapping_result)
@@ -400,152 +466,160 @@
         }
 
         const products = mappingResult?.products || [];
+        const qualityMetrics = mappingResult?.qualityMetrics || {};
         const vendor = result.vendor_name || mappingResult?.vendor || "Unknown";
-
         const statusClass = result.processing_status || "pending";
+        const confidenceScore = result.ai_confidence_score || qualityMetrics.confidenceScore || 0;
+        const completenessScore =
+          result.ai_completeness_score || qualityMetrics.completenessScore || 0;
 
         return `
-          <div class="results-card">
+          <div class="results-card" id="card-${result.result_id}">
             <div class="card-header">
               <h2>${vendor} <span class="product-count">${products.length} products</span></h2>
-              <div class="card-meta">
-                📄 ${result.document_path} • 
-                📅 ${new Date(result.created_at).toLocaleString()}
-              </div>
+              <div class="card-meta">📄 ${result.document_name} • 📅 ${new Date(result.created_at).toLocaleString()}</div>
             </div>
             <div class="card-body">
+              ${renderVersionCarousel(versions, result, rootId, baseUrl)}
+
               <div class="info-grid">
                 <div class="info-item">
                   <span class="info-label">Status</span>
-                  <span class="info-value">
-                    <span class="status ${statusClass}">${result.processing_status}</span>
-                  </span>
+                  <span class="info-value"><span class="status ${statusClass}">${result.processing_status}</span></span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Export Status</span>
-                  <span class="info-value">
-                    <span class="status ${result.export_status || "pending"}">${result.export_status || "pending"}</span>
-                  </span>
+                  <span class="info-value"><span class="status ${result.export_status || "pending"}">${result.export_status || "pending"}</span></span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Result ID</span>
-                  <span class="info-value" style="font-size: 0.85em;">${result.result_id}</span>
+                  <span class="info-label">AI Confidence</span>
+                  <span class="info-value"><span class="confidence-score-value ${getConfidenceClass(confidenceScore)}">${confidenceScore.toFixed(1)}%</span></span>
+                  <div class="confidence-bar"><div class="confidence-fill ${getConfidenceClass(confidenceScore)}" style="width: ${confidenceScore}%"></div></div>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Vendor</span>
-                  <span class="info-value">${result.vendor_name || vendor}</span>
+                  <span class="info-label">Completeness</span>
+                  <span class="info-value"><span class="confidence-score-value ${getConfidenceClass(completenessScore)}">${completenessScore.toFixed(1)}%</span></span>
+                  <div class="confidence-bar"><div class="confidence-fill ${getConfidenceClass(completenessScore)}" style="width: ${completenessScore}%"></div></div>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Document Name</span>
-                  <span class="info-value" style="font-size: 0.9em;">${result.document_name}</span>
+                  <span class="info-label">Version</span>
+                  <span class="info-value">v${result.reprocessing_count || 0}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">AI Model</span>
                   <span class="info-value">${result.ai_model_used || "N/A"}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Processing Version</span>
-                  <span class="info-value">v${result.reprocessing_count || 0}</span>
+                  <span class="info-label">OCR Cost</span>
+                  <span class="info-value">$${(result.doc_intel_cost_usd || 0).toFixed(4)}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Doc Intel Cost</span>
-                  <span class="info-value">$${(result.doc_intel_cost_usd || 0).toFixed(2)}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">AI Model Cost</span>
+                  <span class="info-label">AI Cost</span>
                   <span class="info-value">$${(result.ai_model_cost_usd || 0).toFixed(4)}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Total Cost</span>
+                  <span class="info-value">$${((result.doc_intel_cost_usd || 0) + (result.ai_model_cost_usd || 0)).toFixed(4)}</span>
                 </div>
               </div>
 
-              <!-- Action Buttons for Workflow -->
               <div class="action-buttons">
-                ${
-                  result.processing_status === "completed" && result.export_status === "pending"
-                    ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export to Production</button>`
-                    : ""
-                }
-                
-                ${
-                  result.processing_status === "completed" ||
-                  result.processing_status === "ocr_complete"
-                    ? `<button class="secondary" onclick="reprocessMapping('${result.result_id}')">🔄 Rerun AI Mapping</button>`
-                    : ""
-                }
-                
-                <button class="danger" onclick="deleteDocument('${result.result_id}', '${result.vendor_name}')">🗑️ Delete Document</button>
+                ${result.processing_status === "completed" && result.export_status === "pending" ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export</button>` : ""}
+                ${result.processing_status === "completed" || result.processing_status === "ocr_complete" ? `<button class="secondary" onclick="reprocessMapping('${result.result_id}')">🔄 Rerun AI</button>` : ""}
+                ${result.parent_document_id ? `<button class="danger small" onclick="deleteRun('${result.result_id}')">🗑️ Delete Run</button>` : ""}
+                <button class="danger" onclick="deleteDocument('${result.result_id}')">🗑️ Delete All</button>
               </div>
 
               ${
                 products.length > 0
                   ? `
-                <details style="margin-top: 20px;">
-                  <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f0f0f0; border-radius: 4px; user-select: none;">
-                    📦 View Extracted Products (${products.length} items)
-                  </summary>
+                <details open style="margin-top: 20px;">
+                  <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f0f0f0; border-radius: 4px; user-select: none;">📦 Extracted Products (${products.length} items)</summary>
                   <div style="margin-top: 15px; max-height: 500px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
                     <table class="products-table">
                       <thead style="position: sticky; top: 0; background: white; z-index: 1;">
-                        <tr>
-                          <th>SKU</th>
-                          <th>Product Name</th>
-                          <th>Price</th>
-                          <th>Unit/Dimensions</th>
-                        </tr>
+                        <tr><th>SKU</th><th>Product Name</th><th>Price</th><th>Unit/Dimensions</th></tr>
                       </thead>
                       <tbody>
-                        ${products
-                          .map(
-                            (product) => `
-                          <tr>
-                            <td><span class="product-sku">${product.sku}</span></td>
-                            <td><span class="product-name">${product.name}</span></td>
-                            <td><span class="product-price">$${product.price.toFixed(2)}</span></td>
-                            <td><span class="product-unit">${product.unit || "N/A"}</span></td>
-                          </tr>
-                        `
-                          )
-                          .join("")}
+                        ${products.map((p) => `<tr><td><span class="product-sku">${p.sku || "N/A"}</span></td><td><span class="product-name">${p.name || "N/A"}</span></td><td><span class="product-price">$${(p.price || 0).toFixed(2)}</span></td><td><span class="product-unit">${p.unit || "N/A"}</span></td></tr>`).join("")}
                       </tbody>
                     </table>
                   </div>
                 </details>
               `
-                  : `
-                <div class="empty-state" style="margin-top: 20px;">
-                  <h3>No products extracted</h3>
-                  <p>${result.processing_status === "completed" ? "Document processed but no products found" : "Processing not yet complete"}</p>
-                </div>
-              `
+                  : `<div class="empty-state" style="margin-top: 20px;"><h3>No products extracted</h3><p>${result.processing_status === "completed" ? "Document processed but no products found" : "Processing not yet complete"}</p></div>`
               }
             </div>
           </div>
         `;
       }
 
-      // Auto-load on page load if resultId in URL params
+      function renderVersionCarousel(versions, currentVersion, rootId, baseUrl) {
+        if (versions.length <= 1) return "";
+
+        return `
+          <div class="version-carousel">
+            <div class="version-carousel-header">
+              <span class="version-carousel-title">📊 Processing History (${versions.length} versions)</span>
+            </div>
+            <div class="version-list">
+              ${versions
+                .sort((a, b) => (b.reprocessing_count || 0) - (a.reprocessing_count || 0))
+                .map((v) => renderVersionCard(v, currentVersion, rootId))
+                .join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderVersionCard(version, currentVersion, rootId) {
+        const isActive = version.result_id === currentVersion.result_id;
+        const maxVersion = Math.max(
+          ...(currentVersions[rootId] || []).map((v) => v.reprocessing_count || 0)
+        );
+        const isLatest = version.reprocessing_count === maxVersion;
+        const confidence = version.ai_confidence_score || 0;
+
+        return `
+          <div class="version-card ${isActive ? "active" : ""}" onclick="switchVersion('${version.result_id}')">
+            <div class="version-card-header">
+              <span class="version-number">v${version.reprocessing_count || 0}</span>
+              ${isLatest ? '<span class="version-badge">Latest</span>' : ""}
+            </div>
+            <div class="version-stats">
+              <div>📦 ${version.product_count || 0} products</div>
+              <div>💰 $${((version.ai_model_cost_usd || 0) + (version.doc_intel_cost_usd || 0)).toFixed(4)}</div>
+              <div>🎯 ${confidence.toFixed(0)}% confidence</div>
+              <div>📅 ${new Date(version.created_at).toLocaleDateString()}</div>
+            </div>
+            <div class="confidence-bar"><div class="confidence-fill ${getConfidenceClass(confidence)}" style="width: ${confidence}%"></div></div>
+          </div>
+        `;
+      }
+
+      function getConfidenceClass(score) {
+        if (score >= 80) return "high";
+        if (score >= 60) return "medium";
+        return "low";
+      }
+
+      function switchVersion(versionId) {
+        document.getElementById("resultId").value = versionId;
+        loadResults();
+      }
+
       window.addEventListener("DOMContentLoaded", () => {
         const params = new URLSearchParams(window.location.search);
         const resultId = params.get("resultId");
         const vendor = params.get("vendor");
-
-        if (resultId) {
-          document.getElementById("resultId").value = resultId;
-        }
-        if (vendor) {
-          document.getElementById("vendor").value = vendor;
-        }
-
-        if (resultId || vendor) {
-          loadResults();
-        }
+        if (resultId) document.getElementById("resultId").value = resultId;
+        if (vendor) document.getElementById("vendor").value = vendor;
+        if (resultId || vendor) loadResults();
       });
 
-      // Action Handlers
       async function confirmMapping(documentId) {
-        if (!confirm("Export products to production catalog? This action cannot be undone.")) {
+        if (!confirm("Export products to production catalog? This action cannot be undone."))
           return;
-        }
-
         const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
         try {
           const response = await fetch(`${baseUrl}/api/confirmMapping`, {
@@ -553,13 +627,12 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ documentId }),
           });
-
           const data = await response.json();
           if (response.ok) {
             alert(
               `✅ Success! ${data.productsExported} products exported to ${data.vendor} catalog.`
             );
-            loadResults(); // Refresh
+            loadResults();
           } else {
             alert(`❌ Error: ${data.error || JSON.stringify(data)}`);
           }
@@ -569,79 +642,79 @@
       }
 
       async function reprocessMapping(documentId) {
-        if (
-          !confirm(
-            "Create new version for AI remapping? Original results preserved (immutable bronze-layer)."
-          )
-        ) {
-          return;
-        }
-
+        if (!confirm("Create new version for AI remapping? Original results preserved.")) return;
         const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
         try {
-          // Step 1: Create new version record
           const reprocessResponse = await fetch(`${baseUrl}/api/reprocessMapping`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ documentId }),
           });
-
           const reprocessData = await reprocessResponse.json();
           if (!reprocessResponse.ok) {
-            alert(`❌ Error: ${reprocessData.error || JSON.stringify(reprocessData)}`);
+            alert(`❌ Error: ${reprocessData.error}`);
             return;
           }
-
           const newDocumentId = reprocessData.newDocumentId;
           alert(`✅ New version created (v${reprocessData.version})! Triggering AI mapping...`);
-
-          // Step 2: Trigger AI mapper on NEW record
           const mapResponse = await fetch(`${baseUrl}/api/aiProductMapper`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ documentId: newDocumentId }),
           });
-
           const mapData = await mapResponse.json();
           if (mapResponse.ok) {
             alert(
               `✅ Reprocessing complete! ${mapData.productCount} products extracted (v${reprocessData.version}).`
             );
-            loadResults(); // Refresh
+            loadResults();
           } else {
-            alert(`❌ Mapping error: ${mapData.error || JSON.stringify(mapData)}`);
+            alert(`❌ Mapping error: ${mapData.error}`);
           }
         } catch (error) {
           alert(`❌ Network error: ${error.message}`);
         }
       }
 
-      async function deleteDocument(documentId, vendorName) {
-        if (
-          !confirm(
-            `Delete document for ${vendorName}? This will remove all database records and blobs.`
-          )
-        ) {
-          return;
-        }
-
+      async function deleteRun(documentId) {
+        if (!confirm("Delete this specific run version? This cannot be undone.")) return;
         const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
         try {
           const response = await fetch(
-            `${baseUrl}/api/deleteVendor?vendorId=${encodeURIComponent(vendorName)}`,
-            {
-              method: "DELETE",
-            }
+            `${baseUrl}/api/deleteRun?documentId=${encodeURIComponent(documentId)}`,
+            { method: "DELETE" }
           );
-
           const data = await response.json();
           if (response.ok) {
-            alert(
-              `✅ Deleted ${data.documentsDeleted} documents and ${data.blobsDeleted} blobs for ${vendorName}.`
-            );
-            loadResults(); // Refresh
+            alert(`✅ ${data.message}`);
+            loadResults();
           } else {
-            alert(`❌ Error: ${data.error || JSON.stringify(data)}`);
+            alert(`❌ Error: ${data.error}`);
+          }
+        } catch (error) {
+          alert(`❌ Network error: ${error.message}`);
+        }
+      }
+
+      async function deleteDocument(documentId) {
+        if (
+          !confirm(
+            "Delete ALL versions of this document? This will remove all processing runs and the original file. This cannot be undone."
+          )
+        )
+          return;
+        const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/deleteDocument?documentId=${encodeURIComponent(documentId)}`,
+            { method: "DELETE" }
+          );
+          const data = await response.json();
+          if (response.ok) {
+            alert(`✅ ${data.message} (${data.versionsDeleted} versions removed)`);
+            loadResults();
+          } else {
+            alert(`❌ Error: ${data.error}`);
           }
         } catch (error) {
           alert(`❌ Network error: ${error.message}`);
