@@ -26,28 +26,78 @@ export async function getResults(
   try {
     const resultId = request.query.get("resultId");
     const vendorName = request.query.get("vendor");
+    const showAllVersions = request.query.get("allVersions") === "true";
     const limit = parseInt(request.query.get("limit") || "10");
 
     const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING);
     await pool.connect();
 
-    let query = `
-      SELECT TOP (@limit)
-        result_id,
-        document_name,
-        document_path,
-        document_type,
-        vendor_name,
-        processing_status,
-        doc_intel_page_count,
-        doc_intel_table_count,
-        ai_model_analysis,
-        ai_model_used,
-        created_at,
-        updated_at
-      FROM vvocr.document_processing_results
-      WHERE 1=1
-    `;
+    let query: string;
+
+    if (showAllVersions) {
+      // Show all versions (for detailed audit/comparison)
+      query = `
+        SELECT TOP (@limit)
+          result_id,
+          document_name,
+          document_path,
+          document_type,
+          vendor_name,
+          processing_status,
+          export_status,
+          reprocessing_count,
+          parent_document_id,
+          doc_intel_page_count,
+          doc_intel_table_count,
+          doc_intel_cost_usd,
+          ai_model_analysis,
+          ai_model_used,
+          ai_model_cost_usd,
+          llm_mapping_result,
+          product_count,
+          created_at,
+          updated_at
+        FROM vvocr.document_processing_results
+        WHERE 1=1
+      `;
+    } else {
+      // Show only LATEST version of each document (default)
+      // Use CTE to find max version per parent chain
+      query = `
+        WITH LatestVersions AS (
+          SELECT 
+            COALESCE(parent_document_id, result_id) as root_id,
+            MAX(reprocessing_count) as max_version
+          FROM vvocr.document_processing_results
+          GROUP BY COALESCE(parent_document_id, result_id)
+        )
+        SELECT TOP (@limit)
+          d.result_id,
+          d.document_name,
+          d.document_path,
+          d.document_type,
+          d.vendor_name,
+          d.processing_status,
+          d.export_status,
+          d.reprocessing_count,
+          d.parent_document_id,
+          d.doc_intel_page_count,
+          d.doc_intel_table_count,
+          d.doc_intel_cost_usd,
+          d.ai_model_analysis,
+          d.ai_model_used,
+          d.ai_model_cost_usd,
+          d.llm_mapping_result,
+          d.product_count,
+          d.created_at,
+          d.updated_at
+        FROM vvocr.document_processing_results d
+        INNER JOIN LatestVersions lv 
+          ON COALESCE(d.parent_document_id, d.result_id) = lv.root_id
+          AND d.reprocessing_count = lv.max_version
+        WHERE 1=1
+      `;
+    }
 
     const queryRequest = pool.request().input("limit", sql.Int, limit);
 
@@ -70,6 +120,7 @@ export async function getResults(
     const records = result.recordset.map((record) => ({
       ...record,
       ai_model_analysis: record.ai_model_analysis ? JSON.parse(record.ai_model_analysis) : null,
+      llm_mapping_result: record.llm_mapping_result ? JSON.parse(record.llm_mapping_result) : null,
     }));
 
     return {

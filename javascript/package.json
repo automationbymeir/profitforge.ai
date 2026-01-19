@@ -9,24 +9,28 @@
     "watch": "tsc --watch",
     "prestart": "npm run build",
     "start": "func start",
+    "dev": "tsc --watch & func start & npx serve test -p 3000",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run test/unit",
     "test:e2e": "vitest run test/e2e",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "clean": "cd test/tools && ./cleanup.sh"
   },
   "dependencies": {
+    "@azure/ai-form-recognizer": "^4.0.0",
     "@azure/functions": "^4.0.0",
     "@azure/storage-blob": "^12.19.0",
-    "@azure/ai-form-recognizer": "^4.0.0",
+    "@azure/storage-queue": "^12.29.0",
     "mssql": "^10.0.1",
-    "openai": "^6.16.0"
+    "openai": "^6.16.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
     "@types/mssql": "^9.1.8",
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^1.2.0",
     "typescript": "^5.0.0",
-    "vitest": "^1.2.0",
-    "@vitest/coverage-v8": "^1.2.0"
+    "vitest": "^1.2.0"
   }
 }

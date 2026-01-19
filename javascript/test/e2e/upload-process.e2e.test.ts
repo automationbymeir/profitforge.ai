@@ -114,12 +114,13 @@ describe("E2E Tests - Upload → Process → Verify", () => {
 
     console.log("✅ Upload successful:", uploadResult);
 
-    // 2. Wait for processing to complete
+    // 2. Wait for processing to complete (OCR → AI mapping now automatic)
     console.log("⏳ Waiting for document processing...");
     const dbRecord = await waitForProcessing(uploadResult.resultId);
     console.log("✅ Document processed:", { status: dbRecord.processing_status });
+
     // 3. Verify database record
-    // expect(dbRecord.processing_status).toBe("completed");
+    expect(dbRecord.processing_status).toBe("completed");
     expect(dbRecord.document_name).toBe("samplePDF.pdf");
     expect(dbRecord.doc_intel_extracted_text).toBeTruthy();
     expect(dbRecord.doc_intel_page_count).toBeGreaterThan(0);

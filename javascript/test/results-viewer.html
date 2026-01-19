@@ -91,6 +91,38 @@
         transform: none;
       }
 
+      button.secondary {
+        background: #6c757d;
+      }
+
+      button.secondary:hover {
+        background: #5a6268;
+      }
+
+      button.danger {
+        background: #dc3545;
+      }
+
+      button.danger:hover {
+        background: #c82333;
+      }
+
+      button.success {
+        background: #28a745;
+      }
+
+      button.success:hover {
+        background: #218838;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px solid #f0f0f0;
+      }
+
       .results-card {
         background: white;
         border-radius: 8px;
@@ -355,9 +387,20 @@
       }
 
       function renderResultCard(result) {
-        const analysis = result.ai_model_analysis;
-        const products = analysis?.products || [];
-        const vendor = analysis?.vendor || "Unknown";
+        // Try llm_mapping_result first (new format), fallback to ai_model_analysis (legacy)
+        let mappingResult = null;
+        if (result.llm_mapping_result) {
+          // If it's already an object, use it; if string, parse it
+          mappingResult =
+            typeof result.llm_mapping_result === "string"
+              ? JSON.parse(result.llm_mapping_result)
+              : result.llm_mapping_result;
+        } else {
+          mappingResult = result.ai_model_analysis;
+        }
+
+        const products = mappingResult?.products || [];
+        const vendor = result.vendor_name || mappingResult?.vendor || "Unknown";
 
         const statusClass = result.processing_status || "pending";
 
@@ -379,6 +422,12 @@
                   </span>
                 </div>
                 <div class="info-item">
+                  <span class="info-label">Export Status</span>
+                  <span class="info-value">
+                    <span class="status ${result.export_status || "pending"}">${result.export_status || "pending"}</span>
+                  </span>
+                </div>
+                <div class="info-item">
                   <span class="info-label">Result ID</span>
                   <span class="info-value" style="font-size: 0.85em;">${result.result_id}</span>
                 </div>
@@ -391,46 +440,78 @@
                   <span class="info-value" style="font-size: 0.9em;">${result.document_name}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Pages / Tables</span>
-                  <span class="info-value">${result.doc_intel_page_count} / ${result.doc_intel_table_count}</span>
-                </div>
-                <div class="info-item">
                   <span class="info-label">AI Model</span>
                   <span class="info-value">${result.ai_model_used || "N/A"}</span>
                 </div>
+                <div class="info-item">
+                  <span class="info-label">Processing Version</span>
+                  <span class="info-value">v${result.reprocessing_count || 0}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Doc Intel Cost</span>
+                  <span class="info-value">$${(result.doc_intel_cost_usd || 0).toFixed(2)}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">AI Model Cost</span>
+                  <span class="info-value">$${(result.ai_model_cost_usd || 0).toFixed(4)}</span>
+                </div>
+              </div>
+
+              <!-- Action Buttons for Workflow -->
+              <div class="action-buttons">
+                ${
+                  result.processing_status === "completed" && result.export_status === "pending"
+                    ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export to Production</button>`
+                    : ""
+                }
+                
+                ${
+                  result.processing_status === "completed" ||
+                  result.processing_status === "ocr_complete"
+                    ? `<button class="secondary" onclick="reprocessMapping('${result.result_id}')">🔄 Rerun AI Mapping</button>`
+                    : ""
+                }
+                
+                <button class="danger" onclick="deleteDocument('${result.result_id}', '${result.vendor_name}')">🗑️ Delete Document</button>
               </div>
 
               ${
                 products.length > 0
                   ? `
-                <h3>📦 Extracted Products</h3>
-                <table class="products-table">
-                  <thead>
-                    <tr>
-                      <th>SKU</th>
-                      <th>Product Name</th>
-                      <th>Price</th>
-                      <th>Unit/Dimensions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${products
-                      .map(
-                        (product) => `
-                      <tr>
-                        <td><span class="product-sku">${product.sku}</span></td>
-                        <td><span class="product-name">${product.name}</span></td>
-                        <td><span class="product-price">$${product.price.toFixed(2)}</span></td>
-                        <td><span class="product-unit">${product.unit || "N/A"}</span></td>
-                      </tr>
-                    `
-                      )
-                      .join("")}
-                  </tbody>
-                </table>
+                <details style="margin-top: 20px;">
+                  <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f0f0f0; border-radius: 4px; user-select: none;">
+                    📦 View Extracted Products (${products.length} items)
+                  </summary>
+                  <div style="margin-top: 15px; max-height: 500px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
+                    <table class="products-table">
+                      <thead style="position: sticky; top: 0; background: white; z-index: 1;">
+                        <tr>
+                          <th>SKU</th>
+                          <th>Product Name</th>
+                          <th>Price</th>
+                          <th>Unit/Dimensions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${products
+                          .map(
+                            (product) => `
+                          <tr>
+                            <td><span class="product-sku">${product.sku}</span></td>
+                            <td><span class="product-name">${product.name}</span></td>
+                            <td><span class="product-price">$${product.price.toFixed(2)}</span></td>
+                            <td><span class="product-unit">${product.unit || "N/A"}</span></td>
+                          </tr>
+                        `
+                          )
+                          .join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
               `
                   : `
-                <div class="empty-state">
+                <div class="empty-state" style="margin-top: 20px;">
                   <h3>No products extracted</h3>
                   <p>${result.processing_status === "completed" ? "Document processed but no products found" : "Processing not yet complete"}</p>
                 </div>
@@ -458,6 +539,114 @@
           loadResults();
         }
       });
+
+      // Action Handlers
+      async function confirmMapping(documentId) {
+        if (!confirm("Export products to production catalog? This action cannot be undone.")) {
+          return;
+        }
+
+        const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
+        try {
+          const response = await fetch(`${baseUrl}/api/confirmMapping`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ documentId }),
+          });
+
+          const data = await response.json();
+          if (response.ok) {
+            alert(
+              `✅ Success! ${data.productsExported} products exported to ${data.vendor} catalog.`
+            );
+            loadResults(); // Refresh
+          } else {
+            alert(`❌ Error: ${data.error || JSON.stringify(data)}`);
+          }
+        } catch (error) {
+          alert(`❌ Network error: ${error.message}`);
+        }
+      }
+
+      async function reprocessMapping(documentId) {
+        if (
+          !confirm(
+            "Create new version for AI remapping? Original results preserved (immutable bronze-layer)."
+          )
+        ) {
+          return;
+        }
+
+        const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
+        try {
+          // Step 1: Create new version record
+          const reprocessResponse = await fetch(`${baseUrl}/api/reprocessMapping`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ documentId }),
+          });
+
+          const reprocessData = await reprocessResponse.json();
+          if (!reprocessResponse.ok) {
+            alert(`❌ Error: ${reprocessData.error || JSON.stringify(reprocessData)}`);
+            return;
+          }
+
+          const newDocumentId = reprocessData.newDocumentId;
+          alert(`✅ New version created (v${reprocessData.version})! Triggering AI mapping...`);
+
+          // Step 2: Trigger AI mapper on NEW record
+          const mapResponse = await fetch(`${baseUrl}/api/aiProductMapper`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ documentId: newDocumentId }),
+          });
+
+          const mapData = await mapResponse.json();
+          if (mapResponse.ok) {
+            alert(
+              `✅ Reprocessing complete! ${mapData.productCount} products extracted (v${reprocessData.version}).`
+            );
+            loadResults(); // Refresh
+          } else {
+            alert(`❌ Mapping error: ${mapData.error || JSON.stringify(mapData)}`);
+          }
+        } catch (error) {
+          alert(`❌ Network error: ${error.message}`);
+        }
+      }
+
+      async function deleteDocument(documentId, vendorName) {
+        if (
+          !confirm(
+            `Delete document for ${vendorName}? This will remove all database records and blobs.`
+          )
+        ) {
+          return;
+        }
+
+        const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/deleteVendor?vendorId=${encodeURIComponent(vendorName)}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          const data = await response.json();
+          if (response.ok) {
+            alert(
+              `✅ Deleted ${data.documentsDeleted} documents and ${data.blobsDeleted} blobs for ${vendorName}.`
+            );
+            loadResults(); // Refresh
+          } else {
+            alert(`❌ Error: ${data.error || JSON.stringify(data)}`);
+          }
+        } catch (error) {
+          alert(`❌ Network error: ${error.message}`);
+        }
+      }
     </script>
   </body>
 </html>
