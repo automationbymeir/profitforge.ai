@@ -2,12 +2,13 @@
 
 # Cleanup test data from blob storage and database
 # Usage: ./cleanup.sh [all|blobs|db|pattern]
+# Default: Cleans both blobs and database without prompts
 
 STORAGE_ACCOUNT="deveitanpvstorage"
 CONTAINER="uploads"
 CONNECTION_STRING="${STORAGE_CONNECTION_STRING:-$(cat ../../local.settings.json | grep STORAGE_CONNECTION_STRING | cut -d'"' -f4)}"
 
-ACTION="${1:-prompt}"
+ACTION="${1:-all}"
 
 cleanup_blobs() {
     echo "🗑️  Cleaning up blob storage..."
@@ -75,15 +76,10 @@ show_usage() {
 
 case "$ACTION" in
     all)
-        echo "⚠️  WARNING: This will delete ALL test data!"
-        read -p "Are you sure? (yes/no): " confirm
-        if [ "$confirm" == "yes" ]; then
-            cleanup_blobs
-            cleanup_db
-            echo "✅ All test data cleaned"
-        else
-            echo "Cancelled"
-        fi
+        echo "🗑️  Cleaning ALL test data (blobs + database)..."
+        cleanup_blobs
+        cleanup_db
+        echo "✅ All test data cleaned"
         ;;
     blobs)
         cleanup_blobs

@@ -120,7 +120,7 @@ export const mockHttpRequest = (overrides: Partial<any> = {}) => ({
       [
         "file",
         {
-          name: "test-invoice.txt",
+          name: "test-invoice.pdf",
           type: "application/pdf",
           arrayBuffer: vi.fn().mockResolvedValue(Buffer.from("test file content")),
         },

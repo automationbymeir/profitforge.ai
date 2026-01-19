@@ -9,6 +9,8 @@ export interface StorageResources {
   // dataLakeFilesystem: azurenative.storage.BlobContainer;
   blobStorage: azurenative.storage.StorageAccount;
   uploadsContainer: azurenative.storage.BlobContainer;
+  bronzeLayerContainer: azurenative.storage.BlobContainer;
+  aiMappingQueue: azurenative.storage.Queue;
   storageConnectionString: pulumi.Output<string>;
   functionBlobUrl: pulumi.Output<string>;
 }
@@ -63,6 +65,21 @@ export function createStorageResources(
     publicAccess: azurenative.storage.PublicAccess.None,
   });
 
+  // Bronze-layer container for raw/processed data retention
+  const bronzeLayerContainer = new azurenative.storage.BlobContainer(`${stack}-bronze-layer`, {
+    resourceGroupName,
+    accountName: blobStorage.name,
+    containerName: "bronze-layer",
+    publicAccess: azurenative.storage.PublicAccess.None,
+  });
+
+  // AI mapping queue for decoupled processing
+  const aiMappingQueue = new azurenative.storage.Queue(`${stack}-ai-mapping-queue`, {
+    resourceGroupName,
+    accountName: blobStorage.name,
+    queueName: "ai-mapping-queue",
+  });
+
   // Get primary storage key for connection string
   const storageKeys = azurenative.storage.listStorageAccountKeysOutput({
     resourceGroupName: azureConfig.resourceGroup,
@@ -111,6 +128,8 @@ export function createStorageResources(
     // dataLakeFilesystem,
     blobStorage,
     uploadsContainer,
+    bronzeLayerContainer,
+    aiMappingQueue,
     storageConnectionString,
     functionBlobUrl,
   };
