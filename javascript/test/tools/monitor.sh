@@ -62,6 +62,34 @@ while true; do
     " 2>/dev/null
     
     echo ""
+    echo "📦 VENDOR PRODUCTS (Total count):"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    node -e "
+        const sql = require('mssql');
+        const config = 'Server=tcp:dev-eitan-vvocr-sql0d3c18e3.database.windows.net,1433;Database=dev-eitan-vvocr-db;User ID=sqladmin;Password=MySecurePassword123!;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;';
+        
+        (async () => {
+            try {
+                const pool = new sql.ConnectionPool(config);
+                await pool.connect();
+                const result = await pool.request().query(\`
+                    SELECT 
+                        COUNT(*) as total_products,
+                        COUNT(DISTINCT vendor_id) as unique_vendors,
+                        COUNT(DISTINCT source_document_id) as source_documents
+                    FROM vvocr.vendor_products
+                \`);
+                
+                const row = result.recordset[0];
+                console.log(\`Total Products: \${row.total_products} | Unique Vendors: \${row.unique_vendors} | Source Documents: \${row.source_documents}\`);
+                await pool.close();
+            } catch (err) {
+                console.log('⚠️  Could not fetch vendor products data');
+            }
+        })();
+    " 2>/dev/null
+    
+    echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     sleep 15

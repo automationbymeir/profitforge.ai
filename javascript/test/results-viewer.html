@@ -137,8 +137,6 @@
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 15px;
         margin-bottom: 25px;
-        padding-bottom: 25px;
-        border-bottom: 2px solid #f0f0f0;
       }
       .info-item {
         display: flex;
@@ -533,7 +531,7 @@
               ${
                 products.length > 0
                   ? `
-                <details open style="margin-top: 20px;">
+                <details style="margin-top: 20px;">
                   <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f0f0f0; border-radius: 4px; user-select: none;">📦 Extracted Products (${products.length} items)</summary>
                   <div style="margin-top: 15px; max-height: 500px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
                     <table class="products-table">

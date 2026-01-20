@@ -42,13 +42,19 @@ cleanup_db() {
                 const pool = new sql.ConnectionPool(config);
                 await pool.connect();
                 
-                // Get count first
-                const countResult = await pool.request().query('SELECT COUNT(*) as count FROM vvocr.document_processing_results');
-                console.log('Records to delete:', countResult.recordset[0].count);
+                // Get counts first
+                const docCountResult = await pool.request().query('SELECT COUNT(*) as count FROM vvocr.document_processing_results');
+                const vendorProductsCount = await pool.request().query('SELECT COUNT(*) as count FROM vvocr.vendor_products');
+                console.log('Document records to delete:', docCountResult.recordset[0].count);
+                console.log('Vendor product records to delete:', vendorProductsCount.recordset[0].count);
                 
-                // Delete all records
+                // Delete vendor_products first (child table with FK constraint)
+                await pool.request().query('DELETE FROM vvocr.vendor_products');
+                console.log('✅ Vendor products deleted');
+                
+                // Delete all document_processing_results records
                 await pool.request().query('DELETE FROM vvocr.document_processing_results');
-                console.log('✅ Database records deleted');
+                console.log('✅ Document records deleted');
                 
                 await pool.close();
             } catch (err) {
