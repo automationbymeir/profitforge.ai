@@ -1,5 +1,5 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { BlobServiceClient } from "@azure/storage-blob";
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
+import { BlobServiceClient } from '@azure/storage-blob';
 import {
   checkDailyUploadLimit,
   checkIpRateLimit,
@@ -8,10 +8,10 @@ import {
   incrementDailyUploadCount,
   incrementIpUploadCount,
   initializeUsageTable,
-} from "../utils/usageTracker.js";
+} from '../utils/usageTracker.js';
 
-import sql from "mssql";
-import { getVendorFileName, validateVendorName } from "../utils/validations.js";
+import sql from 'mssql';
+import { getVendorFileName, validateVendorName } from '../utils/validations.js';
 
 // Inline vendor path helper
 function getVendorPath(vendorName: string): string {
@@ -19,15 +19,15 @@ function getVendorPath(vendorName: string): string {
 }
 
 // Initialize table on cold start - in client this is also executed!
-initializeUsageTable().catch((err) => console.error("Failed to init usage table:", err));
+initializeUsageTable().catch((err) => console.error('Failed to init usage table:', err));
 
 // Connection strings from environment variables
-const STORAGE_ACCOUNT_NAME = process.env.STORAGE_ACCOUNT_NAME;
-const STORAGE_CONTAINER_DOCUMENTS = process.env.STORAGE_CONTAINER_DOCUMENTS || "uploads";
+const _STORAGE_ACCOUNT_NAME = process.env.STORAGE_ACCOUNT_NAME;
+const STORAGE_CONTAINER_DOCUMENTS = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';
 const SQL_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING;
 
 // Allowed file types for upload (PDF only for production POC)
-const ALLOWED_FILE_TYPES = ["application/pdf"];
+const ALLOWED_FILE_TYPES = ['application/pdf'];
 
 /**
  * Validate API key for demo mode protection
@@ -37,14 +37,14 @@ function validateApiKey(providedKey: string | null): { valid: boolean; error?: s
   if (!providedKey) {
     return {
       valid: false,
-      error: "Missing API key. Include x-api-key header.",
+      error: 'Missing API key. Include x-api-key header.',
     };
   }
 
   if (providedKey !== process.env.DEMO_API_KEY) {
     return {
       valid: false,
-      error: "Invalid API key",
+      error: 'Invalid API key',
     };
   }
 
@@ -55,7 +55,7 @@ function validateApiKey(providedKey: string | null): { valid: boolean; error?: s
  * Validate file size against configured limit
  */
 function validateFileSize(fileSize: number): boolean {
-  const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || "0");
+  const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '0');
 
   const maxBytes = MAX_FILE_SIZE_MB * 1024 * 1024;
 
@@ -90,19 +90,19 @@ export async function uploadHandler(
 ): Promise<HttpResponseInit> {
   context.log(`Processing upload request for ${req.url}`);
   const clientIp =
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown";
-  if (process.env.IS_DEMO_MODE === "true") {
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown';
+  if (process.env.IS_DEMO_MODE === 'true') {
     // 🛡️ SECURITY CHECK 1: Validate API Key (demo mode only)
-    const apiKeyCheck = validateApiKey(req.headers.get("x-api-key"));
+    const apiKeyCheck = validateApiKey(req.headers.get('x-api-key'));
     if (!apiKeyCheck.valid) {
       context.warn(`API key validation failed: ${apiKeyCheck.error}`);
       return {
         status: 401,
         jsonBody: {
           error: apiKeyCheck.error,
-          message: "This demo requires an API key. Contact the owner for access.",
+          message: 'This demo requires an API key. Contact the owner for access.',
         },
       };
     }
@@ -116,7 +116,7 @@ export async function uploadHandler(
       return {
         status: 429,
         jsonBody: {
-          error: "Rate limit exceeded",
+          error: 'Rate limit exceeded',
           current: ipRateCheck.current,
           limit: ipRateCheck.limit,
           resetTime: ipRateCheck.resetTime,
@@ -132,12 +132,12 @@ export async function uploadHandler(
       return {
         status: 429,
         jsonBody: {
-          error: "Daily upload limit reached",
+          error: 'Daily upload limit reached',
           current: limitCheck.current,
           limit: limitCheck.limit,
-          resetTime: "midnight UTC",
+          resetTime: 'midnight UTC',
           message:
-            "This is a demo environment with daily limits. Try again tomorrow or contact for production access.",
+            'This is a demo environment with daily limits. Try again tomorrow or contact for production access.',
         },
       };
     }
@@ -145,14 +145,14 @@ export async function uploadHandler(
 
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File;
-    const vendorName = formData.get("vendorName") as string;
+    const file = formData.get('file') as File;
+    const vendorName = formData.get('vendorName') as string;
 
     if (!file || !vendorName) {
       return {
         status: 400,
         jsonBody: {
-          error: "Missing file or vendor name in request",
+          error: 'Missing file or vendor name in request',
         },
       };
     }
@@ -162,11 +162,11 @@ export async function uploadHandler(
       return {
         status: 400,
         headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
         },
         body: JSON.stringify({
-          error: "Invalid vendor name format",
+          error: 'Invalid vendor name format',
           message: vendorValidation.error,
         }),
       };
@@ -182,11 +182,11 @@ export async function uploadHandler(
     }
 
     // 🛡️ SECURITY CHECK 3: File size limit (demo mode only)
-    if (process.env.IS_DEMO_MODE === "true" && validateFileSize(file.size) === false) {
+    if (process.env.IS_DEMO_MODE === 'true' && validateFileSize(file.size) === false) {
       return {
         status: 413,
         jsonBody: {
-          error: "File size exceeds limit",
+          error: 'File size exceeds limit',
           message: `This is a demo environment with file size limits of up to ${process.env.MAX_FILE_SIZE_MB}MB.`,
         },
       };
@@ -201,7 +201,7 @@ export async function uploadHandler(
     let pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
     await pool.connect();
 
-    const existingCheck = await pool.request().input("vendorName", sql.NVarChar, vendorName).query(`
+    const existingCheck = await pool.request().input('vendorName', sql.NVarChar, vendorName).query(`
         SELECT result_id, document_name, processing_status
         FROM vvocr.document_processing_results
         WHERE vendor_name = @vendorName
@@ -213,11 +213,11 @@ export async function uploadHandler(
       return {
         status: 409, // Conflict
         headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
         },
         jsonBody: {
-          error: "Vendor already exists",
+          error: 'Vendor already exists',
           message: `A document already exists for vendor ${vendorName}. Please delete the existing document first using DELETE /api/deleteVendor?vendorName=${vendorName}`,
           existingDocument: {
             resultId: existing.result_id,
@@ -246,11 +246,11 @@ export async function uploadHandler(
     try {
       const result = await pool
         .request()
-        .input("vendorName", sql.NVarChar, vendorName)
-        .input("documentName", sql.NVarChar, standardFileName)
-        .input("documentPath", sql.NVarChar, filePath)
-        .input("fileSize", sql.BigInt, fileBuffer.length)
-        .input("fileType", sql.NVarChar, file.type).query(`
+        .input('vendorName', sql.NVarChar, vendorName)
+        .input('documentName', sql.NVarChar, standardFileName)
+        .input('documentPath', sql.NVarChar, filePath)
+        .input('fileSize', sql.BigInt, fileBuffer.length)
+        .input('fileType', sql.NVarChar, file.type).query(`
                   INSERT INTO vvocr.document_processing_results 
                   (document_name, document_path, document_size_bytes, document_type, processing_status, vendor_name)
                   OUTPUT INSERTED.result_id
@@ -267,49 +267,51 @@ export async function uploadHandler(
       return {
         status: 201,
         headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, x-api-key",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
         },
         jsonBody: {
-          message: "Document uploaded successfully",
+          message: 'Document uploaded successfully',
           resultId,
           documentName: standardFileName,
           vendorName: vendorName,
           filePath,
-          status: "pending",
+          status: 'pending',
         },
       };
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
       await pool.close();
-      throw new Error(`Database error: ${dbError.message}`);
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError);
+      throw new Error(`Database error: ${errorMessage}`);
     }
-  } catch (error: any) {
-    context.error(`Error processing upload: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    context.error(`Error processing upload: ${errorMessage}`);
     return {
       status: 500,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
-      jsonBody: { error: error.message },
+      jsonBody: { error: errorMessage },
     };
   }
 }
 
-app.http("upload", {
-  methods: ["POST", "OPTIONS"],
-  authLevel: "anonymous",
+app.http('upload', {
+  methods: ['POST', 'OPTIONS'],
+  authLevel: 'anonymous',
   handler: async (request: HttpRequest, context: InvocationContext) => {
     // Handle CORS preflight
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
       return {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       };
     }
@@ -339,12 +341,12 @@ export async function deleteVendorHandler(
   context.log(`Processing delete request for ${req.url}`);
 
   try {
-    const vendorName = req.query.get("vendorName");
+    const vendorName = req.query.get('vendorName');
 
     if (!vendorName) {
       return {
         status: 400,
-        body: "Missing vendorName query parameter",
+        body: 'Missing vendorName query parameter',
       };
     }
 
@@ -353,7 +355,7 @@ export async function deleteVendorHandler(
     await pool.connect();
 
     try {
-      const result = await pool.request().input("vendorName", sql.NVarChar, vendorName).query(`
+      const result = await pool.request().input('vendorName', sql.NVarChar, vendorName).query(`
           SELECT result_id, document_path 
           FROM vvocr.document_processing_results 
           WHERE vendor_name = @vendorName
@@ -366,8 +368,8 @@ export async function deleteVendorHandler(
         return {
           status: 404,
           headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
           },
           body: JSON.stringify({
             message: `No documents found for vendor: ${vendorName}`,
@@ -387,13 +389,14 @@ export async function deleteVendorHandler(
           const blockBlobClient = containerClient.getBlockBlobClient(doc.document_path);
           await blockBlobClient.delete();
           blobsDeleted++;
-        } catch (blobError: any) {
-          context.warn(`Failed to delete blob ${doc.document_path}: ${blobError.message}`);
+        } catch (blobError: unknown) {
+          const errorMessage = blobError instanceof Error ? blobError.message : String(blobError);
+          context.warn(`Failed to delete blob ${doc.document_path}: ${errorMessage}`);
         }
       }
 
       // 3. Delete database records
-      const deleteResult = await pool.request().input("vendorName", sql.NVarChar, vendorName)
+      const deleteResult = await pool.request().input('vendorName', sql.NVarChar, vendorName)
         .query(`
           DELETE FROM vvocr.document_processing_results 
           WHERE vendor_name = @vendorName
@@ -404,8 +407,8 @@ export async function deleteVendorHandler(
       return {
         status: 200,
         headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
         },
         body: JSON.stringify({
           message: `Vendor ${vendorName} deleted successfully`,
@@ -413,35 +416,36 @@ export async function deleteVendorHandler(
           blobsDeleted,
         }),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       await pool.close();
       throw error;
     }
-  } catch (error: any) {
-    context.error(`Error deleting vendor: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    context.error(`Error deleting vendor: ${errorMessage}`);
     return {
       status: 500,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 }
 
-app.http("deleteVendor", {
-  methods: ["DELETE", "OPTIONS"],
-  authLevel: "anonymous",
+app.http('deleteVendor', {
+  methods: ['DELETE', 'OPTIONS'],
+  authLevel: 'anonymous',
   handler: async (request: HttpRequest, context: InvocationContext) => {
     // Handle CORS preflight
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
       return {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       };
     }
@@ -478,13 +482,13 @@ export async function reprocessMappingHandler(
   context.log(`Reprocess mapping request received`);
 
   try {
-    const body = (await req.json()) as any;
+    const body = (await req.json()) as { documentId?: string };
     const documentId = body.documentId;
 
     if (!documentId) {
       return {
         status: 400,
-        body: JSON.stringify({ error: "Missing documentId in request body" }),
+        body: JSON.stringify({ error: 'Missing documentId in request body' }),
       };
     }
 
@@ -494,7 +498,7 @@ export async function reprocessMappingHandler(
     // Get existing record to copy OCR data and determine version
     const existingResult = await pool
       .request()
-      .input("documentId", sql.UniqueIdentifier, documentId).query(`
+      .input('documentId', sql.UniqueIdentifier, documentId).query(`
         SELECT 
           document_name,
           document_path,
@@ -518,7 +522,7 @@ export async function reprocessMappingHandler(
       await pool.close();
       return {
         status: 404,
-        body: JSON.stringify({ error: "Document not found" }),
+        body: JSON.stringify({ error: 'Document not found' }),
       };
     }
 
@@ -532,20 +536,20 @@ export async function reprocessMappingHandler(
     // Create new immutable record
     const newRecordResult = await pool
       .request()
-      .input("documentName", sql.NVarChar, existing.document_name)
-      .input("documentPath", sql.NVarChar, existing.document_path)
-      .input("documentSize", sql.BigInt, existing.document_size_bytes)
-      .input("documentType", sql.NVarChar, existing.document_type)
-      .input("vendorName", sql.NVarChar, existing.vendor_name)
-      .input("extractedText", sql.NVarChar, existing.doc_intel_extracted_text)
-      .input("structuredData", sql.NVarChar, existing.doc_intel_structured_data)
-      .input("confidenceScore", sql.Decimal(5, 4), existing.doc_intel_confidence_score)
-      .input("pageCount", sql.Int, existing.doc_intel_page_count)
-      .input("tableCount", sql.Int, existing.doc_intel_table_count)
-      .input("docIntelCost", sql.Decimal(10, 6), existing.doc_intel_cost_usd)
-      .input("docIntelPrompt", sql.NVarChar, existing.doc_intel_prompt_used)
-      .input("parentDocumentId", sql.UniqueIdentifier, rootParentId)
-      .input("reprocessingCount", sql.Int, newVersion).query(`
+      .input('documentName', sql.NVarChar, existing.document_name)
+      .input('documentPath', sql.NVarChar, existing.document_path)
+      .input('documentSize', sql.BigInt, existing.document_size_bytes)
+      .input('documentType', sql.NVarChar, existing.document_type)
+      .input('vendorName', sql.NVarChar, existing.vendor_name)
+      .input('extractedText', sql.NVarChar, existing.doc_intel_extracted_text)
+      .input('structuredData', sql.NVarChar, existing.doc_intel_structured_data)
+      .input('confidenceScore', sql.Decimal(5, 4), existing.doc_intel_confidence_score)
+      .input('pageCount', sql.Int, existing.doc_intel_page_count)
+      .input('tableCount', sql.Int, existing.doc_intel_table_count)
+      .input('docIntelCost', sql.Decimal(10, 6), existing.doc_intel_cost_usd)
+      .input('docIntelPrompt', sql.NVarChar, existing.doc_intel_prompt_used)
+      .input('parentDocumentId', sql.UniqueIdentifier, rootParentId)
+      .input('reprocessingCount', sql.Int, newVersion).query(`
         INSERT INTO vvocr.document_processing_results (
           document_name,
           document_path,
@@ -596,8 +600,8 @@ export async function reprocessMappingHandler(
     return {
       status: 200,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
       body: JSON.stringify({
         message: `New version created for remapping (v${newVersion})`,
@@ -605,33 +609,34 @@ export async function reprocessMappingHandler(
         newResultId: newDocumentId,
         version: newVersion,
         parentDocumentId: rootParentId,
-        nextStep: "AI mapping will be queued automatically",
+        nextStep: 'AI mapping will be queued automatically',
       }),
     };
-  } catch (error: any) {
-    context.error(`Error reprocessing mapping: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    context.error(`Error reprocessing mapping: ${errorMessage}`);
     return {
       status: 500,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 }
 
-app.http("reprocessMapping", {
-  methods: ["POST", "OPTIONS"],
-  authLevel: "anonymous",
+app.http('reprocessMapping', {
+  methods: ['POST', 'OPTIONS'],
+  authLevel: 'anonymous',
   handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
       return {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       };
     }
@@ -661,13 +666,13 @@ export async function confirmMappingHandler(
   context.log(`Confirm mapping request received`);
 
   try {
-    const body = (await req.json()) as any;
+    const body = (await req.json()) as { documentId?: string };
     const documentId = body.documentId;
 
     if (!documentId) {
       return {
         status: 400,
-        body: JSON.stringify({ error: "Missing documentId in request body" }),
+        body: JSON.stringify({ error: 'Missing documentId in request body' }),
       };
     }
 
@@ -676,7 +681,7 @@ export async function confirmMappingHandler(
 
     try {
       // 1. Retrieve document and mapping result
-      const docResult = await pool.request().input("documentId", sql.UniqueIdentifier, documentId)
+      const docResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
         .query(`
           SELECT 
             result_id,
@@ -693,13 +698,13 @@ export async function confirmMappingHandler(
         await pool.close();
         return {
           status: 404,
-          body: JSON.stringify({ error: "Document not found" }),
+          body: JSON.stringify({ error: 'Document not found' }),
         };
       }
 
       const document = docResult.recordset[0];
 
-      if (document.processing_status !== "completed") {
+      if (document.processing_status !== 'completed') {
         await pool.close();
         return {
           status: 400,
@@ -710,21 +715,21 @@ export async function confirmMappingHandler(
       }
 
       // Check if already exported (idempotency)
-      if (document.export_status === "confirmed") {
+      if (document.export_status === 'confirmed') {
         await pool.close();
         context.log(`ℹ️ Document ${documentId} already confirmed, skipping re-export`);
 
-        const mappingData = JSON.parse(document.ai_mapping_result || "{}");
+        const mappingData = JSON.parse(document.ai_mapping_result || '{}');
         const productsCount = (mappingData.products || []).length;
 
         return {
           status: 200,
           headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
           },
           body: JSON.stringify({
-            message: "Products already exported (idempotent operation)",
+            message: 'Products already exported (idempotent operation)',
             documentId,
             vendor: document.vendor_name,
             productsExported: productsCount,
@@ -736,7 +741,7 @@ export async function confirmMappingHandler(
         await pool.close();
         return {
           status: 400,
-          body: JSON.stringify({ error: "No mapping result available to export" }),
+          body: JSON.stringify({ error: 'No mapping result available to export' }),
         };
       }
 
@@ -747,7 +752,7 @@ export async function confirmMappingHandler(
         await pool.close();
         return {
           status: 400,
-          body: JSON.stringify({ error: "No products found in mapping result" }),
+          body: JSON.stringify({ error: 'No products found in mapping result' }),
         };
       }
 
@@ -756,15 +761,15 @@ export async function confirmMappingHandler(
       for (const product of products) {
         await pool
           .request()
-          .input("vendorId", sql.NVarChar, document.vendor_name)
-          .input("vendorName", sql.NVarChar, document.vendor_name)
-          .input("productName", sql.NVarChar, product.name)
-          .input("sku", sql.NVarChar, product.sku)
-          .input("price", sql.Decimal(18, 4), product.price)
-          .input("unit", sql.NVarChar, product.unit || null)
-          .input("description", sql.NVarChar, product.description || null)
-          .input("sourceDocId", sql.UniqueIdentifier, documentId)
-          .input("sourceDocName", sql.NVarChar, document.document_name).query(`
+          .input('vendorId', sql.NVarChar, document.vendor_name)
+          .input('vendorName', sql.NVarChar, document.vendor_name)
+          .input('productName', sql.NVarChar, product.name)
+          .input('sku', sql.NVarChar, product.sku)
+          .input('price', sql.Decimal(18, 4), product.price)
+          .input('unit', sql.NVarChar, product.unit || null)
+          .input('description', sql.NVarChar, product.description || null)
+          .input('sourceDocId', sql.UniqueIdentifier, documentId)
+          .input('sourceDocName', sql.NVarChar, document.document_name).query(`
             INSERT INTO vvocr.vendor_products 
             (vendor_id, vendor_name, product_name, sku, price, unit, description, source_document_id, source_document_name)
             VALUES 
@@ -774,7 +779,7 @@ export async function confirmMappingHandler(
       }
 
       // 3. Update export status
-      await pool.request().input("documentId", sql.UniqueIdentifier, documentId).query(`
+      await pool.request().input('documentId', sql.UniqueIdentifier, documentId).query(`
           UPDATE vvocr.document_processing_results 
           SET 
               export_status = 'confirmed',
@@ -792,44 +797,45 @@ export async function confirmMappingHandler(
       return {
         status: 200,
         headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
         },
         body: JSON.stringify({
-          message: "Products exported to production successfully",
+          message: 'Products exported to production successfully',
           documentId,
           vendor: document.vendor_name,
           productsExported: insertedCount,
         }),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       await pool.close();
       throw error;
     }
-  } catch (error: any) {
-    context.error(`Error confirming mapping: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    context.error(`Error confirming mapping: ${errorMessage}`);
     return {
       status: 500,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 }
 
-app.http("confirmMapping", {
-  methods: ["POST", "OPTIONS"],
-  authLevel: "anonymous",
+app.http('confirmMapping', {
+  methods: ['POST', 'OPTIONS'],
+  authLevel: 'anonymous',
   handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
       return {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       };
     }
@@ -858,12 +864,12 @@ export async function getVersionHistoryHandler(
   context.log(`Get version history request received`);
 
   try {
-    const documentId = req.query.get("documentId");
+    const documentId = req.query.get('documentId');
 
     if (!documentId) {
       return {
         status: 400,
-        body: JSON.stringify({ error: "Missing documentId query parameter" }),
+        body: JSON.stringify({ error: 'Missing documentId query parameter' }),
       };
     }
 
@@ -872,7 +878,7 @@ export async function getVersionHistoryHandler(
 
     try {
       // First, get the document to find its root parent
-      const rootResult = await pool.request().input("documentId", sql.UniqueIdentifier, documentId)
+      const rootResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
         .query(`
           SELECT 
             result_id,
@@ -886,7 +892,7 @@ export async function getVersionHistoryHandler(
         await pool.close();
         return {
           status: 404,
-          body: JSON.stringify({ error: "Document not found" }),
+          body: JSON.stringify({ error: 'Document not found' }),
         };
       }
 
@@ -896,7 +902,7 @@ export async function getVersionHistoryHandler(
       // Get all versions in the chain
       const versionsResult = await pool
         .request()
-        .input("rootParentId", sql.UniqueIdentifier, rootParentId).query(`
+        .input('rootParentId', sql.UniqueIdentifier, rootParentId).query(`
           SELECT 
             result_id,
             document_name,
@@ -923,8 +929,8 @@ export async function getVersionHistoryHandler(
       return {
         status: 200,
         headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
         },
         body: JSON.stringify({
           rootDocumentId: rootParentId,
@@ -933,34 +939,35 @@ export async function getVersionHistoryHandler(
           versions: versionsResult.recordset,
         }),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       await pool.close();
       throw error;
     }
-  } catch (error: any) {
-    context.error(`Error getting version history: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    context.error(`Error getting version history: ${errorMessage}`);
     return {
       status: 500,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 }
 
-app.http("getVersionHistory", {
-  methods: ["GET", "OPTIONS"],
-  authLevel: "anonymous",
+app.http('getVersionHistory', {
+  methods: ['GET', 'OPTIONS'],
+  authLevel: 'anonymous',
   handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
       return {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       };
     }
@@ -988,12 +995,12 @@ export async function deleteRunHandler(
   context.log(`Delete run request received`);
 
   try {
-    const documentId = req.query.get("documentId");
+    const documentId = req.query.get('documentId');
 
     if (!documentId) {
       return {
         status: 400,
-        body: JSON.stringify({ error: "Missing documentId query parameter" }),
+        body: JSON.stringify({ error: 'Missing documentId query parameter' }),
       };
     }
 
@@ -1002,7 +1009,7 @@ export async function deleteRunHandler(
 
     try {
       // Check if this is a reprocessed version (has parent_document_id)
-      const checkResult = await pool.request().input("documentId", sql.UniqueIdentifier, documentId)
+      const checkResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
         .query(`
           SELECT 
             result_id,
@@ -1017,7 +1024,7 @@ export async function deleteRunHandler(
         await pool.close();
         return {
           status: 404,
-          body: JSON.stringify({ error: "Document not found" }),
+          body: JSON.stringify({ error: 'Document not found' }),
         };
       }
 
@@ -1029,13 +1036,13 @@ export async function deleteRunHandler(
           status: 400,
           body: JSON.stringify({
             error:
-              "Cannot delete root document. Use DELETE /api/deleteDocument to delete the entire document with all versions.",
+              'Cannot delete root document. Use DELETE /api/deleteDocument to delete the entire document with all versions.',
           }),
         };
       }
 
       // Delete the specific run
-      await pool.request().input("documentId", sql.UniqueIdentifier, documentId).query(`
+      await pool.request().input('documentId', sql.UniqueIdentifier, documentId).query(`
           DELETE FROM vvocr.document_processing_results
           WHERE result_id = @documentId
         `);
@@ -1047,8 +1054,8 @@ export async function deleteRunHandler(
       return {
         status: 200,
         headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
         },
         body: JSON.stringify({
           message: `Run version ${doc.reprocessing_count} deleted successfully`,
@@ -1056,34 +1063,35 @@ export async function deleteRunHandler(
           version: doc.reprocessing_count,
         }),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       await pool.close();
       throw error;
     }
-  } catch (error: any) {
-    context.error(`Error deleting run: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    context.error(`Error deleting run: ${errorMessage}`);
     return {
       status: 500,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 }
 
-app.http("deleteRun", {
-  methods: ["DELETE", "OPTIONS"],
-  authLevel: "anonymous",
+app.http('deleteRun', {
+  methods: ['DELETE', 'OPTIONS'],
+  authLevel: 'anonymous',
   handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
       return {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       };
     }
@@ -1112,12 +1120,12 @@ export async function deleteDocumentHandler(
   context.log(`Delete document request received`);
 
   try {
-    const documentId = req.query.get("documentId");
+    const documentId = req.query.get('documentId');
 
     if (!documentId) {
       return {
         status: 400,
-        body: JSON.stringify({ error: "Missing documentId query parameter" }),
+        body: JSON.stringify({ error: 'Missing documentId query parameter' }),
       };
     }
 
@@ -1126,7 +1134,7 @@ export async function deleteDocumentHandler(
 
     try {
       // Get document info and determine root parent
-      const docResult = await pool.request().input("documentId", sql.UniqueIdentifier, documentId)
+      const docResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
         .query(`
           SELECT 
             result_id,
@@ -1141,7 +1149,7 @@ export async function deleteDocumentHandler(
         await pool.close();
         return {
           status: 404,
-          body: JSON.stringify({ error: "Document not found" }),
+          body: JSON.stringify({ error: 'Document not found' }),
         };
       }
 
@@ -1158,14 +1166,15 @@ export async function deleteDocumentHandler(
         const blockBlobClient = containerClient.getBlockBlobClient(doc.document_path);
         await blockBlobClient.delete();
         context.log(`✅ Deleted blob: ${doc.document_path}`);
-      } catch (blobError: any) {
-        context.warn(`Failed to delete blob ${doc.document_path}: ${blobError.message}`);
+      } catch (blobError: unknown) {
+        const errorMessage = blobError instanceof Error ? blobError.message : String(blobError);
+        context.warn(`Failed to delete blob ${doc.document_path}: ${errorMessage}`);
       }
 
       // Delete ALL database records (root + all versions)
       const deleteResult = await pool
         .request()
-        .input("rootParentId", sql.UniqueIdentifier, rootParentId).query(`
+        .input('rootParentId', sql.UniqueIdentifier, rootParentId).query(`
           DELETE FROM vvocr.document_processing_results
           WHERE result_id = @rootParentId OR parent_document_id = @rootParentId
         `);
@@ -1179,43 +1188,44 @@ export async function deleteDocumentHandler(
       return {
         status: 200,
         headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
         },
         body: JSON.stringify({
-          message: "Document and all versions deleted successfully",
+          message: 'Document and all versions deleted successfully',
           documentName: doc.document_name,
           versionsDeleted: deleteResult.rowsAffected[0],
         }),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       await pool.close();
       throw error;
     }
-  } catch (error: any) {
-    context.error(`Error deleting document: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    context.error(`Error deleting document: ${errorMessage}`);
     return {
       status: 500,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 }
 
-app.http("deleteDocument", {
-  methods: ["DELETE", "OPTIONS"],
-  authLevel: "anonymous",
+app.http('deleteDocument', {
+  methods: ['DELETE', 'OPTIONS'],
+  authLevel: 'anonymous',
   handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
       return {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       };
     }
@@ -1235,19 +1245,19 @@ async function demoUsageHandler(
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
-    if (req.method === "GET") {
+    if (req.method === 'GET') {
       // Get usage stats
       const stats = await getUsageStats();
       return {
         status: 200,
         jsonBody: {
           stats,
-          message: "Usage statistics retrieved",
+          message: 'Usage statistics retrieved',
         },
       };
-    } else if (req.method === "POST") {
+    } else if (req.method === 'POST') {
       // Trigger cleanup
-      const daysToKeep = parseInt(req.query.get("daysToKeep") || "30");
+      const daysToKeep = parseInt(req.query.get('daysToKeep') || '30');
 
       context.log(`🧹 Cleanup triggered: keeping ${daysToKeep} days`);
 
@@ -1258,7 +1268,7 @@ async function demoUsageHandler(
       return {
         status: 200,
         jsonBody: {
-          message: "Cleanup completed successfully",
+          message: 'Cleanup completed successfully',
           daysRetained: daysToKeep,
           deleted: cleanupResult,
           before: statsBefore,
@@ -1269,32 +1279,33 @@ async function demoUsageHandler(
 
     return {
       status: 405,
-      jsonBody: { error: "Method not allowed" },
+      jsonBody: { error: 'Method not allowed' },
     };
-  } catch (error: any) {
-    context.error("Demo operation failed:", error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    context.error('Demo operation failed:', error);
     return {
       status: 500,
       jsonBody: {
-        error: "Demo operation failed",
-        details: error.message,
+        error: 'Demo operation failed',
+        details: errorMessage,
       },
     };
   }
 }
 
-app.http("demoUsage", {
-  methods: ["GET", "POST", "OPTIONS"],
-  authLevel: "anonymous",
-  route: "demo/usage",
+app.http('demoUsage', {
+  methods: ['GET', 'POST', 'OPTIONS'],
+  authLevel: 'anonymous',
+  route: 'demo/usage',
   handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
       return {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       };
     }

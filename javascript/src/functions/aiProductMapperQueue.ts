@@ -1,5 +1,5 @@
-import { app, InvocationContext } from "@azure/functions";
-import { aiProductMapperHandler } from "./aiProductMapper.js";
+import { app, HttpRequest, InvocationContext } from '@azure/functions';
+import { aiProductMapperHandler } from './aiProductMapper.js';
 
 /**
  * AI Product Mapper Queue Trigger
@@ -34,19 +34,19 @@ export async function aiProductMapperQueueTrigger(
 ): Promise<void> {
   try {
     // Parse queue message
-    const message = typeof queueItem === "string" ? JSON.parse(queueItem) : queueItem;
+    const message = typeof queueItem === 'string' ? JSON.parse(queueItem) : queueItem;
     const documentId = message.documentId;
 
     context.log(`🔔 Queue trigger: Processing AI mapping for document ${documentId}`);
 
     if (!documentId) {
-      throw new Error("Queue message missing documentId");
+      throw new Error('Queue message missing documentId');
     }
 
     // Create mock HTTP request for handler
     const mockRequest = {
       json: async () => ({ documentId }),
-    } as any;
+    } as unknown as HttpRequest;
 
     // Call shared handler logic
     const response = await aiProductMapperHandler(mockRequest, context);
@@ -57,15 +57,16 @@ export async function aiProductMapperQueueTrigger(
 
     const result = JSON.parse(response.body as string);
     context.log(`✅ Queue processing complete: ${result.productCount} products extracted`);
-  } catch (error: any) {
-    context.error(`❌ Queue processing failed: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    context.error(`❌ Queue processing failed: ${errorMessage}`);
     // Throw to trigger queue retry mechanism
     throw error;
   }
 }
 
-app.storageQueue("aiProductMapperQueue", {
-  queueName: "ai-mapping-queue",
-  connection: "STORAGE_CONNECTION_STRING",
+app.storageQueue('aiProductMapperQueue', {
+  queueName: 'ai-mapping-queue',
+  connection: 'STORAGE_CONNECTION_STRING',
   handler: aiProductMapperQueueTrigger,
 });

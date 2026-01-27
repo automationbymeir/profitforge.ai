@@ -1,4 +1,4 @@
-import * as pulumi from "@pulumi/pulumi";
+import * as pulumi from '@pulumi/pulumi';
 
 /**
  * Azure resource configuration
@@ -10,7 +10,7 @@ import * as pulumi from "@pulumi/pulumi";
 // Set via: pulumi config set demoMode true
 // Default: false (client mode - no rate limiting, no API keys)
 const config = new pulumi.Config();
-export const isDemoMode = config.getBoolean("demoMode") || false;
+export const isDemoMode = config.getBoolean('demoMode') || false;
 
 export interface AzureConfig {
   // Azure Region
@@ -43,17 +43,17 @@ export interface AzureConfig {
 
 // All stages use client's existing resources
 export const azureConfig: AzureConfig = {
-  location: "israelcentral", // Deploy resources closer to Israel
-  resourceGroup: "dragonfruit-dev-3P-Meir-rg",
-  storageAccountName: "dragonfrstorage593005773",
-  storageContainerDocuments: "df-documents",
-  keyVaultName: "dragonfrkeyvaulte9dc603b",
-  sqlServer: "df-dev-pfsql.database.windows.net",
-  sqlDatabase: "df-dev-main",
-  aiHubName: "dragonfruit-dev-3P-Meir-aihub",
-  aiProjectName: "dragonfruit-dev-3P-Meir-project",
-  cognitiveServicesName: "dragonfruit-dev-3P-Meir-docintel",
-  documentIntelligenceEndpoint: "https://eastus.api.cognitive.microsoft.com/",
-  functionAppName: "dev-meir-vvocr-functions",
-  functionAppPlanName: "EastUSLinuxDynamicPlan",
+  location: 'israelcentral', // Deploy resources closer to Israel
+  resourceGroup: 'dragonfruit-dev-3P-Meir-rg',
+  storageAccountName: 'dragonfrstorage593005773',
+  storageContainerDocuments: 'df-documents',
+  keyVaultName: 'dragonfrkeyvaulte9dc603b',
+  sqlServer: 'df-dev-pfsql.database.windows.net',
+  sqlDatabase: 'df-dev-main',
+  aiHubName: 'dragonfruit-dev-3P-Meir-aihub',
+  aiProjectName: 'dragonfruit-dev-3P-Meir-project',
+  cognitiveServicesName: 'dragonfruit-dev-3P-Meir-docintel',
+  documentIntelligenceEndpoint: 'https://eastus.api.cognitive.microsoft.com/',
+  functionAppName: 'dev-meir-vvocr-functions',
+  functionAppPlanName: 'EastUSLinuxDynamicPlan',
 };

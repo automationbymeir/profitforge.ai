@@ -5,4 +5,4 @@ config:
   profitforge-ai:sqlAdminPassword:
     secure: v1:fD3HFJPWVQW+AbJF:n7e2oJE0Nm1bu+3Z9Ac6SyObAjfRG/WxOSd4U1u4En8djG/w
   azure-native:location: israelcentral
-  azure-native:subscriptionId: 412ffa18-9a21-4b1f-a238-706cd944b3f3
+  azure-native:subscriptionId: 211fc1c2-ed86-429b-bc55-552964347a8d

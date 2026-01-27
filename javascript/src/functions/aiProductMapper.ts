@@ -1,13 +1,37 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { BlobServiceClient } from "@azure/storage-blob";
-import sql from "mssql";
-import { OpenAI } from "openai";
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
+import { BlobServiceClient } from '@azure/storage-blob';
+import sql from 'mssql';
+import { OpenAI } from 'openai';
+
+// Type definitions
+interface RequestBody {
+  documentId: string;
+}
+
+interface TableCell {
+  kind: string;
+  content?: string;
+  rowIndex: number;
+  columnIndex: number;
+}
+
+interface Table {
+  cells: TableCell[];
+}
+
+interface Product {
+  name: string;
+  sku: string;
+  price: number;
+  unit?: string;
+  description?: string;
+}
 
 // Connection strings from environment variables
 const SQL_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING;
 const AI_PROJECT_ENDPOINT = process.env.AI_PROJECT_ENDPOINT;
 const AI_PROJECT_KEY = process.env.AI_PROJECT_KEY;
-const BRONZE_LAYER_CONTAINER = "bronze-layer";
+const BRONZE_LAYER_CONTAINER = 'bronze-layer';
 
 /**
  * AI Product Mapper - HTTP POST endpoint for AI-based product extraction
@@ -76,25 +100,25 @@ export async function aiProductMapperHandler(
   let pool: sql.ConnectionPool | null = null;
 
   try {
-    const body = (await req.json()) as any;
+    const body = (await req.json()) as RequestBody;
     const documentId = body.documentId;
 
     if (!documentId) {
       return {
         status: 400,
-        body: JSON.stringify({ error: "Missing documentId in request body" }),
+        body: JSON.stringify({ error: 'Missing documentId in request body' }),
       };
     }
 
     if (!AI_PROJECT_ENDPOINT || !AI_PROJECT_KEY) {
-      throw new Error("Missing AI project configuration");
+      throw new Error('Missing AI project configuration');
     }
 
     // 1. Retrieve OCR results from database
     pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
     await pool.connect();
 
-    const result = await pool.request().input("documentId", sql.UniqueIdentifier, documentId)
+    const result = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
       .query(`
         SELECT 
           result_id,
@@ -112,15 +136,15 @@ export async function aiProductMapperHandler(
       await pool.close();
       return {
         status: 404,
-        body: JSON.stringify({ error: "Document not found" }),
+        body: JSON.stringify({ error: 'Document not found' }),
       };
     }
 
     const document = result.recordset[0];
 
     if (
-      document.processing_status !== "ocr_complete" &&
-      document.processing_status !== "completed"
+      document.processing_status !== 'ocr_complete' &&
+      document.processing_status !== 'completed'
     ) {
       await pool.close();
       return {
@@ -133,7 +157,7 @@ export async function aiProductMapperHandler(
 
     const ocrData = JSON.parse(document.doc_intel_structured_data);
     const tables = ocrData.tables || [];
-    const fullText = document.doc_intel_extracted_text || "";
+    const fullText = document.doc_intel_extracted_text || '';
 
     context.log(`Processing document: ${document.document_name}, Tables: ${tables.length}`);
 
@@ -141,19 +165,19 @@ export async function aiProductMapperHandler(
     const openai = new OpenAI({
       apiKey: AI_PROJECT_KEY,
       baseURL: `${AI_PROJECT_ENDPOINT}/openai/deployments/gpt-4o`,
-      defaultQuery: { "api-version": "2024-08-01-preview" },
-      defaultHeaders: { "api-key": AI_PROJECT_KEY },
+      defaultQuery: { 'api-version': '2024-08-01-preview' },
+      defaultHeaders: { 'api-key': AI_PROJECT_KEY },
     });
 
     // 3. Analyze ALL table headers to find common column patterns
     const allHeaders: Array<{ tableIdx: number; colIdx: number; header: string }> = [];
-    tables.forEach((table: any, tableIdx: number) => {
-      const headerCells = table.cells.filter((c: any) => c.kind === "columnHeader");
-      headerCells.forEach((cell: any) => {
+    tables.forEach((table: Table, tableIdx: number) => {
+      const headerCells = table.cells.filter((c: TableCell) => c.kind === 'columnHeader');
+      headerCells.forEach((cell: TableCell) => {
         allHeaders.push({
           tableIdx,
           colIdx: cell.columnIndex,
-          header: cell.content,
+          header: cell.content || '',
         });
       });
     });
@@ -169,7 +193,7 @@ export async function aiProductMapperHandler(
 - description (additional details) - OPTIONAL
 
 Here are ALL the column headers found:
-${allHeaders.map((h) => `Table ${h.tableIdx}, Column ${h.colIdx}: "${h.header}"`).join("\n")}
+${allHeaders.map((h) => `Table ${h.tableIdx}, Column ${h.colIdx}: "${h.header}"`).join('\n')}
 
 These tables have a CONSISTENT structure. Identify the column pattern:
 - Which column index is SKU? (look for "SKU", "Item Code", "Item #", etc.)
@@ -200,14 +224,14 @@ Context: ${fullText.substring(0, 2000)}`;
     const startTime = Date.now();
 
     const mappingResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: headerMappingPrompt }],
-      response_format: { type: "json_object" },
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: headerMappingPrompt }],
+      response_format: { type: 'json_object' },
       max_tokens: 500,
       temperature: 0,
     });
 
-    const mappingResult = JSON.parse(mappingResponse.choices[0].message.content || "{}");
+    const mappingResult = JSON.parse(mappingResponse.choices[0].message.content || '{}');
     context.log(`Column mapping: ${JSON.stringify(mappingResult.columnMapping)}`);
 
     // 4. Extract products using column index mapping
@@ -222,29 +246,35 @@ Context: ${fullText.substring(0, 2000)}`;
     const colMap = mappingResult.columnMapping || {};
 
     for (const table of tables) {
-      const contentCells = table.cells.filter((c: any) => c.kind === "content");
+      const contentCells = table.cells.filter((c: TableCell) => c.kind === 'content');
       if (contentCells.length === 0) continue;
 
-      const rowCount = Math.max(...contentCells.map((c: any) => c.rowIndex)) + 1;
+      const rowCount = Math.max(...contentCells.map((c: TableCell) => c.rowIndex)) + 1;
 
       for (let rowIdx = 1; rowIdx < rowCount; rowIdx++) {
-        const rowCells = contentCells.filter((c: any) => c.rowIndex === rowIdx);
+        const rowCells = contentCells.filter((c: TableCell) => c.rowIndex === rowIdx);
 
-        const sku = rowCells.find((c: any) => c.columnIndex === colMap.sku)?.content?.trim();
-        const name = rowCells.find((c: any) => c.columnIndex === colMap.name)?.content?.trim();
-        const priceStr = rowCells.find((c: any) => c.columnIndex === colMap.price)?.content?.trim();
-        const unit = rowCells.find((c: any) => c.columnIndex === colMap.unit)?.content?.trim();
+        const sku = rowCells.find((c: TableCell) => c.columnIndex === colMap.sku)?.content?.trim();
+        const name = rowCells
+          .find((c: TableCell) => c.columnIndex === colMap.name)
+          ?.content?.trim();
+        const priceStr = rowCells
+          .find((c: TableCell) => c.columnIndex === colMap.price)
+          ?.content?.trim();
+        const unit = rowCells
+          .find((c: TableCell) => c.columnIndex === colMap.unit)
+          ?.content?.trim();
         const description = rowCells
-          .find((c: any) => c.columnIndex === colMap.description)
+          .find((c: TableCell) => c.columnIndex === colMap.description)
           ?.content?.trim();
 
         // Validate required fields
         if (sku && name) {
           // Parse price - remove currency symbols, commas
           const priceMatch = priceStr?.match(/[\d,]+\.?\d*/);
-          const price = priceMatch ? parseFloat(priceMatch[0].replace(/,/g, "")) : 0;
+          const price = priceMatch ? parseFloat(priceMatch[0].replace(/,/g, '')) : 0;
 
-          const product: any = {
+          const product: Product = {
             name,
             sku,
             price,
@@ -273,7 +303,7 @@ Context: ${fullText.substring(0, 2000)}`;
       emptyFields: 0,
     };
 
-    products.forEach((p: any) => {
+    products.forEach((p: Product) => {
       if (p.sku && p.sku.trim()) qualityMetrics.productsWithSKU++;
       if (p.name && p.name.trim()) qualityMetrics.productsWithName++;
       if (p.price !== undefined && p.price !== null) {
@@ -330,7 +360,7 @@ Context: ${fullText.substring(0, 2000)}`;
     const mappingResultJson = {
       documentId,
       timestamp: new Date().toISOString(),
-      vendor: mappingResult.vendor || document.vendor_name || "Unknown",
+      vendor: mappingResult.vendor || document.vendor_name || 'Unknown',
       products,
       productCount: products.length,
       columnMapping: mappingResult.columnMapping,
@@ -373,17 +403,17 @@ Context: ${fullText.substring(0, 2000)}`;
     // 7. Update database with AI mapping results and confidence scores
     await pool
       .request()
-      .input("documentId", sql.UniqueIdentifier, documentId)
-      .input("mappingResult", sql.NVarChar, JSON.stringify(mappingResultJson))
-      .input("promptUsed", sql.NVarChar, headerMappingPrompt)
-      .input("promptTokens", sql.Int, promptTokens)
-      .input("completionTokens", sql.Int, completionTokens)
-      .input("totalTokens", sql.Int, totalTokens)
-      .input("aiCost", sql.Decimal(10, 6), aiCost)
-      .input("productCount", sql.Int, products.length)
-      .input("vendorName", sql.NVarChar, document.vendor_name) // Preserve original vendor name
-      .input("completenessScore", sql.Decimal(5, 2), completenessScore)
-      .input("confidenceScore", sql.Decimal(5, 2), confidenceScore).query(`
+      .input('documentId', sql.UniqueIdentifier, documentId)
+      .input('mappingResult', sql.NVarChar, JSON.stringify(mappingResultJson))
+      .input('promptUsed', sql.NVarChar, headerMappingPrompt)
+      .input('promptTokens', sql.Int, promptTokens)
+      .input('completionTokens', sql.Int, completionTokens)
+      .input('totalTokens', sql.Int, totalTokens)
+      .input('aiCost', sql.Decimal(10, 6), aiCost)
+      .input('productCount', sql.Int, products.length)
+      .input('vendorName', sql.NVarChar, document.vendor_name) // Preserve original vendor name
+      .input('completenessScore', sql.Decimal(5, 2), completenessScore)
+      .input('confidenceScore', sql.Decimal(5, 2), confidenceScore).query(`
         UPDATE vvocr.document_processing_results 
         SET 
             ai_mapping_result = @mappingResult,
@@ -410,11 +440,11 @@ Context: ${fullText.substring(0, 2000)}`;
     return {
       status: 200,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
       body: JSON.stringify({
-        message: "AI product mapping completed successfully",
+        message: 'AI product mapping completed successfully',
         documentId,
         vendor: mappingResult.vendor || document.vendor_name,
         productCount: products.length,
@@ -427,18 +457,20 @@ Context: ${fullText.substring(0, 2000)}`;
         cost: aiCost,
       }),
     };
-  } catch (error: any) {
-    context.error(`Error in AI product mapping: ${error.message}`);
-    context.error(`Error stack: ${error.stack}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : '';
+    context.error(`Error in AI product mapping: ${errorMessage}`);
+    context.error(`Error stack: ${errorStack}`);
 
     // Update database with failure status
     if (pool) {
       try {
-        const body = (await req.json()) as any;
+        const body = (await req.json()) as RequestBody;
         await pool
           .request()
-          .input("documentId", sql.UniqueIdentifier, body.documentId)
-          .input("error", sql.NVarChar, error.message).query(`
+          .input('documentId', sql.UniqueIdentifier, body.documentId)
+          .input('error', sql.NVarChar, errorMessage).query(`
             UPDATE vvocr.document_processing_results 
             SET 
                 processing_status = 'failed',
@@ -455,26 +487,26 @@ Context: ${fullText.substring(0, 2000)}`;
     return {
       status: 500,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 }
 
-app.http("aiProductMapper", {
-  methods: ["POST", "OPTIONS"],
-  authLevel: "anonymous",
+app.http('aiProductMapper', {
+  methods: ['POST', 'OPTIONS'],
+  authLevel: 'anonymous',
   handler: async (request: HttpRequest, context: InvocationContext) => {
     // Handle CORS preflight
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
       return {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       };
     }

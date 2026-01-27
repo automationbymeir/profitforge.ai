@@ -1,15 +1,15 @@
-import { AzureKeyCredential, DocumentAnalysisClient } from "@azure/ai-form-recognizer";
-import { app, InvocationContext } from "@azure/functions";
-import { BlobServiceClient } from "@azure/storage-blob";
-import { QueueServiceClient } from "@azure/storage-queue";
-import sql from "mssql";
+import { AzureKeyCredential, DocumentAnalysisClient } from '@azure/ai-form-recognizer';
+import { app, InvocationContext } from '@azure/functions';
+import { BlobServiceClient } from '@azure/storage-blob';
+import { QueueServiceClient } from '@azure/storage-queue';
+import sql from 'mssql';
 
 // Connection strings from environment variables
 const SQL_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING;
 const DOCUMENT_INTELLIGENCE_ENDPOINT = process.env.DOCUMENT_INTELLIGENCE_ENDPOINT;
 const DOCUMENT_INTELLIGENCE_KEY = process.env.DOCUMENT_INTELLIGENCE_KEY;
-const STORAGE_CONTAINER_DOCUMENTS = process.env.STORAGE_CONTAINER_DOCUMENTS || "uploads";
-const BRONZE_LAYER_CONTAINER = "bronze-layer";
+const STORAGE_CONTAINER_DOCUMENTS = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';
+const BRONZE_LAYER_CONTAINER = 'bronze-layer';
 
 /**
  * Document Processor - Blob trigger function for OCR extraction ONLY
@@ -69,7 +69,7 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
 
   try {
     if (!DOCUMENT_INTELLIGENCE_ENDPOINT || !DOCUMENT_INTELLIGENCE_KEY) {
-      throw new Error("Missing Document Intelligence configuration");
+      throw new Error('Missing Document Intelligence configuration');
     }
 
     // 1. Initialize Document Analysis Client
@@ -79,7 +79,7 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
     );
 
     // 2. Start analysis (using prebuilt-layout for tables and structure)
-    const poller = await client.beginAnalyzeDocument("prebuilt-layout", blob);
+    const poller = await client.beginAnalyzeDocument('prebuilt-layout', blob);
     const { content, tables, pages } = await poller.pollUntilDone();
 
     const pageCount = pages?.length || 0;
@@ -91,9 +91,9 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
     const docIntelCost = (pageCount / 1000) * 1.5;
 
     // Extract path - blob trigger gives full path like "uploads/vendor/file.pdf"
-    const pathParts = blobPath.split("/");
-    const relativePath = pathParts.length > 1 ? pathParts.slice(1).join("/") : blobPath;
-    const vendorName = pathParts.length > 1 ? pathParts[1] : "unknown";
+    const pathParts = blobPath.split('/');
+    const relativePath = pathParts.length > 1 ? pathParts.slice(1).join('/') : blobPath;
+    const vendorName = pathParts.length > 1 ? pathParts[1] : 'unknown';
 
     // 3. Store OCR results in bronze-layer
     const blobServiceClient = BlobServiceClient.fromConnectionString(
@@ -105,7 +105,7 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
     pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
     await pool.connect();
 
-    const docResult = await pool.request().input("documentPath", sql.NVarChar, relativePath).query(`
+    const docResult = await pool.request().input('documentPath', sql.NVarChar, relativePath).query(`
         SELECT result_id FROM vvocr.document_processing_results 
         WHERE document_path = @documentPath
       `);
@@ -117,7 +117,7 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
     const documentId = docResult.recordset[0].result_id;
 
     // Store raw PDF in bronze-layer
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = pathParts[pathParts.length - 1];
     const rawBlobPath = `raw/${vendorName}/${timestamp}-${fileName}`;
     const rawBlobClient = bronzeContainer.getBlockBlobClient(rawBlobPath);
@@ -147,14 +147,14 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
 
     await pool
       .request()
-      .input("documentPath", sql.NVarChar, relativePath)
-      .input("extractedText", sql.NVarChar, content)
-      .input("structuredData", sql.NVarChar, JSON.stringify({ tables }))
-      .input("pageCount", sql.Int, pageCount)
-      .input("tableCount", sql.Int, tableCount)
-      .input("docIntelCost", sql.Decimal(10, 6), docIntelCost)
-      .input("duration", sql.Int, processingDuration)
-      .input("startedAt", sql.DateTime2, new Date(startTime)).query(`
+      .input('documentPath', sql.NVarChar, relativePath)
+      .input('extractedText', sql.NVarChar, content)
+      .input('structuredData', sql.NVarChar, JSON.stringify({ tables }))
+      .input('pageCount', sql.Int, pageCount)
+      .input('tableCount', sql.Int, tableCount)
+      .input('docIntelCost', sql.Decimal(10, 6), docIntelCost)
+      .input('duration', sql.Int, processingDuration)
+      .input('startedAt', sql.DateTime2, new Date(startTime)).query(`
         UPDATE vvocr.document_processing_results 
         SET 
             doc_intel_extracted_text = @extractedText,
@@ -179,22 +179,25 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
       const queueServiceClient = QueueServiceClient.fromConnectionString(
         process.env.STORAGE_CONNECTION_STRING!
       );
-      const queueClient = queueServiceClient.getQueueClient("ai-mapping-queue");
+      const queueClient = queueServiceClient.getQueueClient('ai-mapping-queue');
       await queueClient.createIfNotExists();
 
-      await queueClient.sendMessage(Buffer.from(JSON.stringify({ documentId })).toString("base64"));
+      await queueClient.sendMessage(Buffer.from(JSON.stringify({ documentId })).toString('base64'));
 
       context.log(`✅ AI mapping queued successfully for document ${documentId}`);
-    } catch (queueError: any) {
+    } catch (queueError: unknown) {
       // Don't fail OCR if queuing fails - log and continue
-      context.warn(`⚠️ Failed to queue AI mapping: ${queueError.message}`);
+      const errorMessage = queueError instanceof Error ? queueError.message : String(queueError);
+      context.warn(`⚠️ Failed to queue AI mapping: ${errorMessage}`);
       context.warn(
         `   Document ${documentId} is in 'ocr_complete' state and can be reprocessed manually via API.`
       );
     }
-  } catch (error: any) {
-    context.error(`Error processing document: ${error.message}`);
-    context.error(`Error stack: ${error.stack}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : '';
+    context.error(`Error processing document: ${errorMessage}`);
+    context.error(`Error stack: ${errorStack}`);
 
     // Update database with failure status
     try {
@@ -202,11 +205,11 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
         pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
         await pool.connect();
       }
-      const relativePath = blobPath.split("/").slice(1).join("/");
+      const relativePath = blobPath.split('/').slice(1).join('/');
       await pool
         .request()
-        .input("documentPath", sql.NVarChar, relativePath)
-        .input("error", sql.NVarChar, error.message).query(`
+        .input('documentPath', sql.NVarChar, relativePath)
+        .input('error', sql.NVarChar, errorMessage).query(`
           UPDATE vvocr.document_processing_results 
           SET 
               processing_status = 'failed',
@@ -221,8 +224,8 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
   }
 }
 
-app.storageBlob("processDocument", {
+app.storageBlob('processDocument', {
   path: `${STORAGE_CONTAINER_DOCUMENTS}/{name}`,
-  connection: "STORAGE_CONNECTION_STRING",
+  connection: 'STORAGE_CONNECTION_STRING',
   handler: processDocument,
 });

@@ -10,21 +10,21 @@
  * - UNIT_TEST_API_VALIDATION_01_26
  */
 
-export type TestType = "E2E" | "INTEGRATION" | "UNIT";
+export type TestType = 'E2E' | 'INTEGRATION' | 'UNIT';
 
 /**
  * Generate a test vendor name with current month/year
  */
 export function generateTestVendorName(testType: TestType, description: string): string {
   const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, '0');
   const year = String(now.getFullYear()).slice(-2);
 
   // Normalize description: uppercase, replace spaces/hyphens with underscores
   const normalizedDesc = description
     .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, ""); // Remove leading/trailing underscores
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
 
   return `${testType}_TEST_${normalizedDesc}_${month}_${year}`;
 }

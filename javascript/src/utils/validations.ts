@@ -21,7 +21,7 @@ export interface VendorNameParts {
  */
 export function validateVendorName(vendorName: string): { valid: boolean; error?: string } {
   if (!vendorName) {
-    return { valid: false, error: "Vendor name is required" };
+    return { valid: false, error: 'Vendor name is required' };
   }
 
   // Format: VENDOR_NAME_MM_YY (alphanumeric with underscores, ending in MM_YY)
@@ -31,12 +31,12 @@ export function validateVendorName(vendorName: string): { valid: boolean; error?
     return {
       valid: false,
       error:
-        "Vendor name must be in format VENDOR_NAME_MM_YY (e.g., BETTER_LIVING_11_25). Only uppercase letters, numbers, underscores, and MM_YY suffix allowed.",
+        'Vendor name must be in format VENDOR_NAME_MM_YY (e.g., BETTER_LIVING_11_25). Only uppercase letters, numbers, underscores, and MM_YY suffix allowed.',
     };
   }
 
   // Extract and validate month
-  const parts = vendorName.split("_");
+  const parts = vendorName.split('_');
   const month = parts[parts.length - 2];
   const monthNum = parseInt(month);
 
@@ -59,10 +59,10 @@ export function parseVendorName(vendorName: string): VendorNameParts | null {
     return null;
   }
 
-  const parts = vendorName.split("_");
+  const parts = vendorName.split('_');
   const year = parts[parts.length - 1];
   const month = parts[parts.length - 2];
-  const baseName = parts.slice(0, -2).join("_");
+  const baseName = parts.slice(0, -2).join('_');
 
   return {
     fullName: vendorName,

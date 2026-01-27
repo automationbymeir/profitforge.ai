@@ -4,22 +4,22 @@
  * Helpers for managing local blob storage and queues in integration tests.
  */
 
-import { BlobServiceClient } from "@azure/storage-blob";
-import { QueueServiceClient } from "@azure/storage-queue";
+import { BlobServiceClient } from '@azure/storage-blob';
+import { QueueServiceClient } from '@azure/storage-queue';
 
 // Azurite connection strings (local blob/queue emulator)
 export const AZURITE_BLOB_CONNECTION_STRING =
-  "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;";
+  'DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;';
 
 export const AZURITE_QUEUE_CONNECTION_STRING = AZURITE_BLOB_CONNECTION_STRING;
 
 // Azurite default credentials
-const AZURITE_ACCOUNT_NAME = "devstoreaccount1";
-const AZURITE_ACCOUNT_KEY =
-  "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+const _AZURITE_ACCOUNT_NAME = 'devstoreaccount1';
+const _AZURITE_ACCOUNT_KEY =
+  'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==';
 
-export const TEST_CONTAINER_NAME = "test-uploads";
-export const TEST_QUEUE_NAME = "test-mapping-queue";
+export const TEST_CONTAINER_NAME = 'test-uploads';
+export const TEST_QUEUE_NAME = 'test-mapping-queue';
 
 /**
  * Get Azurite blob service client

@@ -1,5 +1,5 @@
-import { app, InvocationContext, Timer } from "@azure/functions";
-import { cleanupOldUsageRecords, getUsageStats } from "../utils/usageTracker.js";
+import { app, InvocationContext, Timer } from '@azure/functions';
+import { cleanupOldUsageRecords, getUsageStats } from '../utils/usageTracker.js';
 
 /**
  * Scheduled cleanup function
@@ -14,7 +14,7 @@ export async function scheduledCleanupHandler(
   timer: Timer,
   context: InvocationContext
 ): Promise<void> {
-  context.log("🧹 Starting scheduled cleanup...");
+  context.log('🧹 Starting scheduled cleanup...');
 
   try {
     // Get stats before cleanup
@@ -22,7 +22,7 @@ export async function scheduledCleanupHandler(
     context.log(`📊 Before cleanup:`, statsBefore);
 
     // Clean up records older than 30 days
-    const daysToKeep = parseInt(process.env.USAGE_RETENTION_DAYS || "30");
+    const daysToKeep = parseInt(process.env.USAGE_RETENTION_DAYS || '30');
     const result = await cleanupOldUsageRecords(daysToKeep);
 
     context.log(`✅ Cleanup complete:`);
@@ -34,14 +34,14 @@ export async function scheduledCleanupHandler(
     const statsAfter = await getUsageStats();
     context.log(`📊 After cleanup:`, statsAfter);
   } catch (error) {
-    context.error("❌ Cleanup failed:", error);
+    context.error('❌ Cleanup failed:', error);
     throw error;
   }
 }
 
 // Register timer trigger
 // Runs every day at 2:00 AM UTC
-app.timer("scheduledCleanup", {
-  schedule: "0 0 2 * * *", // Cron: every day at 2 AM
+app.timer('scheduledCleanup', {
+  schedule: '0 0 2 * * *', // Cron: every day at 2 AM
   handler: scheduledCleanupHandler,
 });

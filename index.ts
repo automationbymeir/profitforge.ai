@@ -14,7 +14,7 @@ const config = new pulumi.Config();
 const stack = pulumi.getStack();
 
 // Get secrets from Pulumi config
-const documentIntelligenceKey = config.requireSecret('documentIntelligenceKey');
+const _documentIntelligenceKey = config.requireSecret('documentIntelligenceKey');
 const adminPassword = config.requireSecret('sqlAdminPassword');
 const adminUsername = 'sqladmin';
 
@@ -30,8 +30,12 @@ const databaseResources = createDatabaseResources(
 );
 
 // --- Storage Infrastructure ---
-const { blobStorage, uploadsContainer, storageConnectionString, functionBlobUrl } =
-  createStorageResources(azureConfig.resourceGroup, azureConfig.location, stack);
+const {
+  blobStorage,
+  uploadsContainer: _uploadsContainer,
+  storageConnectionString,
+  functionBlobUrl,
+} = createStorageResources(azureConfig.resourceGroup, azureConfig.location, stack);
 
 // --- Application Insights (Monitoring) ---
 const appInsightsResources = createApplicationInsightsResources(
@@ -44,7 +48,7 @@ const appInsightsResources = createApplicationInsightsResources(
 const cognitiveServices = createCognitiveServices(azureConfig.resourceGroup, azureConfig.location);
 
 // --- AI Foundry (Hub + Project + GPT-4o Deployment) ---
-const aiFoundry = createAIFoundryResources(
+const _aiFoundry = createAIFoundryResources(
   azureConfig.resourceGroup,
   azureConfig.location,
   cognitiveServices.openAiAccountName

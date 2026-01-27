@@ -4,9 +4,20 @@
   "workspaces": [
     "packages/*"
   ],
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix ."
+  },
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
     "@types/node": "^18",
-    "typescript": "^5.0.0"
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.18.2"
   },
   "dependencies": {
     "@pulumi/azure-native": "^3.0.0",

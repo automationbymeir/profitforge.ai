@@ -1,11 +1,11 @@
 // Use SST's global azurenative provider
 
-import * as azurenative from "@pulumi/azure-native";
-import * as command from "@pulumi/command";
-import * as pulumi from "@pulumi/pulumi";
-import * as mssql from "@pulumiverse/mssql";
-import * as crypto from "crypto";
-import * as fs from "fs";
+import * as azurenative from '@pulumi/azure-native';
+import * as command from '@pulumi/command';
+import * as pulumi from '@pulumi/pulumi';
+import * as mssql from '@pulumiverse/mssql';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
 
 export interface DatabaseResources {
   sqlServer: azurenative.sql.Server;
@@ -26,8 +26,8 @@ export function createDatabaseResources(
     location: location,
     administratorLogin: adminUsername,
     administratorLoginPassword: adminPassword,
-    version: "12.0",
-    minimalTlsVersion: "1.2",
+    version: '12.0',
+    minimalTlsVersion: '1.2',
     publicNetworkAccess: azurenative.sql.ServerNetworkAccessFlag.Enabled,
   });
 
@@ -35,8 +35,8 @@ export function createDatabaseResources(
   new azurenative.sql.FirewallRule(`${stack}-allow-azure`, {
     resourceGroupName: resourceGroupName,
     serverName: sqlServer.name,
-    startIpAddress: "0.0.0.0",
-    endIpAddress: "255.255.255.255",
+    startIpAddress: '0.0.0.0',
+    endIpAddress: '255.255.255.255',
   });
 
   // Create Serverless Database
@@ -45,9 +45,9 @@ export function createDatabaseResources(
     serverName: sqlServer.name,
     location: location,
     sku: {
-      name: "GP_S_Gen5",
-      tier: "GeneralPurpose",
-      family: "Gen5",
+      name: 'GP_S_Gen5',
+      tier: 'GeneralPurpose',
+      family: 'Gen5',
       capacity: 1, // 1 vCore
     },
     autoPauseDelay: 60, // Auto-pause after 60 minutes of inactivity
@@ -57,9 +57,9 @@ export function createDatabaseResources(
 
   // Wait for database to be fully "ready" for connections (Azure SQL Serverless warmup)
   const waitForDb = new command.local.Command(
-    "wait-for-db",
+    'wait-for-db',
     {
-      create: "sleep 45",
+      create: 'sleep 45',
     },
     { dependsOn: [sqlDatabase] }
   );
@@ -69,7 +69,7 @@ export function createDatabaseResources(
 
   // Configure MSSQL Provider
   const mssqlProvider = new mssql.Provider(
-    "mssql-provider",
+    'mssql-provider',
     {
       hostname: sqlServer.fullyQualifiedDomainName,
       port: 1433,
@@ -90,15 +90,15 @@ export function createDatabaseResources(
   );
 
   // Deploy the full production SQL schema script
-  const schemaScriptContentRaw = fs.readFileSync("infra/vvocr-schema.sql", "utf8");
+  const schemaScriptContentRaw = fs.readFileSync('infra/vvocr-schema.sql', 'utf8');
   const schemaScriptContent = schemaScriptContentRaw
-    .replace(/^GO\s*$/gm, "")
-    .replace(/^\s*GO\s*$/gm, "");
+    .replace(/^GO\s*$/gm, '')
+    .replace(/^\s*GO\s*$/gm, '');
 
-  const schemaHash = crypto.createHash("md5").update(schemaScriptContent).digest("hex");
+  const schemaHash = crypto.createHash('md5').update(schemaScriptContent).digest('hex');
 
   const deploySchema = new mssql.Script(
-    "deploy-schema",
+    'deploy-schema',
     {
       databaseId: database.id,
       updateScript: `
@@ -144,14 +144,14 @@ export function createDatabaseResources(
           "''"
         )}');`,
         readScript: `IF OBJECT_ID('vvocr.${name}', 'V') IS NOT NULL SELECT 'exists' as [status] ELSE SELECT '' as [status]`,
-        state: { status: "exists" },
+        state: { status: 'exists' },
       },
       { provider: mssqlProvider, dependsOn: [deploySchema] }
     );
   };
 
   createView(
-    "v_recent_processing_summary",
+    'v_recent_processing_summary',
     `
   CREATE VIEW vvocr.v_recent_processing_summary AS
   SELECT 
@@ -174,7 +174,7 @@ export function createDatabaseResources(
   );
 
   createView(
-    "v_daily_cost_summary",
+    'v_daily_cost_summary',
     `
   CREATE VIEW vvocr.v_daily_cost_summary AS
   SELECT 
@@ -189,7 +189,7 @@ export function createDatabaseResources(
   );
 
   createView(
-    "v_processing_performance",
+    'v_processing_performance',
     `
   CREATE VIEW vvocr.v_processing_performance AS
   SELECT 

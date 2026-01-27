@@ -5,16 +5,16 @@
  * No real AI processing - just testing the query/filter logic.
  */
 
-import { beforeEach, describe, expect, it } from "vitest";
-import { cleanTestDatabase, insertTestDocument } from "./helpers/test-db";
+import { beforeEach, describe, expect, it } from 'vitest';
+import { cleanTestDatabase, insertTestDocument } from './helpers/test-db';
 
-const FUNCTION_BASE_URL = "http://localhost:7071";
+const FUNCTION_BASE_URL = 'http://localhost:7071';
 
-describe("Integration: Get Results API", () => {
-  const testVendor = "TEST_GET_RESULTS_01_26";
+describe('Integration: Get Results API', () => {
+  const testVendor = 'TEST_GET_RESULTS_01_26';
   let resultId1: string;
-  let resultId2: string;
-  let resultId3: string;
+  let _resultId2: string;
+  let _resultId3: string;
 
   beforeEach(async () => {
     // Clean and seed test data
@@ -23,29 +23,29 @@ describe("Integration: Get Results API", () => {
     // Insert 3 test documents for the same vendor
     resultId1 = await insertTestDocument({
       vendorName: testVendor,
-      documentName: "doc1.pdf",
-      processingStatus: "completed",
+      documentName: 'doc1.pdf',
+      processingStatus: 'completed',
       productCount: 5,
-      aiMappingResult: [{ code: "A001", description: "Product 1", price: 10.0 }],
+      aiMappingResult: [{ code: 'A001', description: 'Product 1', price: 10.0 }],
     });
 
-    resultId2 = await insertTestDocument({
+    _resultId2 = await insertTestDocument({
       vendorName: testVendor,
-      documentName: "doc2.pdf",
-      processingStatus: "completed",
+      documentName: 'doc2.pdf',
+      processingStatus: 'completed',
       productCount: 3,
-      aiMappingResult: [{ code: "A002", description: "Product 2", price: 20.0 }],
+      aiMappingResult: [{ code: 'A002', description: 'Product 2', price: 20.0 }],
     });
 
-    resultId3 = await insertTestDocument({
+    _resultId3 = await insertTestDocument({
       vendorName: testVendor,
-      documentName: "doc3.pdf",
-      processingStatus: "pending",
+      documentName: 'doc3.pdf',
+      processingStatus: 'pending',
       productCount: 0,
     });
   });
 
-  it("should return all documents for a vendor", async () => {
+  it('should return all documents for a vendor', async () => {
     // Act
     const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}`);
 
@@ -56,7 +56,7 @@ describe("Integration: Get Results API", () => {
     expect(data.every((r: any) => r.vendor_name === testVendor)).toBe(true);
   });
 
-  it("should filter by resultId", async () => {
+  it('should filter by resultId', async () => {
     // Act
     const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?resultId=${resultId1}`);
 
@@ -67,7 +67,7 @@ describe("Integration: Get Results API", () => {
     expect(data[0].result_id).toBe(resultId1);
   });
 
-  it("should return empty array for invalid UUID", async () => {
+  it('should return empty array for invalid UUID', async () => {
     // Act
     const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?resultId=not-a-uuid`);
 
@@ -77,7 +77,7 @@ describe("Integration: Get Results API", () => {
     expect(data).toHaveLength(0);
   });
 
-  it("should limit results", async () => {
+  it('should limit results', async () => {
     // Act
     const response = await fetch(
       `${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}&limit=2`
@@ -89,7 +89,7 @@ describe("Integration: Get Results API", () => {
     expect(data).toHaveLength(2);
   });
 
-  it("should filter by status (only completed)", async () => {
+  it('should filter by status (only completed)', async () => {
     // Act
     const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}`);
 
@@ -99,11 +99,11 @@ describe("Integration: Get Results API", () => {
 
     // API returns all documents, not filtered by status
     expect(data).toHaveLength(3);
-    const completedDocs = data.filter((r: any) => r.processing_status === "completed");
+    const completedDocs = data.filter((r: any) => r.processing_status === 'completed');
     expect(completedDocs.length).toBe(2);
   });
 
-  it("should handle vendor with no documents", async () => {
+  it('should handle vendor with no documents', async () => {
     // Act
     const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?vendor=nonexistent-vendor`);
 
@@ -113,22 +113,22 @@ describe("Integration: Get Results API", () => {
     expect(data).toHaveLength(0);
   });
 
-  it("should include CORS headers", async () => {
+  it('should include CORS headers', async () => {
     // Act
     const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}`);
 
     // Assert
-    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
-    expect(response.headers.get("Content-Type")).toContain("application/json");
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    expect(response.headers.get('Content-Type')).toContain('application/json');
   });
 
-  it("should parse JSON fields in response", async () => {
+  it('should parse JSON fields in response', async () => {
     // Arrange - Create document with JSON fields
     await insertTestDocument({
       vendorName: testVendor,
-      documentName: "json-test.pdf",
-      processingStatus: "completed",
-      aiMappingResult: [{ code: "A001", price: 10.0 }],
+      documentName: 'json-test.pdf',
+      processingStatus: 'completed',
+      aiMappingResult: [{ code: 'A001', price: 10.0 }],
     });
 
     // Act
@@ -144,24 +144,24 @@ describe("Integration: Get Results API", () => {
       const result = data[0];
       // JSON fields should be parsed as objects, not strings
       if (result.ai_mapping_result) {
-        expect(typeof result.ai_mapping_result).toBe("object");
+        expect(typeof result.ai_mapping_result).toBe('object');
       }
     }
   });
 
-  it("should show all versions when allVersions=true", async () => {
+  it('should show all versions when allVersions=true', async () => {
     // Arrange - Create version chain
     const originalId = await insertTestDocument({
       vendorName: testVendor,
-      documentName: "versions.pdf",
-      processingStatus: "completed",
+      documentName: 'versions.pdf',
+      processingStatus: 'completed',
       reprocessingCount: 0,
     });
 
     const version1Id = await insertTestDocument({
       vendorName: testVendor,
-      documentName: "versions.pdf",
-      processingStatus: "completed",
+      documentName: 'versions.pdf',
+      processingStatus: 'completed',
       reprocessingCount: 1,
       parentDocumentId: originalId,
     });
@@ -181,19 +181,19 @@ describe("Integration: Get Results API", () => {
     expect(resultIds).toContain(version1Id);
   });
 
-  it("should show only latest version by default", async () => {
+  it('should show only latest version by default', async () => {
     // Arrange - Create version chain
     const originalId = await insertTestDocument({
       vendorName: testVendor,
-      documentName: "latest.pdf",
-      processingStatus: "completed",
+      documentName: 'latest.pdf',
+      processingStatus: 'completed',
       reprocessingCount: 0,
     });
 
     const version1Id = await insertTestDocument({
       vendorName: testVendor,
-      documentName: "latest.pdf",
-      processingStatus: "completed",
+      documentName: 'latest.pdf',
+      processingStatus: 'completed',
       reprocessingCount: 1,
       parentDocumentId: originalId,
     });

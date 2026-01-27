@@ -12,20 +12,20 @@
  * 4. Clean queue state: npm run queue:purge (optional, clears old poison messages)
  */
 
-import { readFileSync } from "fs";
-import sql from "mssql";
-import { join } from "path";
-import { beforeAll, describe, expect, it } from "vitest";
-import { generateTestVendorName } from "../helpers/testVendorNames";
+import { readFileSync } from 'fs';
+import sql from 'mssql';
+import { join } from 'path';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { generateTestVendorName } from '../helpers/testVendorNames';
 
-const FUNCTION_BASE_URL = process.env.FUNCTION_APP_URL || "http://localhost:7071";
+const FUNCTION_BASE_URL = process.env.FUNCTION_APP_URL || 'http://localhost:7071';
 const UPLOAD_ENDPOINT = `${FUNCTION_BASE_URL}/api/upload`;
 
 // Read connection string from environment (E2E tests use production resources)
-const DB_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING || "";
+const DB_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING || '';
 
 if (!DB_CONNECTION_STRING) {
-  throw new Error("SQL_CONNECTION_STRING environment variable is required for E2E tests");
+  throw new Error('SQL_CONNECTION_STRING environment variable is required for E2E tests');
 }
 
 /**
@@ -43,8 +43,8 @@ async function waitForDocumentStatus(
   while (Date.now() - startTime < maxWaitMs) {
     const result = await pool
       .request()
-      .input("resultId", sql.NVarChar, resultId)
-      .query("SELECT * FROM vvocr.document_processing_results WHERE result_id = @resultId");
+      .input('resultId', sql.NVarChar, resultId)
+      .query('SELECT * FROM vvocr.document_processing_results WHERE result_id = @resultId');
 
     const record = result.recordset[0];
 
@@ -55,7 +55,7 @@ async function waitForDocumentStatus(
 
     // Only exit on failed if it's been in failed state for >10 seconds
     // (to avoid exiting on transient errors during retry logic)
-    if (record && record.status === "failed" && expectedStatus !== "failed") {
+    if (record && record.status === 'failed' && expectedStatus !== 'failed') {
       const timeSinceUpdate = new Date().getTime() - new Date(record.updated_at).getTime();
       if (timeSinceUpdate > 10000) {
         await pool.close();
@@ -70,28 +70,28 @@ async function waitForDocumentStatus(
   throw new Error(`Timeout waiting for ${expectedStatus} (waited ${maxWaitMs}ms)`);
 }
 
-describe("E2E Processing: Upload to Completion", () => {
+describe('E2E Processing: Upload to Completion', () => {
   beforeAll(() => {
     if (!DB_CONNECTION_STRING) {
-      throw new Error("E2E tests require real database connection string in local.settings.json");
+      throw new Error('E2E tests require real database connection string in local.settings.json');
     }
   });
 
-  it("should process PDF from upload through AI mapping", async () => {
+  it('should process PDF from upload through AI mapping', async () => {
     // Arrange
-    const testFile = readFileSync(join(__dirname, "./docs/samplePDF.pdf"));
-    const vendorName = generateTestVendorName("E2E", "UPLOAD_TO_COMPLETION");
+    const testFile = readFileSync(join(__dirname, './docs/samplePDF.pdf'));
+    const vendorName = generateTestVendorName('E2E', 'UPLOAD_TO_COMPLETION');
     const formData = new FormData();
-    formData.append("file", new Blob([testFile], { type: "application/pdf" }), "test-upload.pdf");
-    formData.append("vendorName", vendorName);
+    formData.append('file', new Blob([testFile], { type: 'application/pdf' }), 'test-upload.pdf');
+    formData.append('vendorName', vendorName);
 
-    console.log("\n📤 Uploading document...");
+    console.log('\n📤 Uploading document...');
     console.log(`   Vendor name: ${vendorName}`);
     const startTime = Date.now();
 
     // Act - Upload
     const uploadResponse = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
-      method: "POST",
+      method: 'POST',
       body: formData,
     });
 
@@ -106,11 +106,11 @@ describe("E2E Processing: Upload to Completion", () => {
 
     console.log(`✓ Upload successful (resultId: ${resultId})`);
     console.log(`  Vendor: ${uploadData.vendorId || vendorName}`);
-    console.log(`  File: ${uploadData.filePath || "uploaded"}`);
+    console.log(`  File: ${uploadData.filePath || 'uploaded'}`);
 
     // Wait for OCR completion
-    console.log("⏳ Waiting for OCR processing...");
-    const ocrComplete = await waitForDocumentStatus(resultId, "ocr_complete", 120000);
+    console.log('⏳ Waiting for OCR processing...');
+    const ocrComplete = await waitForDocumentStatus(resultId, 'ocr_complete', 120000);
     expect(ocrComplete.ocr_text).toBeDefined();
     expect(ocrComplete.ocr_text.length).toBeGreaterThan(0);
     const pageCount = ocrComplete.ocr_page_count || ocrComplete.doc_intel_page_count || 0;
@@ -119,11 +119,11 @@ describe("E2E Processing: Upload to Completion", () => {
     );
 
     // Wait for AI mapping completion
-    console.log("⏳ Waiting for AI mapping...");
-    const completed = await waitForDocumentStatus(resultId, "completed", 120000);
+    console.log('⏳ Waiting for AI mapping...');
+    const completed = await waitForDocumentStatus(resultId, 'completed', 120000);
 
     // Assert - Verify all stages completed
-    expect(completed.status).toBe("completed");
+    expect(completed.status).toBe('completed');
     expect(completed.ocr_text).toBeDefined();
     expect(completed.extracted_products).toBeDefined();
     expect(completed.product_count).toBeGreaterThan(0);
@@ -150,57 +150,57 @@ describe("E2E Processing: Upload to Completion", () => {
     });
 
     // Display detailed metrics
-    console.log("\n📊 Processing Metrics:");
-    console.log(`  OCR Confidence: ${completed.doc_intel_confidence_score || "N/A"}`);
-    console.log(`  AI Model: ${completed.ai_model_used || "N/A"}`);
-    console.log(`  AI Confidence: ${completed.ai_confidence_score || "N/A"}`);
-    console.log(`  Total Tokens: ${completed.ai_total_tokens || "N/A"}`);
+    console.log('\n📊 Processing Metrics:');
+    console.log(`  OCR Confidence: ${completed.doc_intel_confidence_score || 'N/A'}`);
+    console.log(`  AI Model: ${completed.ai_model_used || 'N/A'}`);
+    console.log(`  AI Confidence: ${completed.ai_confidence_score || 'N/A'}`);
+    console.log(`  Total Tokens: ${completed.ai_total_tokens || 'N/A'}`);
 
     if (products.length > 0) {
-      console.log("\n📦 Sample Products (first 3):");
+      console.log('\n📦 Sample Products (first 3):');
       products.slice(0, 3).forEach((product: any, idx: number) => {
         console.log(`  ${idx + 1}. ${product.name || product.description || product.sku}`);
-        console.log(`     SKU: ${product.sku || product.code || "N/A"}`);
-        console.log(`     Price: $${product.price || "N/A"}`);
+        console.log(`     SKU: ${product.sku || product.code || 'N/A'}`);
+        console.log(`     Price: $${product.price || 'N/A'}`);
       });
       if (products.length > 3) {
         console.log(`  ... and ${products.length - 3} more products`);
       }
     }
 
-    console.log("\n✅ E2E pipeline validation passed\n");
+    console.log('\n✅ E2E pipeline validation passed\n');
   }, 300000); // 5 minute timeout
 
-  it.skip("should reject unsupported file types", async () => {
-    const testFile = Buffer.from("This is a plain text file");
+  it.skip('should reject unsupported file types', async () => {
+    const testFile = Buffer.from('This is a plain text file');
     const formData = new FormData();
-    formData.append("file", new Blob([testFile], { type: "text/plain" }), "test.txt");
-    formData.append("vendorName", "e2e-test-vendor");
+    formData.append('file', new Blob([testFile], { type: 'text/plain' }), 'test.txt');
+    formData.append('vendorName', 'e2e-test-vendor');
 
     const uploadResponse = await fetch(UPLOAD_ENDPOINT, {
-      method: "POST",
+      method: 'POST',
       body: formData,
     });
 
     expect(uploadResponse.status).toBe(400);
     const errorText = await uploadResponse.text();
-    expect(errorText).toContain("Unsupported file type");
+    expect(errorText).toContain('Unsupported file type');
   });
 
-  it("should handle multiple concurrent uploads", async () => {
-    const testFile = readFileSync(join(__dirname, "./docs/samplePDF.pdf"));
+  it('should handle multiple concurrent uploads', async () => {
+    const testFile = readFileSync(join(__dirname, './docs/samplePDF.pdf'));
 
     const uploads = Array.from({ length: 3 }, (_, i) => {
       const formData = new FormData();
       formData.append(
-        "file",
-        new Blob([testFile], { type: "application/pdf" }),
+        'file',
+        new Blob([testFile], { type: 'application/pdf' }),
         `samplePDF-${i}.pdf`
       );
-      formData.append("vendorName", generateTestVendorName("E2E", `CONCURRENT_UPLOAD_${i}`));
+      formData.append('vendorName', generateTestVendorName('E2E', `CONCURRENT_UPLOAD_${i}`));
 
       return fetch(UPLOAD_ENDPOINT, {
-        method: "POST",
+        method: 'POST',
         body: formData,
       });
     });
@@ -210,10 +210,10 @@ describe("E2E Processing: Upload to Completion", () => {
 
     expect(results).toHaveLength(3);
     results.forEach((result) => {
-      expect(result).toHaveProperty("resultId");
+      expect(result).toHaveProperty('resultId');
       expect(result.filePath || result.vendorName).toBeDefined();
     });
 
-    console.log("✅ Concurrent uploads successful:", results.length);
+    console.log('✅ Concurrent uploads successful:', results.length);
   }, 90000);
 });
