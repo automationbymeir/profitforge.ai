@@ -8,4 +8,3 @@ dist/
 legacy/
 **/local.settings.json
 .vscode/
-Pulumi.dev-eitan.yaml

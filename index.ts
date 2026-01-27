@@ -1,12 +1,12 @@
-import * as pulumi from "@pulumi/pulumi";
-import { createAIFoundryResources } from "./infra/aiFoundry";
-import { createCognitiveServices } from "./infra/cognitiveServices";
-import { azureConfig } from "./infra/config";
-import { createDatabaseResources } from "./infra/database";
-import { createFunctionAppResources } from "./infra/functions";
-import { createStorageResources } from "./infra/storage";
+import * as pulumi from '@pulumi/pulumi';
+import { createAIFoundryResources } from './infra/aiFoundry';
+import { createApplicationInsightsResources } from './infra/applicationInsights';
+import { createCognitiveServices } from './infra/cognitiveServices';
+import { azureConfig } from './infra/config';
+import { createDatabaseResources } from './infra/database';
+import { createFunctionAppResources } from './infra/functions';
+import { createStorageResources } from './infra/storage';
 // Unused resources commented out:
-// import { createApplicationInsightsResources } from "./infra/applicationInsights";
 // import { createKeyVaultResources } from "./infra/keyVault";
 
 // Get Pulumi configuration and stack
@@ -14,9 +14,9 @@ const config = new pulumi.Config();
 const stack = pulumi.getStack();
 
 // Get secrets from Pulumi config
-const documentIntelligenceKey = config.requireSecret("documentIntelligenceKey");
-const adminPassword = config.requireSecret("sqlAdminPassword");
-const adminUsername = "sqladmin";
+const documentIntelligenceKey = config.requireSecret('documentIntelligenceKey');
+const adminPassword = config.requireSecret('sqlAdminPassword');
+const adminUsername = 'sqladmin';
 
 // Use existing resource group
 
@@ -33,6 +33,13 @@ const databaseResources = createDatabaseResources(
 const { blobStorage, uploadsContainer, storageConnectionString, functionBlobUrl } =
   createStorageResources(azureConfig.resourceGroup, azureConfig.location, stack);
 
+// --- Application Insights (Monitoring) ---
+const appInsightsResources = createApplicationInsightsResources(
+  azureConfig.resourceGroup,
+  azureConfig.location,
+  stack
+);
+
 // --- AI Services (Document Intelligence + OpenAI) ---
 const cognitiveServices = createCognitiveServices(azureConfig.resourceGroup, azureConfig.location);
 
@@ -47,12 +54,13 @@ const aiFoundry = createAIFoundryResources(
 const functionAppResources = createFunctionAppResources(
   storageConnectionString,
   functionBlobUrl,
-  "", // Empty KeyVault URI for now (can add later if needed)
+  '', // Empty KeyVault URI for now (can add later if needed)
   cognitiveServices.docIntelEndpoint,
   cognitiveServices.docIntelPrimaryKey,
   pulumi.interpolate`https://${cognitiveServices.openAiAccountName}.openai.azure.com`,
   cognitiveServices.openAiPrimaryKey,
   databaseResources.connectionString,
+  appInsightsResources.appInsights.connectionString,
   stack
 );
 
@@ -74,6 +82,13 @@ export const docIntelEndpoint = cognitiveServices.docIntelEndpoint;
 export const openAiAccountName = cognitiveServices.openAiAccountName;
 export const aiHubName = pulumi.output(azureConfig.aiHubName);
 export const aiProjectName = pulumi.output(azureConfig.aiProjectName);
+
+// --- Monitoring Outputs ---
+export const appInsightsName = appInsightsResources.appInsights.name;
+export const appInsightsInstrumentationKey = pulumi.secret(
+  appInsightsResources.appInsights.instrumentationKey
+);
+export const logAnalyticsWorkspaceId = appInsightsResources.logAnalyticsWorkspace.customerId;
 
 // --- Secrets (marked as secret outputs for runtime use) ---
 export const outputDocumentIntelligenceKey = pulumi.secret(cognitiveServices.docIntelPrimaryKey);

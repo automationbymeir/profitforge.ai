@@ -1,0 +1,8 @@
+encryptionsalt: v1:B2yfwIq9/Vc=:v1:9fRDi8v+XL4LraxK:Hvan7RsGsY/XecrLob2HYZPOnVpl2g==
+config:
+  profitforge-ai:documentIntelligenceKey:
+    secure: v1:ynHxseaV8aXLEFX9:t4O5Ov9S9fasYH4WKJtIT1pTSt/XzRgJmLt5AD7YbkGGjW+urbBfAEST2mFYuVXAVjgx7VRVgr3GxmaF7OQtjMfYf6jwvpOgD55D4BXro7q1Rm5+7GtJEbwHj/gT+eiGg4MB+A==
+  profitforge-ai:sqlAdminPassword:
+    secure: v1:fD3HFJPWVQW+AbJF:n7e2oJE0Nm1bu+3Z9Ac6SyObAjfRG/WxOSd4U1u4En8djG/w
+  azure-native:location: israelcentral
+  azure-native:subscriptionId: 412ffa18-9a21-4b1f-a238-706cd944b3f3
