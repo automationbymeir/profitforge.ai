@@ -1,4 +1,4 @@
-import { TableClient } from "@azure/data-tables";
+import { TableClient } from '@azure/data-tables';
 
 let tableClient: TableClient | null = null;
 
@@ -6,7 +6,7 @@ function getTableClient(): TableClient {
   if (!tableClient) {
     tableClient = TableClient.fromConnectionString(
       process.env.STORAGE_CONNECTION_STRING!,
-      "DemoUsageTracking"
+      'DemoUsageTracking'
     );
   }
   return tableClient;
@@ -15,8 +15,9 @@ function getTableClient(): TableClient {
 export async function initializeUsageTable(): Promise<void> {
   try {
     await getTableClient().createTable();
-  } catch (error: any) {
-    if (error.statusCode !== 409) throw error; // 409 = already exists
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode !== 409)
+      throw error; // 409 = already exists
   }
 }
 
@@ -25,15 +26,15 @@ export async function checkDailyUploadLimit(): Promise<{
   current: number;
   limit: number;
 }> {
-  const today = new Date().toISOString().split("T")[0];
-  const MAX_DAILY_UPLOADS = parseInt(process.env.MAX_DAILY_UPLOADS || "0"); // 0 = no limit (client mode)
+  const today = new Date().toISOString().split('T')[0];
+  const MAX_DAILY_UPLOADS = parseInt(process.env.MAX_DAILY_UPLOADS || '0'); // 0 = no limit (client mode)
 
   if (MAX_DAILY_UPLOADS === 0) {
     return { allowed: true, current: 0, limit: 0 }; // Client mode: no limits
   }
 
   try {
-    const entity = await getTableClient().getEntity("daily", today);
+    const entity = await getTableClient().getEntity('daily', today);
     const currentCount = (entity.uploadCount as number) || 0;
 
     return {
@@ -41,46 +42,47 @@ export async function checkDailyUploadLimit(): Promise<{
       current: currentCount,
       limit: MAX_DAILY_UPLOADS,
     };
-  } catch (error: any) {
-    if (error.statusCode === 404) {
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 404) {
       return { allowed: true, current: 0, limit: MAX_DAILY_UPLOADS };
     }
     // Fail open if Table Storage unavailable
-    console.error("Usage check failed, allowing upload:", error);
+    console.error('Usage check failed, allowing upload:', error);
     return { allowed: true, current: 0, limit: MAX_DAILY_UPLOADS };
   }
 }
 
 export async function incrementDailyUploadCount(): Promise<number> {
-  if (parseInt(process.env.MAX_DAILY_UPLOADS || "0") === 0) {
+  if (parseInt(process.env.MAX_DAILY_UPLOADS || '0') === 0) {
     return 0; // Client mode: don't track
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split('T')[0];
 
   try {
     let currentCount = 0;
     try {
-      const entity = await getTableClient().getEntity("daily", today);
+      const entity = await getTableClient().getEntity('daily', today);
       currentCount = (entity.uploadCount as number) || 0;
-    } catch (error: any) {
-      if (error.statusCode !== 404) throw error;
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode !== 404)
+        throw error;
     }
 
     const newCount = currentCount + 1;
     await getTableClient().upsertEntity(
       {
-        partitionKey: "daily",
+        partitionKey: 'daily',
         rowKey: today,
         uploadCount: newCount,
         lastUpdated: new Date(),
       },
-      "Replace"
+      'Replace'
     );
 
     return newCount;
   } catch (error) {
-    console.error("Error incrementing count:", error);
+    console.error('Error incrementing count:', error);
     return 0;
   }
 }
@@ -98,22 +100,22 @@ export async function checkIpRateLimit(clientIp: string): Promise<{
   limit: number;
   resetTime: string;
 }> {
-  const MAX_UPLOADS_PER_IP_PER_HOUR = parseInt(process.env.MAX_UPLOADS_PER_IP_PER_HOUR || "0");
+  const MAX_UPLOADS_PER_IP_PER_HOUR = parseInt(process.env.MAX_UPLOADS_PER_IP_PER_HOUR || '0');
 
   // 0 = no IP rate limit (client mode)
   if (MAX_UPLOADS_PER_IP_PER_HOUR === 0) {
-    return { allowed: true, current: 0, limit: 0, resetTime: "" };
+    return { allowed: true, current: 0, limit: 0, resetTime: '' };
   }
 
   // Create hourly window: "2026-01-20-14" for 2PM
   const now = new Date();
-  const hourKey = `${now.toISOString().split("T")[0]}-${now.getUTCHours().toString().padStart(2, "0")}`;
+  const hourKey = `${now.toISOString().split('T')[0]}-${now.getUTCHours().toString().padStart(2, '0')}`;
   const rowKey = `${clientIp}-${hourKey}`;
   const nextHour = new Date(now.getTime() + 3600000);
-  const resetTime = `${nextHour.getUTCHours().toString().padStart(2, "0")}:00 UTC`;
+  const resetTime = `${nextHour.getUTCHours().toString().padStart(2, '0')}:00 UTC`;
 
   try {
-    const entity = await getTableClient().getEntity("ip-rate", rowKey);
+    const entity = await getTableClient().getEntity('ip-rate', rowKey);
     const currentCount = (entity.uploadCount as number) || 0;
 
     return {
@@ -122,8 +124,8 @@ export async function checkIpRateLimit(clientIp: string): Promise<{
       limit: MAX_UPLOADS_PER_IP_PER_HOUR,
       resetTime,
     };
-  } catch (error: any) {
-    if (error.statusCode === 404) {
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 404) {
       // First upload this hour from this IP
       return {
         allowed: true,
@@ -134,7 +136,7 @@ export async function checkIpRateLimit(clientIp: string): Promise<{
     }
 
     // Fail open if Table Storage unavailable
-    console.error("IP rate check failed, allowing upload:", error);
+    console.error('IP rate check failed, allowing upload:', error);
     return {
       allowed: true,
       current: 0,
@@ -148,39 +150,40 @@ export async function checkIpRateLimit(clientIp: string): Promise<{
  * Increment IP-based upload counter
  */
 export async function incrementIpUploadCount(clientIp: string): Promise<number> {
-  if (parseInt(process.env.MAX_UPLOADS_PER_IP_PER_HOUR || "0") === 0) {
+  if (parseInt(process.env.MAX_UPLOADS_PER_IP_PER_HOUR || '0') === 0) {
     return 0; // Client mode: don't track
   }
 
   const now = new Date();
-  const hourKey = `${now.toISOString().split("T")[0]}-${now.getUTCHours().toString().padStart(2, "0")}`;
+  const hourKey = `${now.toISOString().split('T')[0]}-${now.getUTCHours().toString().padStart(2, '0')}`;
   const rowKey = `${clientIp}-${hourKey}`;
 
   try {
     let currentCount = 0;
     try {
-      const entity = await getTableClient().getEntity("ip-rate", rowKey);
+      const entity = await getTableClient().getEntity('ip-rate', rowKey);
       currentCount = (entity.uploadCount as number) || 0;
-    } catch (error: any) {
-      if (error.statusCode !== 404) throw error;
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode !== 404)
+        throw error;
     }
 
     const newCount = currentCount + 1;
     await getTableClient().upsertEntity(
       {
-        partitionKey: "ip-rate",
+        partitionKey: 'ip-rate',
         rowKey,
         uploadCount: newCount,
         clientIp,
         hour: hourKey,
         lastUpdated: new Date(),
       },
-      "Replace"
+      'Replace'
     );
 
     return newCount;
   } catch (error) {
-    console.error("Error incrementing IP count:", error);
+    console.error('Error incrementing IP count:', error);
     return 0;
   }
 }
@@ -195,7 +198,7 @@ export async function cleanupOldUsageRecords(daysToKeep: number = 30): Promise<{
   ipRecordsDeleted: number;
 }> {
   const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000);
-  const cutoffDateStr = cutoffDate.toISOString().split("T")[0];
+  const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
 
   let dailyDeleted = 0;
   let ipDeleted = 0;
@@ -211,7 +214,7 @@ export async function cleanupOldUsageRecords(daysToKeep: number = 30): Promise<{
     });
 
     for await (const entity of dailyEntities) {
-      await client.deleteEntity("daily", entity.rowKey as string);
+      await client.deleteEntity('daily', entity.rowKey as string);
       dailyDeleted++;
     }
 
@@ -230,7 +233,7 @@ export async function cleanupOldUsageRecords(daysToKeep: number = 30): Promise<{
       const recordDate = withoutHour.slice(-10); // Get last 10 chars (YYYY-MM-DD)
 
       if (recordDate < cutoffDateStr) {
-        await client.deleteEntity("ip-rate", rowKey);
+        await client.deleteEntity('ip-rate', rowKey);
         ipDeleted++;
       }
     }
@@ -238,7 +241,7 @@ export async function cleanupOldUsageRecords(daysToKeep: number = 30): Promise<{
     console.log(`Cleanup complete: ${dailyDeleted} daily records, ${ipDeleted} IP records deleted`);
     return { dailyRecordsDeleted: dailyDeleted, ipRecordsDeleted: ipDeleted };
   } catch (error) {
-    console.error("Error during cleanup:", error);
+    console.error('Error during cleanup:', error);
     throw error;
   }
 }
@@ -254,7 +257,7 @@ export async function getUsageStats(): Promise<{
 }> {
   try {
     const client = getTableClient();
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split('T')[0];
 
     let dailyCount = 0;
     let ipCount = 0;
@@ -278,7 +281,7 @@ export async function getUsageStats(): Promise<{
       queryOptions: { filter: `PartitionKey eq 'ip-rate'` },
     });
 
-    for await (const entity of ipEntities) {
+    for await (const _entity of ipEntities) {
       ipCount++;
     }
 
@@ -289,7 +292,7 @@ export async function getUsageStats(): Promise<{
       oldestRecord: oldestDate,
     };
   } catch (error) {
-    console.error("Error fetching stats:", error);
+    console.error('Error fetching stats:', error);
     throw error;
   }
 }

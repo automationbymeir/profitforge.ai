@@ -13,27 +13,27 @@
  * 5. JOKARI - Different field naming
  */
 
-import { readFileSync, readdirSync } from "fs";
-import sql from "mssql";
-import { join } from "path";
-import { describe, expect, it } from "vitest";
-import * as xlsx from "xlsx";
-import { generateTestVendorName } from "../helpers/testVendorNames";
+import { readFileSync, readdirSync } from 'fs';
+import sql from 'mssql';
+import { join } from 'path';
+import { describe, expect, it } from 'vitest';
+import * as xlsx from 'xlsx';
+import { generateTestVendorName } from '../helpers/testVendorNames';
 
-const FUNCTION_BASE_URL = process.env.FUNCTION_APP_URL || "http://localhost:7071";
+const FUNCTION_BASE_URL = process.env.FUNCTION_APP_URL || 'http://localhost:7071';
 // const API_BASE_URL = `${FUNCTION_BASE_URL}/api`;
-const DOCS_DIR = join(__dirname, "../docs");
-const TIMEOUT = 180000; // 3 minutes per test
+const DOCS_DIR = join(__dirname, '../docs');
+const _TIMEOUT = 180000; // 3 minutes per test
 
 // Test only 1 vendor for critical path (add more if needed)
-const VENDORS = ["BETTER LIVING"];
+const VENDORS = ['BETTER LIVING'];
 // const VENDORS = ['BETTER LIVING', 'BLENKO', 'FRIELING', 'GCD', 'JOKARI'];
 
 // Read connection string from environment (E2E tests use production resources)
-const DB_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING || "";
+const DB_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING || '';
 
 if (!DB_CONNECTION_STRING) {
-  throw new Error("SQL_CONNECTION_STRING environment variable is required for E2E tests");
+  throw new Error('SQL_CONNECTION_STRING environment variable is required for E2E tests');
 }
 
 interface BenchmarkProduct {
@@ -117,20 +117,20 @@ async function waitForCompletion(resultId: string, maxWaitMs: number = 180000): 
   while (Date.now() - startTime < maxWaitMs) {
     const result = await pool
       .request()
-      .input("resultId", sql.NVarChar, resultId)
-      .query("SELECT * FROM vvocr.document_processing_results WHERE result_id = @resultId");
+      .input('resultId', sql.NVarChar, resultId)
+      .query('SELECT * FROM vvocr.document_processing_results WHERE result_id = @resultId');
 
     const record = result.recordset[0];
 
     if (record) {
-      if (record.processing_status === "completed") {
+      if (record.processing_status === 'completed') {
         await pool.close();
         return record;
       }
 
       // Only exit on failed if it's been in failed state for >10 seconds
       // (to avoid exiting on transient errors during retry logic)
-      if (record.processing_status === "failed") {
+      if (record.processing_status === 'failed') {
         const timeSinceUpdate = new Date().getTime() - new Date(record.updated_at).getTime();
         if (timeSinceUpdate > 10000) {
           await pool.close();
@@ -151,7 +151,7 @@ async function waitForCompletion(resultId: string, maxWaitMs: number = 180000): 
  */
 function loadBenchmarkData(vendorDir: string): BenchmarkProduct[] {
   const files = readdirSync(vendorDir);
-  const xlsxFile = files.find((f) => f.endsWith(".xlsx"));
+  const xlsxFile = files.find((f) => f.endsWith('.xlsx'));
 
   if (!xlsxFile) {
     throw new Error(`No XLSX benchmark file found in ${vendorDir}`);
@@ -166,14 +166,14 @@ function loadBenchmarkData(vendorDir: string): BenchmarkProduct[] {
 
   for (const row of data as any[]) {
     // Flexible field name detection
-    const sku = row.SKU || row.sku || row["Item Code"] || row["Item #"] || row.ItemCode || "";
+    const sku = row.SKU || row.sku || row['Item Code'] || row['Item #'] || row.ItemCode || '';
     const name =
-      row.Name || row.name || row["Product Name"] || row.ProductName || row.Description || "";
+      row.Name || row.name || row['Product Name'] || row.ProductName || row.Description || '';
     const price = parseFloat(
-      String(row.Price || row.price || row.MSRP || row.Cost || "0").replace(/[^0-9.]/g, "")
+      String(row.Price || row.price || row.MSRP || row.Cost || '0').replace(/[^0-9.]/g, '')
     );
-    const unit = row.Unit || row.unit || row.Dimensions || row.Size || "";
-    const description = row.Description || row.description || row.Details || "";
+    const unit = row.Unit || row.unit || row.Dimensions || row.Size || '';
+    const description = row.Description || row.description || row.Details || '';
 
     // Only include rows with at least SKU or name
     if (sku || name) {
@@ -181,8 +181,8 @@ function loadBenchmarkData(vendorDir: string): BenchmarkProduct[] {
         sku: String(sku).trim(),
         name: String(name).trim(),
         price: price || 0,
-        unit: String(unit || "").trim(),
-        description: String(description || "").trim(),
+        unit: String(unit || '').trim(),
+        description: String(description || '').trim(),
       });
     }
   }
@@ -190,7 +190,7 @@ function loadBenchmarkData(vendorDir: string): BenchmarkProduct[] {
   return products;
 }
 
-describe("E2E Processing: Golden Dataset Validation", () => {
+describe('E2E Processing: Golden Dataset Validation', () => {
   const results: AccuracyMetrics[] = [];
 
   VENDORS.forEach((vendor) => {
@@ -198,7 +198,7 @@ describe("E2E Processing: Golden Dataset Validation", () => {
       // Arrange
       const vendorDir = join(DOCS_DIR, vendor);
       const files = readdirSync(vendorDir);
-      const pdfFile = files.find((f) => f.endsWith(".pdf"));
+      const pdfFile = files.find((f) => f.endsWith('.pdf'));
 
       if (!pdfFile) {
         throw new Error(`No PDF file found for ${vendor}`);
@@ -213,15 +213,15 @@ describe("E2E Processing: Golden Dataset Validation", () => {
 
       // Upload and process
       const testFile = readFileSync(join(vendorDir, pdfFile));
-      const vendorName = generateTestVendorName("E2E", `${vendor.replace(/[^A-Z0-9]+/g, "_")}`);
+      const vendorName = generateTestVendorName('E2E', `${vendor.replace(/[^A-Z0-9]+/g, '_')}`);
       const formData = new FormData();
-      formData.append("file", new Blob([testFile], { type: "application/pdf" }), pdfFile);
-      formData.append("vendorName", vendorName);
+      formData.append('file', new Blob([testFile], { type: 'application/pdf' }), pdfFile);
+      formData.append('vendorName', vendorName);
 
-      console.log("📤 Uploading...");
+      console.log('📤 Uploading...');
       console.log(`   Vendor name: ${vendorName}`);
       const uploadResponse = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
-        method: "POST",
+        method: 'POST',
         body: formData,
       });
 
@@ -235,18 +235,18 @@ describe("E2E Processing: Golden Dataset Validation", () => {
       const resultId = uploadData.resultId;
 
       // Wait for completion
-      console.log("⏳ Processing...");
+      console.log('⏳ Processing...');
       const completed = await waitForCompletion(resultId, 300000);
 
       // Handle both column name formats (processing_status vs status)
       const status = completed.processing_status || completed.status;
-      expect(status).toBe("completed");
+      expect(status).toBe('completed');
 
       // Parse extracted products - handle both ai_mapping_result and extracted_products
       const rawResult = completed.ai_mapping_result || completed.extracted_products;
       let extracted: ExtractedProduct[] = [];
 
-      if (typeof rawResult === "string") {
+      if (typeof rawResult === 'string') {
         const parsed = JSON.parse(rawResult);
         extracted = parsed.products || parsed || [];
       } else if (rawResult) {
@@ -263,7 +263,7 @@ describe("E2E Processing: Golden Dataset Validation", () => {
 
       benchmark.forEach((benchProduct) => {
         const found = extracted.find((extProduct) => {
-          const extSku = (extProduct.code || extProduct.sku || "").toString().trim().toLowerCase();
+          const extSku = (extProduct.code || extProduct.sku || '').toString().trim().toLowerCase();
           const benchSku = benchProduct.sku.toLowerCase();
 
           // SKU exact match
@@ -272,7 +272,7 @@ describe("E2E Processing: Golden Dataset Validation", () => {
           }
 
           // Fuzzy name match
-          const extName = (extProduct.description || extProduct.name || "").toLowerCase();
+          const extName = (extProduct.description || extProduct.name || '').toLowerCase();
           const benchName = benchProduct.name.toLowerCase();
           const similarity = stringSimilarity(extName, benchName);
 
@@ -283,7 +283,7 @@ describe("E2E Processing: Golden Dataset Validation", () => {
           matches++;
 
           // Check field accuracy
-          const extSku = (found.code || found.sku || "").toString().toLowerCase();
+          const extSku = (found.code || found.sku || '').toString().toLowerCase();
           if (extSku === benchProduct.sku.toLowerCase()) {
             skuMatches++;
           }
@@ -294,7 +294,7 @@ describe("E2E Processing: Golden Dataset Validation", () => {
             priceMatches++;
           }
 
-          const extName = (found.description || found.name || "").toLowerCase();
+          const extName = (found.description || found.name || '').toLowerCase();
           const benchName = benchProduct.name.toLowerCase();
           if (stringSimilarity(extName, benchName) > 0.9) {
             nameMatches++;
@@ -325,7 +325,7 @@ describe("E2E Processing: Golden Dataset Validation", () => {
 
       results.push(metrics);
 
-      console.log("\n📊 Accuracy Metrics:");
+      console.log('\n📊 Accuracy Metrics:');
       console.log(`  Precision: ${metrics.precision.toFixed(1)}%`);
       console.log(`  Recall: ${metrics.recall.toFixed(1)}%`);
       console.log(`  F1 Score: ${metrics.f1Score.toFixed(1)}%`);
@@ -341,23 +341,23 @@ describe("E2E Processing: Golden Dataset Validation", () => {
       // Log warning if below production thresholds
       if (recall < 0.7 || precision < 0.8 || f1Score < 0.7) {
         console.warn(
-          "⚠️  Warning: Quality metrics below production thresholds (70% recall, 80% precision, 70% F1)"
+          '⚠️  Warning: Quality metrics below production thresholds (70% recall, 80% precision, 70% F1)'
         );
       }
 
-      console.log("✅ Accuracy validation passed\n");
+      console.log('✅ Accuracy validation passed\n');
     }, 600000); // 10 minute timeout for golden dataset
   });
 
-  it("should display aggregate metrics across all vendors", () => {
+  it('should display aggregate metrics across all vendors', () => {
     if (results.length === 0) {
-      console.log("No results to aggregate (tests may have been skipped)");
+      console.log('No results to aggregate (tests may have been skipped)');
       return;
     }
 
-    console.log("\n\n═══════════════════════════════════════════");
-    console.log("📊 AGGREGATE METRICS ACROSS ALL VENDORS");
-    console.log("═══════════════════════════════════════════\n");
+    console.log('\n\n═══════════════════════════════════════════');
+    console.log('📊 AGGREGATE METRICS ACROSS ALL VENDORS');
+    console.log('═══════════════════════════════════════════\n');
 
     const avgPrecision = results.reduce((sum, r) => sum + r.precision, 0) / results.length;
     const avgRecall = results.reduce((sum, r) => sum + r.recall, 0) / results.length;
@@ -373,8 +373,8 @@ describe("E2E Processing: Golden Dataset Validation", () => {
     console.log(`Average Price Accuracy: ${avgPrice.toFixed(1)}%`);
     console.log(`Average Name Accuracy: ${avgName.toFixed(1)}%`);
 
-    console.log("\n\nPer-Vendor Summary:");
-    console.log("─────────────────────────────────────────\n");
+    console.log('\n\nPer-Vendor Summary:');
+    console.log('─────────────────────────────────────────\n');
     for (const result of results) {
       console.log(`${result.vendor}:`);
       console.log(

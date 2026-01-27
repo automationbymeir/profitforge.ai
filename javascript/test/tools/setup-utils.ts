@@ -2,17 +2,17 @@
  * Shared utilities for test setup (integration and e2e)
  */
 
-import { ChildProcess, execSync, spawn } from "child_process";
-import { createWriteStream } from "fs";
+import { ChildProcess, execSync, spawn } from 'child_process';
+import { createWriteStream } from 'fs';
 
 /**
  * Check if port 7071 is already in use
  */
 export function isPortInUse(): boolean {
   try {
-    const result = execSync("lsof -i :7071", { encoding: "utf-8" });
+    const result = execSync('lsof -i :7071', { encoding: 'utf-8' });
     return result.length > 0;
-  } catch (error) {
+  } catch (_error) {
     // lsof returns exit code 1 when no process found
     return false;
   }
@@ -22,17 +22,17 @@ export function isPortInUse(): boolean {
  * Wait for Functions app to be ready
  */
 export async function waitForFunctions(
-  url: string = "http://localhost:7071/api/helloWorld",
+  url: string = 'http://localhost:7071/api/helloWorld',
   maxAttempts: number = 30
 ): Promise<void> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
       const response = await fetch(url);
       if (response.ok) {
-        console.log("✓ Functions app is ready");
+        console.log('✓ Functions app is ready');
         return;
       }
-    } catch (error) {
+    } catch (_error) {
       // Keep trying
     }
 
@@ -44,7 +44,7 @@ export async function waitForFunctions(
     await new Promise((resolve) => setTimeout(resolve, maxAttempts > 30 ? 1000 : 2000));
   }
 
-  throw new Error("Functions app failed to start within timeout");
+  throw new Error('Functions app failed to start within timeout');
 }
 
 /**
@@ -56,68 +56,68 @@ export function startFunctions(
   checkIfRunning: boolean = false
 ): Promise<ChildProcess> {
   return new Promise((resolve, reject) => {
-    console.log("⚡ Starting Functions app...");
+    console.log('⚡ Starting Functions app...');
 
     // Check if already running (e2e mode)
     if (checkIfRunning && isPortInUse()) {
-      console.log("   ℹ Functions already running on port 7071");
+      console.log('   ℹ Functions already running on port 7071');
       resolve(null as any); // Return null to indicate no process was started
       return;
     }
 
-    console.log("   (Building TypeScript...)");
+    console.log('   (Building TypeScript...)');
 
     // First build
-    const buildProcess = spawn("npm", ["run", "build"], {
-      stdio: "pipe",
+    const buildProcess = spawn('npm', ['run', 'build'], {
+      stdio: 'pipe',
       shell: true,
     });
 
-    buildProcess.on("close", (code) => {
+    buildProcess.on('close', (code) => {
       if (code !== 0) {
         reject(new Error(`Build failed with code ${code}`));
         return;
       }
 
-      console.log("✓ Build complete");
-      console.log("   (Starting func host...)");
+      console.log('✓ Build complete');
+      console.log('   (Starting func host...)');
       console.log(`   (Logging to ${logPath} and ${errorLogPath})`);
 
       // Create log file streams
-      const logStream = createWriteStream(logPath, { flags: "w" });
-      const errorLogStream = createWriteStream(errorLogPath, { flags: "w" });
+      const logStream = createWriteStream(logPath, { flags: 'w' });
+      const errorLogStream = createWriteStream(errorLogPath, { flags: 'w' });
 
       // After build, start func
-      const functionsProcess = spawn("func", ["start"], {
-        stdio: "pipe",
+      const functionsProcess = spawn('func', ['start'], {
+        stdio: 'pipe',
         shell: true,
         detached: true, // Create new process group so we can kill all children
       });
 
-      let output = "";
+      let _output = ''; // Collected for potential debugging, written to log files
       let resolved = false;
 
-      functionsProcess.stdout?.on("data", (data) => {
+      functionsProcess.stdout?.on('data', (data) => {
         const text = data.toString();
-        output += text;
+        _output += text;
         logStream.write(text);
 
         // Look for "Host started" or similar message
         if (
           !resolved &&
-          (text.includes("Host lock lease acquired") ||
-            text.includes("Worker process started") ||
-            text.includes("Job host started") ||
-            text.includes("Host started"))
+          (text.includes('Host lock lease acquired') ||
+            text.includes('Worker process started') ||
+            text.includes('Job host started') ||
+            text.includes('Host started'))
         ) {
           resolved = true;
           resolve(functionsProcess);
         }
       });
 
-      functionsProcess.stderr?.on("data", (data) => {
+      functionsProcess.stderr?.on('data', (data) => {
         const text = data.toString();
-        output += text;
+        _output += text;
         errorLogStream.write(text);
       });
 
@@ -127,7 +127,7 @@ export function startFunctions(
         if (!resolved) {
           console.log(`   (Timeout reached after ${timeout / 1000}s, assuming Functions started)`);
           if (checkIfRunning) {
-            console.log("   (Will verify with health check...)");
+            console.log('   (Will verify with health check...)');
           }
           resolved = true;
           resolve(functionsProcess);
@@ -142,19 +142,19 @@ export function startFunctions(
  */
 export async function stopFunctions(functionsProcess: ChildProcess | null): Promise<void> {
   if (functionsProcess && functionsProcess.pid !== undefined) {
-    console.log("⚡ Stopping Functions app...");
+    console.log('⚡ Stopping Functions app...');
 
     const pid = functionsProcess.pid;
 
     try {
       // Kill the entire process group (func + all workers)
-      process.kill(-pid, "SIGTERM");
+      process.kill(-pid, 'SIGTERM');
       console.log(`   Sent SIGTERM to process group -${pid}`);
-    } catch (error) {
+    } catch (_error) {
       console.log(`   Failed to kill process group, trying individual process...`);
       try {
-        functionsProcess.kill("SIGTERM");
-      } catch (e) {
+        functionsProcess.kill('SIGTERM');
+      } catch (_e) {
         // Might already be dead
       }
     }
@@ -171,7 +171,7 @@ export async function stopFunctions(functionsProcess: ChildProcess | null): Prom
         // Check if process still exists (kill with signal 0 doesn't kill, just checks)
         process.kill(-pid, 0);
         processStillAlive = true;
-      } catch (e) {
+      } catch (_e) {
         // Process is dead
         processStillAlive = false;
       }
@@ -181,14 +181,14 @@ export async function stopFunctions(functionsProcess: ChildProcess | null): Prom
     if (processStillAlive) {
       console.log(`   Process still alive after ${maxWait}ms, sending SIGKILL...`);
       try {
-        process.kill(-pid, "SIGKILL");
+        process.kill(-pid, 'SIGKILL');
         await new Promise((resolve) => setTimeout(resolve, 1000));
-      } catch (e) {
+      } catch (_e) {
         // Already dead or can't kill
       }
     }
 
-    console.log("✓ Functions app stopped");
+    console.log('✓ Functions app stopped');
   }
 }
 
@@ -202,6 +202,6 @@ export function registerSignalHandlers(cleanupFn: () => Promise<void>): void {
     process.exit(0);
   };
 
-  process.on("SIGINT", () => signalHandler("SIGINT"));
-  process.on("SIGTERM", () => signalHandler("SIGTERM"));
+  process.on('SIGINT', () => signalHandler('SIGINT'));
+  process.on('SIGTERM', () => signalHandler('SIGTERM'));
 }

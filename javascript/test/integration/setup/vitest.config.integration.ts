@@ -1,17 +1,17 @@
-import path from "path";
-import { defineConfig } from "vitest/config";
+import path from 'path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    name: "integration",
-    include: ["test/integration/**/*.integration.test.ts"],
-    exclude: ["**/node_modules/**", "**/dist/**"],
+    name: 'integration',
+    include: ['test/integration/**/*.integration.test.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
     globals: true,
-    environment: "node",
-    setupFiles: ["test/integration/setup/setup.integration.ts"],
-    globalSetup: ["test/integration/setup/setup.global.integration.ts"],
+    environment: 'node',
+    setupFiles: ['test/integration/setup/setup.integration.ts'],
+    globalSetup: ['test/integration/setup/setup.global.integration.ts'],
     env: {
-      TEST_MODE: "integration",
+      TEST_MODE: 'integration',
     },
     // Longer timeouts for database/storage operations
     testTimeout: 30000,
@@ -25,7 +25,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "../../src"),
+      '@': path.resolve(__dirname, '../../src'),
     },
   },
 });

@@ -1,5 +1,5 @@
-import { TableClient } from "@azure/data-tables";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { TableClient } from '@azure/data-tables';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkDailyUploadLimit,
   checkIpRateLimit,
@@ -7,11 +7,11 @@ import {
   getUsageStats,
   incrementDailyUploadCount,
   incrementIpUploadCount,
-} from "../../src/utils/usageTracker";
-import { mockTableClient } from "./setup/mocks";
+} from '../../src/utils/usageTracker';
+import { mockTableClient } from './setup/mocks';
 
 // Mock Azure Table Storage
-vi.mock("@azure/data-tables", () => {
+vi.mock('@azure/data-tables', () => {
   let mockClient: any;
 
   return {
@@ -28,14 +28,14 @@ vi.mock("@azure/data-tables", () => {
 
 // Test configuration
 const TEST_CONNECTION_STRING =
-  "DefaultEndpointsProtocol=https;AccountName=mockaccount;AccountKey=mockkey==";
+  'DefaultEndpointsProtocol=https;AccountName=mockaccount;AccountKey=mockkey==';
 
 // Helper to get the mocked table client
 const getTestTableClient = () => {
-  return TableClient.fromConnectionString(TEST_CONNECTION_STRING, "UsageTracking") as any;
+  return TableClient.fromConnectionString(TEST_CONNECTION_STRING, 'UsageTracking') as any;
 };
 
-describe("UsageTracker", () => {
+describe('UsageTracker', () => {
   beforeAll(async () => {
     // Setup test environment
     process.env.STORAGE_CONNECTION_STRING = TEST_CONNECTION_STRING;
@@ -49,9 +49,9 @@ describe("UsageTracker", () => {
     }
   });
 
-  describe("Daily Upload Limits", () => {
-    it("should allow uploads when no limit is set (client mode)", async () => {
-      process.env.MAX_DAILY_UPLOADS = "0";
+  describe('Daily Upload Limits', () => {
+    it('should allow uploads when no limit is set (client mode)', async () => {
+      process.env.MAX_DAILY_UPLOADS = '0';
 
       const result = await checkDailyUploadLimit();
 
@@ -60,8 +60,8 @@ describe("UsageTracker", () => {
       expect(result.limit).toBe(0);
     });
 
-    it("should allow uploads when under daily limit", async () => {
-      process.env.MAX_DAILY_UPLOADS = "50";
+    it('should allow uploads when under daily limit', async () => {
+      process.env.MAX_DAILY_UPLOADS = '50';
 
       const result = await checkDailyUploadLimit();
 
@@ -70,8 +70,8 @@ describe("UsageTracker", () => {
       expect(result.limit).toBe(50);
     });
 
-    it("should increment daily upload count", async () => {
-      process.env.MAX_DAILY_UPLOADS = "50";
+    it('should increment daily upload count', async () => {
+      process.env.MAX_DAILY_UPLOADS = '50';
 
       const count1 = await incrementDailyUploadCount();
       expect(count1).toBe(1);
@@ -84,8 +84,8 @@ describe("UsageTracker", () => {
       expect(check.allowed).toBe(true);
     });
 
-    it("should block uploads when daily limit reached", async () => {
-      process.env.MAX_DAILY_UPLOADS = "3";
+    it('should block uploads when daily limit reached', async () => {
+      process.env.MAX_DAILY_UPLOADS = '3';
 
       // Upload 3 times
       await incrementDailyUploadCount();
@@ -99,19 +99,19 @@ describe("UsageTracker", () => {
       expect(result.limit).toBe(3);
     });
 
-    it("should not increment count in client mode", async () => {
-      process.env.MAX_DAILY_UPLOADS = "0";
+    it('should not increment count in client mode', async () => {
+      process.env.MAX_DAILY_UPLOADS = '0';
 
       const count = await incrementDailyUploadCount();
       expect(count).toBe(0);
     });
   });
 
-  describe("IP-based Rate Limits", () => {
-    const testIp = "192.168.1.100";
+  describe('IP-based Rate Limits', () => {
+    const testIp = '192.168.1.100';
 
-    it("should allow uploads when no IP limit set (client mode)", async () => {
-      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = "0";
+    it('should allow uploads when no IP limit set (client mode)', async () => {
+      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = '0';
 
       const result = await checkIpRateLimit(testIp);
 
@@ -120,8 +120,8 @@ describe("UsageTracker", () => {
       expect(result.limit).toBe(0);
     });
 
-    it("should allow uploads when under hourly IP limit", async () => {
-      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = "10";
+    it('should allow uploads when under hourly IP limit', async () => {
+      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = '10';
 
       const result = await checkIpRateLimit(testIp);
 
@@ -131,8 +131,8 @@ describe("UsageTracker", () => {
       expect(result.resetTime).toMatch(/\d{2}:00 UTC/);
     });
 
-    it("should increment IP upload count", async () => {
-      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = "10";
+    it('should increment IP upload count', async () => {
+      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = '10';
 
       const count1 = await incrementIpUploadCount(testIp);
       expect(count1).toBe(1);
@@ -144,8 +144,8 @@ describe("UsageTracker", () => {
       expect(check.current).toBe(2);
     });
 
-    it("should block uploads when IP hourly limit reached", async () => {
-      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = "3";
+    it('should block uploads when IP hourly limit reached', async () => {
+      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = '3';
 
       // Upload 3 times from same IP
       await incrementIpUploadCount(testIp);
@@ -159,11 +159,11 @@ describe("UsageTracker", () => {
       expect(result.limit).toBe(3);
     });
 
-    it("should track different IPs separately", async () => {
-      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = "10";
+    it('should track different IPs separately', async () => {
+      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = '10';
 
-      const ip1 = "192.168.1.1";
-      const ip2 = "192.168.1.2";
+      const ip1 = '192.168.1.1';
+      const ip2 = '192.168.1.2';
 
       await incrementIpUploadCount(ip1);
       await incrementIpUploadCount(ip1);
@@ -176,56 +176,56 @@ describe("UsageTracker", () => {
       expect(check2.current).toBe(1);
     });
 
-    it("should not increment count in client mode", async () => {
-      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = "0";
+    it('should not increment count in client mode', async () => {
+      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = '0';
 
       const count = await incrementIpUploadCount(testIp);
       expect(count).toBe(0);
     });
   });
 
-  describe("Cleanup Operations", () => {
+  describe('Cleanup Operations', () => {
     beforeEach(async () => {
       // Insert test data with various dates
-      const today = new Date().toISOString().split("T")[0];
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-      const oldDate = new Date(Date.now() - 40 * 86400000).toISOString().split("T")[0]; // 40 days ago
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const oldDate = new Date(Date.now() - 40 * 86400000).toISOString().split('T')[0]; // 40 days ago
       const client = getTestTableClient();
 
       // Daily records
       await client.createEntity({
-        partitionKey: "daily",
+        partitionKey: 'daily',
         rowKey: today,
         uploadCount: 10,
       });
 
       await client.createEntity({
-        partitionKey: "daily",
+        partitionKey: 'daily',
         rowKey: yesterday,
         uploadCount: 15,
       });
 
       await client.createEntity({
-        partitionKey: "daily",
+        partitionKey: 'daily',
         rowKey: oldDate,
         uploadCount: 20,
       });
 
       // IP rate records
       await client.createEntity({
-        partitionKey: "ip-rate",
+        partitionKey: 'ip-rate',
         rowKey: `192.168.1.1-${today}-10`,
         uploadCount: 5,
       });
 
       await client.createEntity({
-        partitionKey: "ip-rate",
+        partitionKey: 'ip-rate',
         rowKey: `192.168.1.1-${oldDate}-10`,
         uploadCount: 3,
       });
     });
 
-    it("should get usage statistics", async () => {
+    it('should get usage statistics', async () => {
       const stats = await getUsageStats();
 
       expect(stats.totalDailyRecords).toBeGreaterThanOrEqual(3);
@@ -233,7 +233,7 @@ describe("UsageTracker", () => {
       expect(stats.todayUploads).toBe(10);
     });
 
-    it("should cleanup old records", async () => {
+    it('should cleanup old records', async () => {
       const daysToKeep = 30;
 
       const result = await cleanupOldUsageRecords(daysToKeep);
@@ -246,7 +246,7 @@ describe("UsageTracker", () => {
       expect(statsAfter.totalDailyRecords).toBeLessThan(3);
     });
 
-    it("should preserve recent records during cleanup", async () => {
+    it('should preserve recent records during cleanup', async () => {
       const statsBefore = await getUsageStats();
       expect(statsBefore.totalDailyRecords).toBe(3);
 
@@ -261,21 +261,21 @@ describe("UsageTracker", () => {
     });
   });
 
-  describe("Edge Cases", () => {
-    it("should handle missing environment variables gracefully", async () => {
+  describe('Edge Cases', () => {
+    it('should handle missing environment variables gracefully', async () => {
       delete process.env.MAX_DAILY_UPLOADS;
       delete process.env.MAX_UPLOADS_PER_IP_PER_HOUR;
 
       const dailyCheck = await checkDailyUploadLimit();
-      const ipCheck = await checkIpRateLimit("192.168.1.1");
+      const ipCheck = await checkIpRateLimit('192.168.1.1');
 
       expect(dailyCheck.allowed).toBe(true);
       expect(ipCheck.allowed).toBe(true);
     });
 
-    it("should handle table storage errors gracefully", async () => {
+    it('should handle table storage errors gracefully', async () => {
       // Mock will handle this gracefully since it doesn't actually connect
-      process.env.MAX_DAILY_UPLOADS = "50";
+      process.env.MAX_DAILY_UPLOADS = '50';
 
       const result = await checkDailyUploadLimit();
 
@@ -285,12 +285,12 @@ describe("UsageTracker", () => {
     });
   });
 
-  describe("Integration Tests", () => {
-    it("should enforce complete upload flow with all limits", async () => {
-      process.env.MAX_DAILY_UPLOADS = "100";
-      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = "10";
+  describe('Integration Tests', () => {
+    it('should enforce complete upload flow with all limits', async () => {
+      process.env.MAX_DAILY_UPLOADS = '100';
+      process.env.MAX_UPLOADS_PER_IP_PER_HOUR = '10';
 
-      const testIp = "192.168.1.1";
+      const testIp = '192.168.1.1';
 
       // Simulate uploads
       for (let i = 0; i < 10; i++) {
@@ -315,7 +315,7 @@ describe("UsageTracker", () => {
       expect(nextIpCheck.allowed).toBe(false);
 
       // But different IP should still work
-      const differentIpCheck = await checkIpRateLimit("192.168.1.2");
+      const differentIpCheck = await checkIpRateLimit('192.168.1.2');
       expect(differentIpCheck.allowed).toBe(true);
     });
   });

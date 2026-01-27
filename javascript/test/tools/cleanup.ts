@@ -13,13 +13,13 @@
  *   tsx test/tools/cleanup.ts db        - Clean database only
  */
 
-import { BlobServiceClient } from "@azure/storage-blob";
-import { readFileSync } from "fs";
-import sql from "mssql";
-import { join } from "path";
-import { purgeQueue } from "./queue.js";
+import { BlobServiceClient } from '@azure/storage-blob';
+import { readFileSync } from 'fs';
+import sql from 'mssql';
+import { join } from 'path';
+import { purgeQueue } from './queue.js';
 
-const CONTAINER_NAME = "uploads";
+const CONTAINER_NAME = 'uploads';
 
 /**
  * Get storage connection string from environment or local.settings.json
@@ -30,16 +30,16 @@ function getConnectionString(): string {
   if (!connectionString) {
     try {
       const localSettings = JSON.parse(
-        readFileSync(join(process.cwd(), "local.settings.json"), "utf-8")
+        readFileSync(join(process.cwd(), 'local.settings.json'), 'utf-8')
       );
       connectionString = localSettings.Values.STORAGE_CONNECTION_STRING;
-    } catch (err) {
-      throw new Error("STORAGE_CONNECTION_STRING not found in environment or local.settings.json");
+    } catch (_err) {
+      throw new Error('STORAGE_CONNECTION_STRING not found in environment or local.settings.json');
     }
   }
 
   if (!connectionString) {
-    throw new Error("STORAGE_CONNECTION_STRING is empty");
+    throw new Error('STORAGE_CONNECTION_STRING is empty');
   }
 
   return connectionString;
@@ -54,16 +54,16 @@ function getDbConnectionString(): string {
   if (!connectionString) {
     try {
       const localSettings = JSON.parse(
-        readFileSync(join(process.cwd(), "local.settings.json"), "utf-8")
+        readFileSync(join(process.cwd(), 'local.settings.json'), 'utf-8')
       );
       connectionString = localSettings.Values.SQL_CONNECTION_STRING;
-    } catch (err) {
-      throw new Error("SQL_CONNECTION_STRING not found in environment or local.settings.json");
+    } catch (_err) {
+      throw new Error('SQL_CONNECTION_STRING not found in environment or local.settings.json');
     }
   }
 
   if (!connectionString) {
-    throw new Error("SQL_CONNECTION_STRING is empty");
+    throw new Error('SQL_CONNECTION_STRING is empty');
   }
 
   return connectionString;
@@ -81,7 +81,7 @@ export async function cleanQueue() {
  * Clean all blobs from the uploads container
  */
 export async function cleanBlobs() {
-  console.log("🗑️  Cleaning blob storage...");
+  console.log('🗑️  Cleaning blob storage...');
 
   try {
     const connectionString = getConnectionString();
@@ -113,7 +113,7 @@ export async function cleanBlobs() {
  * Clean all records from database tables
  */
 export async function cleanDatabase() {
-  console.log("🗑️  Cleaning database...");
+  console.log('🗑️  Cleaning database...');
 
   try {
     const connectionString = getDbConnectionString();
@@ -123,10 +123,10 @@ export async function cleanDatabase() {
     // Get counts first
     const docCountResult = await pool
       .request()
-      .query("SELECT COUNT(*) as count FROM vvocr.document_processing_results");
+      .query('SELECT COUNT(*) as count FROM vvocr.document_processing_results');
     const vendorProductsCount = await pool
       .request()
-      .query("SELECT COUNT(*) as count FROM vvocr.vendor_products");
+      .query('SELECT COUNT(*) as count FROM vvocr.vendor_products');
 
     const docCount = docCountResult.recordset[0].count;
     const productCount = vendorProductsCount.recordset[0].count;
@@ -141,10 +141,10 @@ export async function cleanDatabase() {
     }
 
     // Delete vendor_products first (child table with FK constraint)
-    await pool.request().query("DELETE FROM vvocr.vendor_products");
+    await pool.request().query('DELETE FROM vvocr.vendor_products');
 
     // Delete all document_processing_results records
-    await pool.request().query("DELETE FROM vvocr.document_processing_results");
+    await pool.request().query('DELETE FROM vvocr.document_processing_results');
 
     console.log(`✅ Database cleaned (${docCount} documents, ${productCount} products deleted)`);
 
@@ -159,37 +159,37 @@ export async function cleanDatabase() {
  * Main execution
  */
 async function main() {
-  const command = process.argv[2] || "all";
+  const command = process.argv[2] || 'all';
 
-  console.log("\n🗑️  Starting cleanup...\n");
+  console.log('\n🗑️  Starting cleanup...\n');
 
   try {
-    if (command === "all" || command === "blobs") {
+    if (command === 'all' || command === 'blobs') {
       await cleanBlobs();
       console.log();
     }
 
-    if (command === "all" || command === "queue") {
+    if (command === 'all' || command === 'queue') {
       await cleanQueue();
       console.log();
     }
 
-    if (command === "all" || command === "db") {
+    if (command === 'all' || command === 'db') {
       await cleanDatabase();
       console.log();
     }
 
-    if (command !== "all" && command !== "blobs" && command !== "queue" && command !== "db") {
+    if (command !== 'all' && command !== 'blobs' && command !== 'queue' && command !== 'db') {
       console.error(`❌ Unknown command: ${command}`);
-      console.log("\nUsage:");
-      console.log("  tsx test/tools/cleanup.ts           - Clean everything");
-      console.log("  tsx test/tools/cleanup.ts blobs     - Clean blobs only");
-      console.log("  tsx test/tools/cleanup.ts queue     - Clean queue only");
-      console.log("  tsx test/tools/cleanup.ts db        - Clean database only");
+      console.log('\nUsage:');
+      console.log('  tsx test/tools/cleanup.ts           - Clean everything');
+      console.log('  tsx test/tools/cleanup.ts blobs     - Clean blobs only');
+      console.log('  tsx test/tools/cleanup.ts queue     - Clean queue only');
+      console.log('  tsx test/tools/cleanup.ts db        - Clean database only');
       process.exit(1);
     }
 
-    console.log("✅ Cleanup complete\n");
+    console.log('✅ Cleanup complete\n');
   } catch (error: any) {
     console.error(`\n❌ Cleanup failed: ${error.message}\n`);
   }

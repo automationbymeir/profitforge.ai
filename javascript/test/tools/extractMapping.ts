@@ -4,17 +4,17 @@
  * Usage: cd /home/eitanick/code/profitforge.ai/javascript && npx tsx test/tools/extractMapping.ts [json_file_path]
  */
 
-import { readFileSync } from "fs";
-import { join } from "path";
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 function extractMapping(jsonPath: string) {
   console.log(`📂 Reading file: ${jsonPath}\n`);
 
   try {
-    const data = JSON.parse(readFileSync(jsonPath, "utf-8"));
+    const data = JSON.parse(readFileSync(jsonPath, 'utf-8'));
 
     if (!Array.isArray(data) || data.length === 0) {
-      console.log("📭 No documents found in JSON file");
+      console.log('📭 No documents found in JSON file');
       process.exit(0);
     }
 
@@ -32,24 +32,24 @@ function extractMapping(jsonPath: string) {
 
       if (row.ai_mapping_result) {
         const parsed =
-          typeof row.ai_mapping_result === "string"
+          typeof row.ai_mapping_result === 'string'
             ? JSON.parse(row.ai_mapping_result)
             : row.ai_mapping_result;
         console.log(JSON.stringify(parsed, null, 2));
       } else {
-        console.log("  (null)");
+        console.log('  (null)');
       }
 
-      console.log("\n" + "─".repeat(60) + "\n");
+      console.log('\n' + '─'.repeat(60) + '\n');
     });
   } catch (err: any) {
-    console.error("❌ Error:", err.message);
+    console.error('❌ Error:', err.message);
     process.exit(1);
   }
 }
 
 // Parse command line args
-const jsonPath = process.argv[2] || "test/tools/processed_e2e.json";
-const fullPath = jsonPath.startsWith("/") ? jsonPath : join(process.cwd(), jsonPath);
+const jsonPath = process.argv[2] || 'test/tools/processed_e2e.json';
+const fullPath = jsonPath.startsWith('/') ? jsonPath : join(process.cwd(), jsonPath);
 
 extractMapping(fullPath);

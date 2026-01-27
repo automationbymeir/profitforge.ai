@@ -1,6 +1,6 @@
-import * as azurenative from "@pulumi/azure-native";
-import * as pulumi from "@pulumi/pulumi";
-import { azureConfig } from "./config";
+import * as azurenative from '@pulumi/azure-native';
+import * as pulumi from '@pulumi/pulumi';
+import { azureConfig } from './config';
 
 // Use SST's global azurenative provider
 
@@ -46,22 +46,22 @@ export function createStorageResources(
   // Blob Storage Account for uploads
   const blobStorage = new azurenative.storage.StorageAccount(`${stack}-blobstorage`, {
     resourceGroupName,
-    accountName: `${stack.replace(/-/g, "")}pvstorage`, // Remove dashes for Azure naming requirements
+    accountName: `${stack.replace(/-/g, '')}pvstorage`, // Remove dashes for Azure naming requirements
     location,
-    kind: "StorageV2",
+    kind: 'StorageV2',
     sku: {
-      name: "Standard_LRS",
+      name: 'Standard_LRS',
     },
-    accessTier: "Hot",
+    accessTier: 'Hot',
     allowBlobPublicAccess: false,
-    minimumTlsVersion: "TLS1_2",
+    minimumTlsVersion: 'TLS1_2',
   });
 
   // Uploads container
   const uploadsContainer = new azurenative.storage.BlobContainer(`${stack}-uploads`, {
     resourceGroupName,
     accountName: blobStorage.name,
-    containerName: "uploads",
+    containerName: 'uploads',
     publicAccess: azurenative.storage.PublicAccess.None,
   });
 
@@ -69,7 +69,7 @@ export function createStorageResources(
   const bronzeLayerContainer = new azurenative.storage.BlobContainer(`${stack}-bronze-layer`, {
     resourceGroupName,
     accountName: blobStorage.name,
-    containerName: "bronze-layer",
+    containerName: 'bronze-layer',
     publicAccess: azurenative.storage.PublicAccess.None,
   });
 
@@ -77,7 +77,7 @@ export function createStorageResources(
   const aiMappingQueue = new azurenative.storage.Queue(`${stack}-ai-mapping-queue`, {
     resourceGroupName,
     accountName: blobStorage.name,
-    queueName: "ai-mapping-queue",
+    queueName: 'ai-mapping-queue',
   });
 
   // Get primary storage key for connection string
@@ -100,7 +100,7 @@ export function createStorageResources(
     resourceGroupName: azureConfig.resourceGroup,
     accountName: blobStorage.name,
     containerName: codeContainer.name,
-    source: new pulumi.asset.FileArchive("./javascript"),
+    source: new pulumi.asset.FileArchive('./javascript'),
     blobName: `${stack}-functions-v2.zip`, // Force new deployment
     type: azurenative.storage.BlobType.Block,
   });
@@ -109,16 +109,16 @@ export function createStorageResources(
   const functionBlobSAS = azurenative.storage.listStorageAccountServiceSASOutput({
     accountName: blobStorage.name,
     protocols: azurenative.storage.HttpProtocol.Https,
-    sharedAccessStartTime: "2023-01-01",
-    sharedAccessExpiryTime: "2030-01-01",
+    sharedAccessStartTime: '2023-01-01',
+    sharedAccessExpiryTime: '2030-01-01',
     resourceGroupName: azureConfig.resourceGroup,
     resource: azurenative.storage.SignedResource.C,
     permissions: azurenative.storage.Permissions.R,
     canonicalizedResource: pulumi.interpolate`/blob/${blobStorage.name}/${codeContainer.name}`,
-    contentType: "application/json",
-    cacheControl: "max-age=5",
-    contentDisposition: "inline",
-    contentEncoding: "deflate",
+    contentType: 'application/json',
+    cacheControl: 'max-age=5',
+    contentDisposition: 'inline',
+    contentEncoding: 'deflate',
   });
 
   const functionBlobUrl = pulumi.interpolate`https://${blobStorage.name}.blob.core.windows.net/${codeContainer.name}/${codeBlob.name}?${functionBlobSAS.serviceSasToken}`;

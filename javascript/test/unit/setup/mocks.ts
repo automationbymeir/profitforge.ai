@@ -1,7 +1,7 @@
 // Mock factories for Azure services
 // Used in unit tests to avoid real Azure calls
 
-import { vi } from "vitest";
+import { vi } from 'vitest';
 
 type MockFile = {
   name: string;
@@ -14,8 +14,8 @@ type FormDataValue = string | MockFile;
 export const mockBlobServiceClient = () => ({
   getContainerClient: vi.fn().mockReturnValue({
     getBlockBlobClient: vi.fn().mockReturnValue({
-      upload: vi.fn().mockResolvedValue({ requestId: "mock-request-id" }),
-      url: "https://mockaccount.blob.core.windows.net/uploads/test.pdf",
+      upload: vi.fn().mockResolvedValue({ requestId: 'mock-request-id' }),
+      url: 'https://mockaccount.blob.core.windows.net/uploads/test.pdf',
     }),
   }),
 });
@@ -40,30 +40,30 @@ export const mockSqlConnection = () => {
         return { recordset: [] };
       }
       // Second query (INSERT with OUTPUT) returns the new result_id
-      if (sql && (sql.includes("INSERT") || sql.includes("OUTPUT INSERTED.result_id"))) {
+      if (sql && (sql.includes('INSERT') || sql.includes('OUTPUT INSERTED.result_id'))) {
         return {
-          recordset: [{ result_id: "test-uuid-1234" }],
+          recordset: [{ result_id: 'test-uuid-1234' }],
           rowsAffected: [1],
         };
       }
       // SELECT queries return full document data
-      if (sql && sql.includes("SELECT")) {
+      if (sql && sql.includes('SELECT')) {
         return {
           recordset: [
             {
-              result_id: "test-uuid-1234",
-              document_name: "BETTER_LIVING-11-25.pdf",
-              document_path: "BETTER_LIVING_11_25/BETTER_LIVING-11-25.pdf",
+              result_id: 'test-uuid-1234',
+              document_name: 'BETTER_LIVING-11-25.pdf',
+              document_path: 'BETTER_LIVING_11_25/BETTER_LIVING-11-25.pdf',
               document_size_bytes: 1024,
-              document_type: "application/pdf",
-              vendor_name: "BETTER_LIVING_11_25",
-              doc_intel_extracted_text: "test content",
-              doc_intel_structured_data: "{}",
+              document_type: 'application/pdf',
+              vendor_name: 'BETTER_LIVING_11_25',
+              doc_intel_extracted_text: 'test content',
+              doc_intel_structured_data: '{}',
               doc_intel_confidence_score: 0.95,
               doc_intel_page_count: 1,
               doc_intel_table_count: 0,
               doc_intel_cost_usd: 0.0015,
-              doc_intel_prompt_used: "test prompt",
+              doc_intel_prompt_used: 'test prompt',
               reprocessing_count: 0,
               parent_document_id: null,
             },
@@ -97,7 +97,7 @@ export const mockTableClient = () => {
       const key = `${partitionKey}:${rowKey}`;
       const entity = entities.get(key);
       if (!entity) {
-        const error: any = new Error("Entity not found");
+        const error: any = new Error('Entity not found');
         error.statusCode = 404;
         throw error;
       }
@@ -134,7 +134,7 @@ export const mockTableClient = () => {
           let matches = true;
 
           // PartitionKey equality filter
-          if (filter.includes("PartitionKey eq")) {
+          if (filter.includes('PartitionKey eq')) {
             const match = filter.match(/PartitionKey eq '([^']+)'/);
             if (match) {
               matches = matches && entity.partitionKey === match[1];
@@ -142,7 +142,7 @@ export const mockTableClient = () => {
           }
 
           // RowKey less than filter
-          if (filter.includes("RowKey lt")) {
+          if (filter.includes('RowKey lt')) {
             const match = filter.match(/RowKey lt '([^']+)'/);
             if (match) {
               matches = matches && entity.rowKey < match[1];
@@ -168,16 +168,16 @@ export const mockTableClient = () => {
 
 export const mockDocumentAnalysisClient = () => {
   const mockAnalysisResult = {
-    content: "Mock OCR extracted text content",
+    content: 'Mock OCR extracted text content',
     pages: [{ pageNumber: 1 }],
     tables: [
       {
         rowCount: 2,
         columnCount: 3,
         cells: [
-          { content: "Header 1", rowIndex: 0, columnIndex: 0 },
-          { content: "Header 2", rowIndex: 0, columnIndex: 1 },
-          { content: "Header 3", rowIndex: 0, columnIndex: 2 },
+          { content: 'Header 1', rowIndex: 0, columnIndex: 0 },
+          { content: 'Header 2', rowIndex: 0, columnIndex: 1 },
+          { content: 'Header 3', rowIndex: 0, columnIndex: 2 },
         ],
       },
     ],
@@ -202,12 +202,12 @@ export const mockOpenAI = () => ({
               content: JSON.stringify({
                 products: [
                   {
-                    sku: "TEST-SKU-001",
-                    name: "Test Product",
-                    description: "A test product description",
+                    sku: 'TEST-SKU-001',
+                    name: 'Test Product',
+                    description: 'A test product description',
                     retail_price: 99.99,
                     wholesale_price: 59.99,
-                    category: "Electronics",
+                    category: 'Electronics',
                     confidence: 0.95,
                   },
                 ],
@@ -232,9 +232,9 @@ export const mockInvocationContext = () => ({
   info: vi.fn(),
   trace: vi.fn(),
   triggerMetadata: {
-    blobTrigger: "uploads/BETTER_LIVING_11_25/BETTER_LIVING-11-25.pdf",
+    blobTrigger: 'uploads/BETTER_LIVING_11_25/BETTER_LIVING-11-25.pdf',
   },
-  invocationId: "test-invocation-id",
+  invocationId: 'test-invocation-id',
   traceContext: {},
   bindings: {},
   bindingData: {},
@@ -242,11 +242,11 @@ export const mockInvocationContext = () => ({
 });
 
 export const mockHttpRequest = (overrides: Partial<any> = {}) => {
-  const headers = new Map<string, string>([["content-type", "multipart/form-data"]]);
+  const headers = new Map<string, string>([['content-type', 'multipart/form-data']]);
 
   return {
-    method: "POST",
-    url: "http://localhost:7071/api/upload",
+    method: 'POST',
+    url: 'http://localhost:7071/api/upload',
     headers: {
       get: (key: string) => headers.get(key.toLowerCase()) || null,
       set: (key: string, value: string) => headers.set(key.toLowerCase(), value),
@@ -258,14 +258,14 @@ export const mockHttpRequest = (overrides: Partial<any> = {}) => {
     formData: vi.fn().mockResolvedValue(
       new Map<string, FormDataValue>([
         [
-          "file",
+          'file',
           {
-            name: "catalog.pdf",
-            type: "application/pdf",
-            arrayBuffer: vi.fn().mockResolvedValue(Buffer.from("test file content")),
+            name: 'catalog.pdf',
+            type: 'application/pdf',
+            arrayBuffer: vi.fn().mockResolvedValue(Buffer.from('test file content')),
           },
         ],
-        ["vendorName", "BETTER_LIVING_11_25"],
+        ['vendorName', 'BETTER_LIVING_11_25'],
       ])
     ),
     ...overrides,

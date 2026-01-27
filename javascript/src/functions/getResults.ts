@@ -1,6 +1,6 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import sql from "mssql";
-import { withDatabase } from "../utils/database.js";
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
+import sql from 'mssql';
+import { withDatabase } from '../utils/database.js';
 
 /**
  * HTTP GET endpoint to retrieve processed document results
@@ -13,13 +13,13 @@ export async function getResults(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
-  context.log("Processing getResults request");
+  context.log('Processing getResults request');
 
   try {
-    const resultId = request.query.get("resultId");
-    const vendorName = request.query.get("vendor");
-    const showAllVersions = request.query.get("allVersions") === "true";
-    const limitParam = request.query.get("limit") || "10";
+    const resultId = request.query.get('resultId');
+    const vendorName = request.query.get('vendor');
+    const showAllVersions = request.query.get('allVersions') === 'true';
+    const limitParam = request.query.get('limit') || '10';
     const limit = parseInt(limitParam, 10) || 10; // Default to 10 if invalid
 
     // Validate UUID format if resultId is provided
@@ -30,8 +30,8 @@ export async function getResults(
         return {
           status: 200,
           headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
           },
           body: JSON.stringify([]),
         };
@@ -110,19 +110,19 @@ export async function getResults(
       `;
       }
 
-      const queryRequest = pool.request().input("limit", sql.Int, limit);
+      const queryRequest = pool.request().input('limit', sql.Int, limit);
 
       if (resultId) {
-        query += " AND result_id = @resultId";
-        queryRequest.input("resultId", sql.UniqueIdentifier, resultId);
+        query += ' AND result_id = @resultId';
+        queryRequest.input('resultId', sql.UniqueIdentifier, resultId);
       }
 
       if (vendorName) {
-        query += " AND vendor_name LIKE @vendorName";
-        queryRequest.input("vendorName", sql.NVarChar, `%${vendorName}%`);
+        query += ' AND vendor_name LIKE @vendorName';
+        queryRequest.input('vendorName', sql.NVarChar, `%${vendorName}%`);
       }
 
-      query += " ORDER BY created_at DESC";
+      query += ' ORDER BY created_at DESC';
 
       const result = await queryRequest.query(query);
 
@@ -136,36 +136,37 @@ export async function getResults(
     return {
       status: 200,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
       body: JSON.stringify(results),
     };
-  } catch (error: any) {
-    context.error("Error retrieving results:", error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    context.error('Error retrieving results:', error);
     return {
       status: 500,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 }
 
-app.http("getResults", {
-  methods: ["GET", "OPTIONS"],
-  authLevel: "anonymous",
+app.http('getResults', {
+  methods: ['GET', 'OPTIONS'],
+  authLevel: 'anonymous',
   handler: async (request: HttpRequest, context: InvocationContext) => {
     // Handle CORS preflight
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
       return {
         status: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       };
     }

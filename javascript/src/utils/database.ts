@@ -1,9 +1,9 @@
-import sql from "mssql";
+import sql from 'mssql';
 
 const SQL_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING;
 
 if (!SQL_CONNECTION_STRING) {
-  throw new Error("SQL_CONNECTION_STRING environment variable is required");
+  throw new Error('SQL_CONNECTION_STRING environment variable is required');
 }
 
 // Singleton connection pool
@@ -34,18 +34,18 @@ export async function getConnectionPool(): Promise<sql.ConnectionPool> {
         globalPool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
 
         // Handle connection errors
-        globalPool.on("error", (err) => {
-          console.error("[DB Pool Error]", err.message);
+        globalPool.on('error', (err) => {
+          console.error('[DB Pool Error]', err.message);
           // Don't destroy pool on error - let retry logic handle it
         });
       }
 
       // Connect with automatic retry logic
       await globalPool.connect();
-      console.log("[DB] Connection pool ready");
+      console.log('[DB] Connection pool ready');
       return globalPool;
     } catch (error) {
-      console.error("[DB] Failed to create connection pool:", error);
+      console.error('[DB] Failed to create connection pool:', error);
       // Reset pool promise so next attempt can try again
       poolPromise = null;
       globalPool = null;
@@ -70,17 +70,19 @@ export async function withDatabase<T>(
     try {
       const pool = await getConnectionPool();
       return await operation(pool);
-    } catch (error: any) {
-      lastError = error;
+    } catch (error: unknown) {
+      lastError = error as Error;
 
       // Check if error is transient (should retry)
+      const errorCode = (error as { code?: string }).code;
+      const errorMsg = error instanceof Error ? error.message : '';
       const isTransient =
-        error.code === "ESOCKET" ||
-        error.code === "ETIMEDOUT" ||
-        error.code === "ECONNRESET" ||
-        error.code === "EAI_AGAIN" ||
-        error.message?.includes("timeout") ||
-        error.message?.includes("connection");
+        errorCode === 'ESOCKET' ||
+        errorCode === 'ETIMEDOUT' ||
+        errorCode === 'ECONNRESET' ||
+        errorCode === 'EAI_AGAIN' ||
+        errorMsg.includes('timeout') ||
+        errorMsg.includes('connection');
 
       if (isTransient && attempt < retries) {
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff, max 5s
@@ -91,10 +93,12 @@ export async function withDatabase<T>(
 
         // Reset pool on connection errors
         if (globalPool && !globalPool.connected) {
-          console.log("[DB] Resetting disconnected pool...");
+          console.log('[DB] Resetting disconnected pool...');
           try {
             await globalPool.close();
-          } catch {}
+          } catch {
+            // Ignore errors when closing disconnected pool
+          }
           globalPool = null;
           poolPromise = null;
         }
@@ -107,7 +111,7 @@ export async function withDatabase<T>(
     }
   }
 
-  throw lastError || new Error("Database operation failed after retries");
+  throw lastError || new Error('Database operation failed after retries');
 }
 
 /**
@@ -117,9 +121,9 @@ export async function closeConnectionPool(): Promise<void> {
   if (globalPool) {
     try {
       await globalPool.close();
-      console.log("[DB] Connection pool closed");
+      console.log('[DB] Connection pool closed');
     } catch (error) {
-      console.error("[DB] Error closing pool:", error);
+      console.error('[DB] Error closing pool:', error);
     } finally {
       globalPool = null;
       poolPromise = null;

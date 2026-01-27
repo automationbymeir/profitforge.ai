@@ -15,24 +15,24 @@
  *   npm run db:slow-queries     # Find slow queries
  */
 
-import { readFileSync } from "fs";
-import sql from "mssql";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { readFileSync } from 'fs';
+import sql from 'mssql';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Load connection string
-let DB_CONNECTION_STRING = "";
+let DB_CONNECTION_STRING = '';
 try {
   const localSettings = JSON.parse(
-    readFileSync(join(__dirname, "../../local.settings.json"), "utf-8")
+    readFileSync(join(__dirname, '../../local.settings.json'), 'utf-8')
   );
-  DB_CONNECTION_STRING = localSettings.Values.SQL_CONNECTION_STRING || "";
+  DB_CONNECTION_STRING = localSettings.Values.SQL_CONNECTION_STRING || '';
 } catch (err) {
-  console.error("Failed to load local.settings.json:", err);
+  console.error('Failed to load local.settings.json:', err);
   process.exit(1);
 }
 
@@ -105,7 +105,7 @@ async function getActiveConnections(): Promise<ConnectionInfo[]> {
 async function getQueryStats(topN: number = 20): Promise<QueryStat[]> {
   const pool = await getPool();
 
-  const result = await pool.request().input("topN", sql.Int, topN).query(`
+  const result = await pool.request().input('topN', sql.Int, topN).query(`
     SELECT TOP (@topN)
       SUBSTRING(
         qt.text,
@@ -227,15 +227,15 @@ async function getTableStats(): Promise<any[]> {
  * Monitor database in real-time
  */
 async function monitorRealTime(intervalSeconds: number = 5) {
-  console.log("🔍 Starting real-time database monitoring...\n");
+  console.log('🔍 Starting real-time database monitoring...\n');
   console.log(`Refresh interval: ${intervalSeconds} seconds`);
-  console.log("Press Ctrl+C to stop\n");
+  console.log('Press Ctrl+C to stop\n');
 
   const monitor = async () => {
     console.clear();
-    console.log("=".repeat(80));
+    console.log('='.repeat(80));
     console.log(`📊 Database Monitor - ${new Date().toLocaleString()}`);
-    console.log("=".repeat(80));
+    console.log('='.repeat(80));
 
     try {
       // Active connections
@@ -279,7 +279,7 @@ async function monitorRealTime(intervalSeconds: number = 5) {
       console.error(`\n❌ Monitoring error: ${error.message}`);
     }
 
-    console.log("\n" + "=".repeat(80));
+    console.log('\n' + '='.repeat(80));
   };
 
   // Initial run
@@ -293,7 +293,7 @@ async function monitorRealTime(intervalSeconds: number = 5) {
  * Show query logs (cached query stats)
  */
 async function showQueryLogs() {
-  console.log("📋 Query Performance Statistics\n");
+  console.log('📋 Query Performance Statistics\n');
 
   const stats = await getQueryStats(50);
 
@@ -304,7 +304,7 @@ async function showQueryLogs() {
       `${i + 1}. Executions: ${stat.execution_count}, Avg: ${stat.avg_elapsed_time_ms}ms, Total: ${stat.total_elapsed_time_ms}ms`
     );
     console.log(`   Last run: ${stat.last_execution_time}`);
-    console.log(`   Query: ${stat.query_text.substring(0, 200).replace(/\s+/g, " ")}...`);
+    console.log(`   Query: ${stat.query_text.substring(0, 200).replace(/\s+/g, ' ')}...`);
     console.log();
   });
 }
@@ -313,7 +313,7 @@ async function showQueryLogs() {
  * Show connection summary
  */
 async function showConnections() {
-  console.log("🔌 Active Database Connections\n");
+  console.log('🔌 Active Database Connections\n');
 
   const connections = await getActiveConnections();
 
@@ -335,13 +335,13 @@ async function showConnections() {
  * Show slow queries report
  */
 async function showSlowQueries() {
-  console.log("🐌 Slow Query Report\n");
+  console.log('🐌 Slow Query Report\n');
 
   const stats = await getQueryStats(20);
   const slowQueries = stats.filter((s) => s.avg_elapsed_time_ms > 1000); // Slower than 1 second
 
   if (slowQueries.length === 0) {
-    console.log("✅ No slow queries found (all queries < 1 second average)");
+    console.log('✅ No slow queries found (all queries < 1 second average)');
     return;
   }
 
@@ -352,23 +352,23 @@ async function showSlowQueries() {
     console.log(`   Executions: ${stat.execution_count}`);
     console.log(`   Total time: ${stat.total_elapsed_time_ms}ms`);
     console.log(`   Logical reads: ${stat.total_logical_reads}`);
-    console.log(`   Query: ${stat.query_text.substring(0, 300).replace(/\s+/g, " ")}...`);
+    console.log(`   Query: ${stat.query_text.substring(0, 300).replace(/\s+/g, ' ')}...`);
     console.log();
   });
 }
 
 // CLI interface
-const command = process.argv[2] || "monitor";
+const command = process.argv[2] || 'monitor';
 
 // Cleanup on exit
-process.on("SIGINT", async () => {
-  console.log("\n\n🛑 Shutting down...");
+process.on('SIGINT', async () => {
+  console.log('\n\n🛑 Shutting down...');
   await closePool();
   process.exit(0);
 });
 
-process.on("SIGTERM", async () => {
-  console.log("\n\n🛑 Shutting down...");
+process.on('SIGTERM', async () => {
+  console.log('\n\n🛑 Shutting down...');
   await closePool();
   process.exit(0);
 });
@@ -376,34 +376,34 @@ process.on("SIGTERM", async () => {
 (async () => {
   try {
     switch (command) {
-      case "monitor":
+      case 'monitor':
         await monitorRealTime(5);
         break;
-      case "logs":
+      case 'logs':
         await showQueryLogs();
         await closePool();
         break;
-      case "connections":
+      case 'connections':
         await showConnections();
         await closePool();
         break;
-      case "slow":
-      case "slow-queries":
+      case 'slow':
+      case 'slow-queries':
         await showSlowQueries();
         await closePool();
         break;
       default:
-        console.log("Usage: npm run db:monitor [command]");
-        console.log("\nCommands:");
-        console.log("  monitor       - Real-time monitoring (default)");
-        console.log("  logs          - View query performance logs");
-        console.log("  connections   - Show active connections");
-        console.log("  slow-queries  - Find slow queries");
+        console.log('Usage: npm run db:monitor [command]');
+        console.log('\nCommands:');
+        console.log('  monitor       - Real-time monitoring (default)');
+        console.log('  logs          - View query performance logs');
+        console.log('  connections   - Show active connections');
+        console.log('  slow-queries  - Find slow queries');
         await closePool();
         break;
     }
   } catch (error: any) {
-    console.error("Error:", error.message);
+    console.error('Error:', error.message);
     await closePool();
     process.exit(1);
   }

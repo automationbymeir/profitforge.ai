@@ -8,22 +8,22 @@
  * 4. Cleans up everything on completion
  */
 
-import { BlobServiceClient } from "@azure/storage-blob";
-import { ChildProcess, spawn } from "child_process";
-import { existsSync, unlinkSync, writeFileSync } from "fs";
-import sql from "mssql";
-import { getTestConfig } from "../../config.js";
+import { BlobServiceClient } from '@azure/storage-blob';
+import { ChildProcess, spawn } from 'child_process';
+import { existsSync, unlinkSync, writeFileSync } from 'fs';
+import sql from 'mssql';
+import { getTestConfig } from '../../config.js';
 import {
   registerSignalHandlers,
   startFunctions,
   stopFunctions,
   waitForFunctions,
-} from "../../tools/setup-utils.js";
+} from '../../tools/setup-utils.js';
 
-const SETTINGS_PATH = "local.settings.json";
-const FUNC_LOG_PATH = "test/functions-integration-output.log";
-const FUNC_ERROR_LOG_PATH = "test/functions-integration-error.log";
-const config = getTestConfig("integration");
+const SETTINGS_PATH = 'local.settings.json';
+const FUNC_LOG_PATH = 'test/functions-integration-output.log';
+const FUNC_ERROR_LOG_PATH = 'test/functions-integration-error.log';
+const config = getTestConfig('integration');
 
 let dockerProcess: ChildProcess | null = null;
 let functionsProcess: ChildProcess | null = null;
@@ -33,7 +33,7 @@ async function cleanup() {
   if (isCleaningUp) return;
   isCleaningUp = true;
 
-  console.log("\n🧹 Cleaning up test environment...\n");
+  console.log('\n🧹 Cleaning up test environment...\n');
 
   // Stop Functions first
   await stopFunctions(functionsProcess);
@@ -44,10 +44,10 @@ async function cleanup() {
   // Delete local.settings.json (e2e-specific config)
   if (existsSync(SETTINGS_PATH)) {
     unlinkSync(SETTINGS_PATH);
-    console.log("✓ Deleted local.settings.json");
+    console.log('✓ Deleted local.settings.json');
   }
 
-  console.log("\n✅ Test environment cleaned up!\n");
+  console.log('\n✅ Test environment cleaned up!\n');
 }
 
 async function waitForDatabase(maxAttempts = 30): Promise<void> {
@@ -58,7 +58,7 @@ async function waitForDatabase(maxAttempts = 30): Promise<void> {
       const pool = new sql.ConnectionPool(connectionString);
       await pool.connect();
       await pool.close();
-      console.log("✓ Database is ready");
+      console.log('✓ Database is ready');
       return;
     } catch (error) {
       if (i === maxAttempts - 1) throw error;
@@ -72,14 +72,14 @@ async function setupAzuriteContainers(): Promise<void> {
   const blobServiceClient = BlobServiceClient.fromConnectionString(storageConnectionString);
 
   // Create the "uploads" container that Functions app expects
-  const uploadsContainer = blobServiceClient.getContainerClient("uploads");
+  const uploadsContainer = blobServiceClient.getContainerClient('uploads');
   if (!(await uploadsContainer.exists())) {
     await uploadsContainer.create();
     console.log("✓ Created 'uploads' blob container");
   }
 
   // Also create bronze-layer for OCR results
-  const bronzeContainer = blobServiceClient.getContainerClient("bronze-layer");
+  const bronzeContainer = blobServiceClient.getContainerClient('bronze-layer');
   if (!(await bronzeContainer.exists())) {
     await bronzeContainer.create();
     console.log("✓ Created 'bronze-layer' blob container");
@@ -88,28 +88,28 @@ async function setupAzuriteContainers(): Promise<void> {
 
 function startDocker(): Promise<void> {
   return new Promise((resolve, reject) => {
-    console.log("🐳 Starting Docker containers...");
+    console.log('🐳 Starting Docker containers...');
 
     dockerProcess = spawn(
-      "docker",
-      ["compose", "-f", "test/integration/setup/docker-compose.test.yml", "up", "-d"],
+      'docker',
+      ['compose', '-f', 'test/integration/setup/docker-compose.test.yml', 'up', '-d'],
       {
-        stdio: "pipe",
+        stdio: 'pipe',
       }
     );
 
-    let output = "";
-    dockerProcess.stdout?.on("data", (data) => {
+    let output = '';
+    dockerProcess.stdout?.on('data', (data) => {
       output += data.toString();
     });
 
-    dockerProcess.stderr?.on("data", (data) => {
+    dockerProcess.stderr?.on('data', (data) => {
       output += data.toString();
     });
 
-    dockerProcess.on("close", (code) => {
+    dockerProcess.on('close', (code) => {
       if (code === 0) {
-        console.log("✓ Docker containers started");
+        console.log('✓ Docker containers started');
         resolve();
       } else {
         reject(new Error(`Docker failed with code ${code}: ${output}`));
@@ -120,25 +120,25 @@ function startDocker(): Promise<void> {
 
 function stopDocker(): Promise<void> {
   return new Promise((resolve) => {
-    console.log("🐳 Stopping Docker containers...");
+    console.log('🐳 Stopping Docker containers...');
 
     const stop = spawn(
-      "docker",
-      ["compose", "-f", "test/integration/setup/docker-compose.test.yml", "down", "-v"],
+      'docker',
+      ['compose', '-f', 'test/integration/setup/docker-compose.test.yml', 'down', '-v'],
       {
-        stdio: "pipe",
+        stdio: 'pipe',
       }
     );
 
-    stop.on("close", () => {
-      console.log("✓ Docker containers stopped");
+    stop.on('close', () => {
+      console.log('✓ Docker containers stopped');
       resolve();
     });
   });
 }
 
 export default async function globalSetup() {
-  const mode = "integration";
+  const mode = 'integration';
 
   console.log(`\n🔧 Setting up ${mode} test environment...\n`);
 
@@ -158,7 +158,7 @@ export default async function globalSetup() {
     await startDocker();
 
     // Wait a bit for containers to initialize
-    console.log("   (Waiting for containers to initialize...)");
+    console.log('   (Waiting for containers to initialize...)');
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     await waitForDatabase();
@@ -183,7 +183,7 @@ export default async function globalSetup() {
     // Return teardown function
     return cleanup;
   } catch (error) {
-    console.error("\n❌ Failed to setup test environment:", error);
+    console.error('\n❌ Failed to setup test environment:', error);
 
     // Cleanup on failure
     await cleanup();

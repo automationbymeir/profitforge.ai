@@ -45,12 +45,12 @@
  * ============================================================================
  */
 
-import { QueueServiceClient } from "@azure/storage-queue";
-import { readFileSync } from "fs";
-import { join } from "path";
+import { QueueServiceClient } from '@azure/storage-queue';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-const QUEUE_NAME = "ai-mapping-queue";
-const COMMAND = process.argv[2] || "view";
+const QUEUE_NAME = 'ai-mapping-queue';
+const COMMAND = process.argv[2] || 'view';
 
 interface MessageInfo {
   messageId: string;
@@ -69,16 +69,16 @@ function getConnectionString(): string {
   if (!connectionString) {
     try {
       const localSettings = JSON.parse(
-        readFileSync(join(process.cwd(), "local.settings.json"), "utf-8")
+        readFileSync(join(process.cwd(), 'local.settings.json'), 'utf-8')
       );
       connectionString = localSettings.Values.STORAGE_CONNECTION_STRING;
-    } catch (err) {
-      throw new Error("STORAGE_CONNECTION_STRING not found in environment or local.settings.json");
+    } catch (_err) {
+      throw new Error('STORAGE_CONNECTION_STRING not found in environment or local.settings.json');
     }
   }
 
   if (!connectionString) {
-    throw new Error("STORAGE_CONNECTION_STRING not set");
+    throw new Error('STORAGE_CONNECTION_STRING not set');
   }
 
   return connectionString;
@@ -89,21 +89,21 @@ function getConnectionString(): string {
  */
 function displayMessages(messages: MessageInfo[], isPoison: boolean = false) {
   if (messages.length === 0) {
-    console.log("   (empty)\n");
+    console.log('   (empty)\n');
     return;
   }
 
   messages.forEach((msg, i) => {
     console.log(`${i + 1}. Message ID: ${msg.messageId}`);
     console.log(
-      `   Dequeue Count: ${msg.dequeueCount}${isPoison ? " (FAILED - max retries exceeded)" : ""}`
+      `   Dequeue Count: ${msg.dequeueCount}${isPoison ? ' (FAILED - max retries exceeded)' : ''}`
     );
     console.log(`   Inserted: ${msg.insertedOn}`);
     console.log(`   Expires: ${msg.expiresOn}`);
 
     try {
       // Messages are base64 encoded
-      const decoded = Buffer.from(msg.messageText, "base64").toString("utf-8");
+      const decoded = Buffer.from(msg.messageText, 'base64').toString('utf-8');
       const content = JSON.parse(decoded);
       console.log(`   Document ID: ${content.documentId}`);
       if (content.testMessage) console.log(`   [TEST MESSAGE]`);
@@ -147,7 +147,7 @@ async function viewQueue() {
     if ((poisonProps.approximateMessagesCount ?? 0) > 0) {
       console.log("   💡 Tip: Run 'npm run queue:purge' to clear all messages\n");
     }
-  } catch (e) {
+  } catch (_e) {
     console.log(`☠️  POISON QUEUE (${QUEUE_NAME}-poison)`);
     console.log(`   Queue doesn't exist yet\n`);
   }
@@ -190,7 +190,7 @@ export async function purgeQueue() {
     } else {
       console.log(`   Already empty`);
     }
-  } catch (e) {
+  } catch (_e) {
     console.log(`   Queue doesn't exist (this is fine)`);
   }
 
@@ -218,12 +218,12 @@ async function sendTestMessage() {
   };
 
   // Send message (base64 encoded)
-  await queueClient.sendMessage(Buffer.from(JSON.stringify(testMessage)).toString("base64"));
+  await queueClient.sendMessage(Buffer.from(JSON.stringify(testMessage)).toString('base64'));
 
-  console.log("✅ Test message sent successfully!");
+  console.log('✅ Test message sent successfully!');
   console.log(`   Document ID: ${testMessage.documentId}`);
-  console.log("\n💡 Run: npm run queue:view to see the message");
-  console.log("   Note: May take 2-5 seconds for message count to update (eventual consistency)\n");
+  console.log('\n💡 Run: npm run queue:view to see the message');
+  console.log('   Note: May take 2-5 seconds for message count to update (eventual consistency)\n');
 }
 
 /**
@@ -256,16 +256,16 @@ if (require.main === module) {
   (async () => {
     try {
       switch (COMMAND) {
-        case "view":
+        case 'view':
           await viewQueue();
           break;
-        case "purge":
+        case 'purge':
           await purgeQueue();
           break;
-        case "test":
+        case 'test':
           await sendTestMessage();
           break;
-        case "help":
+        case 'help':
           showHelp();
           break;
         default:
