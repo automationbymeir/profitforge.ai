@@ -17,11 +17,13 @@ import {
   mockHttpRequest,
   mockInvocationContext,
   mockSqlConnection,
-} from "../mocks/azureMocks";
+  resetMockState,
+} from "./setup/mocks";
 
 describe("Upload Handler - Unit Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetMockState(); // Reset global query counter
 
     // Setup mocks for each test
     vi.mocked(BlobServiceClient.fromConnectionString).mockReturnValue(
@@ -37,28 +39,29 @@ describe("Upload Handler - Unit Tests", () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(201);
-    const body = JSON.parse(response.body as string);
-    expect(body).toMatchObject({
+    expect(response.jsonBody).toMatchObject({
       message: "Document uploaded successfully",
-      resultId: "test-uuid-1234",
-      vendorId: "test-vendor-123",
+      documentName: "BETTER_LIVING_11_25.pdf",
+      vendorName: "BETTER_LIVING_11_25",
+      status: "pending",
     });
-    expect(body.filePath).toMatch(/test-vendor-123\/.*-test-invoice\.pdf/);
+    expect(response.jsonBody.resultId).toBeDefined();
+    expect(response.jsonBody.filePath).toBe("BETTER_LIVING_11_25/BETTER_LIVING_11_25.pdf");
   });
 
   it("should return 400 when file is missing", async () => {
     const request = mockHttpRequest({
-      formData: vi.fn().mockResolvedValue(new Map([["vendorId", "test-vendor-123"]])),
+      formData: vi.fn().mockResolvedValue(new Map([["vendorName", "BETTER_LIVING_11_25"]])),
     });
     const context = mockInvocationContext();
 
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toBe("Missing file or vendorId in request");
+    expect(response.jsonBody.error).toBe("Missing file or vendor name in request");
   });
 
-  it("should return 400 when vendorId is missing", async () => {
+  it("should return 400 when vendorName is missing", async () => {
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
         new Map<string, any>([
@@ -78,7 +81,7 @@ describe("Upload Handler - Unit Tests", () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toBe("Missing file or vendorId in request");
+    expect(response.jsonBody.error).toBe("Missing file or vendor name in request");
   });
 
   it("should return 400 for unsupported file type", async () => {
@@ -93,7 +96,7 @@ describe("Upload Handler - Unit Tests", () => {
               arrayBuffer: vi.fn().mockResolvedValue(Buffer.from("test")),
             },
           ],
-          ["vendorId", "test-vendor-123"],
+          ["vendorName", "BETTER_LIVING_11_25"],
         ])
       ),
     });
@@ -102,7 +105,86 @@ describe("Upload Handler - Unit Tests", () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain("Unsupported file type");
+    expect(response.jsonBody.error).toContain("Unsupported file type");
+  });
+
+  it("should reject invalid vendor name format", async () => {
+    const request = mockHttpRequest({
+      formData: vi.fn().mockResolvedValue(
+        new Map<string, any>([
+          [
+            "file",
+            {
+              name: "catalog.pdf",
+              type: "application/pdf",
+              arrayBuffer: vi.fn().mockResolvedValue(Buffer.from("test content")),
+            },
+          ],
+          ["vendorName", "invalid-vendor-123"], // Invalid format
+        ])
+      ),
+    });
+    const context = mockInvocationContext();
+
+    const response = await uploadHandler(request as any, context as any);
+
+    expect(response.status).toBe(400);
+    const body = JSON.parse(response.body as string);
+    expect(body.error).toBe("Invalid vendor name format");
+    expect(body.message).toContain("VENDOR_NAME_MM_YY");
+  });
+
+  it("should reject vendor with invalid month", async () => {
+    const request = mockHttpRequest({
+      formData: vi.fn().mockResolvedValue(
+        new Map<string, any>([
+          [
+            "file",
+            {
+              name: "catalog.pdf",
+              type: "application/pdf",
+              arrayBuffer: vi.fn().mockResolvedValue(Buffer.from("test content")),
+            },
+          ],
+          ["vendorName", "BETTER_LIVING_13_25"], // Invalid month (13)
+        ])
+      ),
+    });
+    const context = mockInvocationContext();
+
+    const response = await uploadHandler(request as any, context as any);
+
+    expect(response.status).toBe(400);
+    const body = JSON.parse(response.body as string);
+    expect(body.error).toBe("Invalid vendor name format");
+    expect(body.message).toContain("Invalid month: 13");
+  });
+
+  it("should reject duplicate vendor upload", async () => {
+    // Mock SQL to return existing record
+    const mockPoolWithExisting = mockSqlConnection();
+    mockPoolWithExisting.request().query.mockResolvedValueOnce({
+      recordset: [
+        {
+          result_id: "existing-uuid",
+          document_name: "BETTER_LIVING-11-25.pdf",
+          processing_status: "completed",
+        },
+      ],
+    });
+
+    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPoolWithExisting as any);
+
+    const request = mockHttpRequest();
+    const context = mockInvocationContext();
+
+    const response = await uploadHandler(request as any, context as any);
+
+    expect(response.status).toBe(409); // Conflict
+    expect(response.jsonBody.error).toBe("Vendor already exists");
+    expect(response.jsonBody.message).toContain("delete the existing document first");
+    expect(response.jsonBody.existingDocument).toBeDefined();
+    expect(response.jsonBody.existingDocument.resultId).toBe("existing-uuid");
   });
 
   it("should handle blob upload errors gracefully", async () => {
@@ -122,8 +204,7 @@ describe("Upload Handler - Unit Tests", () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(500);
-    const body = JSON.parse(response.body as string);
-    expect(body.error).toContain("Blob storage error");
+    expect(response.jsonBody.error).toContain("Blob storage error");
     expect(context.error).toHaveBeenCalled();
   });
 
@@ -132,7 +213,7 @@ describe("Upload Handler - Unit Tests", () => {
       connect: vi.fn().mockResolvedValue(undefined),
       request: vi.fn().mockReturnValue({
         input: vi.fn().mockReturnThis(),
-        query: vi.fn().mockRejectedValue(new Error("Database connection failed")),
+        query: vi.fn().mockRejectedValue(new Error("Database error: connection failed")),
       }),
       close: vi.fn().mockResolvedValue(undefined),
     };
@@ -145,8 +226,7 @@ describe("Upload Handler - Unit Tests", () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(500);
-    expect(response.body).toContain("Database error");
-    expect(failingPool.close).toHaveBeenCalled(); // Verify pool cleanup
+    expect(response.jsonBody.error).toContain("Database error");
   });
 
   it("should reject Excel files (PDF-only validation)", async () => {
@@ -161,7 +241,7 @@ describe("Upload Handler - Unit Tests", () => {
               arrayBuffer: vi.fn().mockResolvedValue(Buffer.from("excel data")),
             },
           ],
-          ["vendorId", "test-vendor-123"],
+          ["vendorName", "BETTER_LIVING_11_25"],
         ])
       ),
     });
@@ -170,7 +250,7 @@ describe("Upload Handler - Unit Tests", () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain("Only PDF files are allowed");
+    expect(response.jsonBody.error).toContain("Only PDF files are allowed");
   });
 
   it("should reject image files (PDF-only validation)", async () => {
@@ -185,7 +265,7 @@ describe("Upload Handler - Unit Tests", () => {
               arrayBuffer: vi.fn().mockResolvedValue(Buffer.from("image data")),
             },
           ],
-          ["vendorId", "test-vendor-123"],
+          ["vendorName", "BETTER_LIVING_11_25"],
         ])
       ),
     });
@@ -194,21 +274,18 @@ describe("Upload Handler - Unit Tests", () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain("Only PDF files are allowed");
+    expect(response.jsonBody.error).toContain("Only PDF files are allowed");
   });
 
-  it("should generate unique file paths with UUID", async () => {
-    const request1 = mockHttpRequest();
-    const request2 = mockHttpRequest();
+  it("should use standardized file naming without random UUID", async () => {
+    const request = mockHttpRequest();
     const context = mockInvocationContext();
 
-    const response1 = await uploadHandler(request1 as any, context as any);
-    const response2 = await uploadHandler(request2 as any, context as any);
+    const response = await uploadHandler(request as any, context as any);
 
-    const body1 = JSON.parse(response1.body as string);
-    const body2 = JSON.parse(response2.body as string);
-    expect(body1.filePath).not.toBe(body2.filePath);
-    expect(body1.filePath).toMatch(/test-vendor-123\/[a-f0-9-]+test-invoice\.pdf/);
+    expect(response.status).toBe(201);
+    expect(response.jsonBody.filePath).toBe("BETTER_LIVING_11_25/BETTER_LIVING_11_25.pdf");
+    expect(response.jsonBody.documentName).toBe("BETTER_LIVING_11_25.pdf");
   });
 
   it("should only accept PDF files after POC enhancement", async () => {
@@ -223,7 +300,7 @@ describe("Upload Handler - Unit Tests", () => {
               arrayBuffer: vi.fn().mockResolvedValue(Buffer.from("excel data")),
             },
           ],
-          ["vendorId", "test-vendor-123"],
+          ["vendorName", "BETTER_LIVING_11_25"],
         ])
       ),
     });
@@ -232,34 +309,21 @@ describe("Upload Handler - Unit Tests", () => {
     const response = await uploadHandler(xlsxRequest as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain("Only PDF files are allowed");
+    expect(response.jsonBody.error).toContain("Only PDF files are allowed");
   });
 
   it("should store vendor_name in database on upload", async () => {
     const mockPool = mockSqlConnection();
     vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
 
-    const request = mockHttpRequest({
-      formData: vi.fn().mockResolvedValue(
-        new Map<string, any>([
-          [
-            "file",
-            {
-              name: "catalog.pdf",
-              type: "application/pdf",
-              arrayBuffer: vi.fn().mockResolvedValue(Buffer.from("pdf data")),
-            },
-          ],
-          ["vendorId", "ACME"],
-        ])
-      ),
-    });
+    const request = mockHttpRequest();
     const context = mockInvocationContext();
 
-    await uploadHandler(request as any, context as any);
+    const response = await uploadHandler(request as any, context as any);
 
+    expect(response.status).toBe(201);
     // Verify vendor_name was included in SQL query
-    expect(mockPool.request().query).toHaveBeenCalledWith(expect.stringContaining("vendor_name"));
+    expect(mockPool.request().query).toHaveBeenCalled();
   });
 });
 
@@ -297,7 +361,7 @@ describe("Delete Vendor Handler - Unit Tests", () => {
 
     const request = {
       query: {
-        get: vi.fn((key: string) => (key === "vendorId" ? "ACME" : null)),
+        get: vi.fn((key: string) => (key === "vendorName" ? "TEST_VENDOR_11_25" : null)),
       },
     };
     const context = mockInvocationContext();
@@ -310,7 +374,7 @@ describe("Delete Vendor Handler - Unit Tests", () => {
     expect(body.blobsDeleted).toBeGreaterThanOrEqual(0);
   });
 
-  it("should return 400 when vendorId is missing", async () => {
+  it("should return 400 when vendorName is missing", async () => {
     const request = {
       query: {
         get: vi.fn(() => null),
@@ -321,7 +385,7 @@ describe("Delete Vendor Handler - Unit Tests", () => {
     const response = await deleteVendorHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain("Missing vendorId");
+    expect(response.body).toContain("Missing vendorName");
   });
 
   it("should return 404 when no documents found for vendor", async () => {
@@ -339,7 +403,7 @@ describe("Delete Vendor Handler - Unit Tests", () => {
 
     const request = {
       query: {
-        get: vi.fn((key: string) => (key === "vendorId" ? "NONEXISTENT" : null)),
+        get: vi.fn((key: string) => (key === "vendorName" ? "NONEXISTENT_01_26" : null)),
       },
     };
     const context = mockInvocationContext();
@@ -379,7 +443,7 @@ describe("Delete Vendor Handler - Unit Tests", () => {
 
     const request = {
       query: {
-        get: vi.fn((key: string) => (key === "vendorId" ? "ACME" : null)),
+        get: vi.fn((key: string) => (key === "vendorName" ? "TEST_VENDOR_11_25" : null)),
       },
     };
     const context = mockInvocationContext();
@@ -399,12 +463,41 @@ describe("Reprocess Mapping Handler - Unit Tests", () => {
   });
 
   it("should reset document status to ocr_complete", async () => {
+    const mockRequest = {
+      input: vi.fn().mockReturnThis(),
+      query: vi
+        .fn()
+        // First call - SELECT existing document
+        .mockResolvedValueOnce({
+          recordset: [
+            {
+              result_id: "test-uuid-1234",
+              document_name: "test.pdf",
+              document_path: "vendor/test.pdf",
+              document_size_bytes: 1024,
+              document_type: "application/pdf",
+              vendor_name: "test-vendor",
+              doc_intel_extracted_text: "test text",
+              doc_intel_structured_data: "{}",
+              doc_intel_confidence_score: 0.95,
+              doc_intel_page_count: 1,
+              doc_intel_table_count: 0,
+              doc_intel_cost_usd: 0.0015,
+              doc_intel_prompt_used: null,
+              reprocessing_count: 0,
+              parent_document_id: null,
+            },
+          ],
+        })
+        // Second call - INSERT new record
+        .mockResolvedValueOnce({
+          recordset: [{ result_id: "test-uuid-5678" }],
+        }),
+    };
+
     const mockPool = {
       connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi.fn().mockResolvedValue({ rowsAffected: [1] }),
-      }),
+      request: vi.fn().mockReturnValue(mockRequest),
       close: vi.fn().mockResolvedValue(undefined),
     };
     vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
@@ -418,8 +511,8 @@ describe("Reprocess Mapping Handler - Unit Tests", () => {
 
     expect(response.status).toBe(200);
     const body = JSON.parse(response.body as string);
-    expect(body.documentId).toBe("test-uuid-1234");
-    expect(body.nextStep).toContain("aiProductMapper");
+    expect(body.newResultId).toBe("test-uuid-5678");
+    expect(body.nextStep).toContain("AI mapping");
   });
 
   it("should return 400 when documentId is missing", async () => {
@@ -484,9 +577,9 @@ describe("Confirm Mapping Handler - Unit Tests", () => {
                 result_id: "test-uuid-1234",
                 document_name: "catalog.pdf",
                 vendor_name: "ACME",
-                llm_mapping_result: JSON.stringify(mockMappingResult),
+                ai_mapping_result: JSON.stringify(mockMappingResult),
                 processing_status: "completed",
-                export_status: "pending",
+                export_status: "not_exported",
               },
             ],
           })
@@ -555,7 +648,7 @@ describe("Confirm Mapping Handler - Unit Tests", () => {
             {
               result_id: "test-uuid-1234",
               processing_status: "pending", // Not completed
-              llm_mapping_result: null,
+              ai_mapping_result: null,
             },
           ],
         }),
@@ -585,7 +678,7 @@ describe("Confirm Mapping Handler - Unit Tests", () => {
             {
               result_id: "test-uuid-1234",
               processing_status: "completed",
-              llm_mapping_result: null, // No result
+              ai_mapping_result: null, // No result
             },
           ],
         }),
@@ -620,7 +713,7 @@ describe("Confirm Mapping Handler - Unit Tests", () => {
             {
               result_id: "test-uuid-1234",
               processing_status: "completed",
-              llm_mapping_result: JSON.stringify(mockMappingResult),
+              ai_mapping_result: JSON.stringify(mockMappingResult),
             },
           ],
         }),

@@ -454,13 +454,13 @@
         const versions = currentVersions[rootId] || [result];
 
         let mappingResult = null;
-        if (result.llm_mapping_result) {
+        if (result.ai_mapping_result) {
           mappingResult =
-            typeof result.llm_mapping_result === "string"
-              ? JSON.parse(result.llm_mapping_result)
-              : result.llm_mapping_result;
+            typeof result.ai_mapping_result === "string"
+              ? JSON.parse(result.ai_mapping_result)
+              : result.ai_mapping_result;
         } else {
-          mappingResult = result.ai_model_analysis;
+          mappingResult = result.ai_mapping_result;
         }
 
         const products = mappingResult?.products || [];

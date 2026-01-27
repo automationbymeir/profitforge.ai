@@ -1,12 +1,25 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlobServiceClient } from "@azure/storage-blob";
-import * as crypto from "crypto";
+import {
+  checkDailyUploadLimit,
+  checkIpRateLimit,
+  cleanupOldUsageRecords,
+  getUsageStats,
+  incrementDailyUploadCount,
+  incrementIpUploadCount,
+  initializeUsageTable,
+} from "../utils/usageTracker.js";
+
 import sql from "mssql";
+import { getVendorFileName, validateVendorName } from "../utils/validations.js";
 
 // Inline vendor path helper
 function getVendorPath(vendorName: string): string {
   return vendorName;
 }
+
+// Initialize table on cold start - in client this is also executed!
+initializeUsageTable().catch((err) => console.error("Failed to init usage table:", err));
 
 // Connection strings from environment variables
 const STORAGE_ACCOUNT_NAME = process.env.STORAGE_ACCOUNT_NAME;
@@ -15,6 +28,39 @@ const SQL_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING;
 
 // Allowed file types for upload (PDF only for production POC)
 const ALLOWED_FILE_TYPES = ["application/pdf"];
+
+/**
+ * Validate API key for demo mode protection
+ * Returns true if valid or if demo mode is disabled (client mode)
+ */
+function validateApiKey(providedKey: string | null): { valid: boolean; error?: string } {
+  if (!providedKey) {
+    return {
+      valid: false,
+      error: "Missing API key. Include x-api-key header.",
+    };
+  }
+
+  if (providedKey !== process.env.DEMO_API_KEY) {
+    return {
+      valid: false,
+      error: "Invalid API key",
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate file size against configured limit
+ */
+function validateFileSize(fileSize: number): boolean {
+  const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || "0");
+
+  const maxBytes = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+  return fileSize > maxBytes ? false : true;
+}
 
 /**
  * Upload Handler - HTTP POST endpoint for document uploads
@@ -43,30 +89,146 @@ export async function uploadHandler(
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log(`Processing upload request for ${req.url}`);
+  const clientIp =
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+  if (process.env.IS_DEMO_MODE === "true") {
+    // 🛡️ SECURITY CHECK 1: Validate API Key (demo mode only)
+    const apiKeyCheck = validateApiKey(req.headers.get("x-api-key"));
+    if (!apiKeyCheck.valid) {
+      context.warn(`API key validation failed: ${apiKeyCheck.error}`);
+      return {
+        status: 401,
+        jsonBody: {
+          error: apiKeyCheck.error,
+          message: "This demo requires an API key. Contact the owner for access.",
+        },
+      };
+    }
+
+    // 🛡️ SECURITY CHECK 2: IP-based rate limit (per hour, demo mode only)
+    const ipRateCheck = await checkIpRateLimit(clientIp);
+    if (!ipRateCheck.allowed) {
+      context.warn(
+        `IP rate limit exceeded for ${clientIp}: ${ipRateCheck.current}/${ipRateCheck.limit}`
+      );
+      return {
+        status: 429,
+        jsonBody: {
+          error: "Rate limit exceeded",
+          current: ipRateCheck.current,
+          limit: ipRateCheck.limit,
+          resetTime: ipRateCheck.resetTime,
+          message: `Too many uploads from your IP. Limit: ${ipRateCheck.limit} per hour. Resets at ${ipRateCheck.resetTime}.`,
+        },
+      };
+    }
+
+    // 🛡️ SECURITY CHECK 3: Daily upload limit (before parsing large files)
+    const limitCheck = await checkDailyUploadLimit();
+    if (!limitCheck.allowed) {
+      context.log(`Daily limit reached: ${limitCheck.current}/${limitCheck.limit}`);
+      return {
+        status: 429,
+        jsonBody: {
+          error: "Daily upload limit reached",
+          current: limitCheck.current,
+          limit: limitCheck.limit,
+          resetTime: "midnight UTC",
+          message:
+            "This is a demo environment with daily limits. Try again tomorrow or contact for production access.",
+        },
+      };
+    }
+  }
 
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    const vendorId = formData.get("vendorId") as string;
+    const vendorName = formData.get("vendorName") as string;
 
-    if (!file || !vendorId) {
+    if (!file || !vendorName) {
       return {
         status: 400,
-        body: "Missing file or vendorId in request",
+        jsonBody: {
+          error: "Missing file or vendor name in request",
+        },
       };
     }
-
+    // VALIDATION: Vendor name format
+    const vendorValidation = validateVendorName(vendorName);
+    if (!vendorValidation.valid) {
+      return {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          error: "Invalid vendor name format",
+          message: vendorValidation.error,
+        }),
+      };
+    }
     // Validate file type
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       return {
         status: 400,
-        body: `Unsupported file type: ${file.type}. Only PDF files are allowed.`,
+        jsonBody: {
+          error: `Unsupported file type: ${file.type}. Only PDF files are allowed.`,
+        },
       };
     }
 
-    const fileName = file.name;
+    // 🛡️ SECURITY CHECK 3: File size limit (demo mode only)
+    if (process.env.IS_DEMO_MODE === "true" && validateFileSize(file.size) === false) {
+      return {
+        status: 413,
+        jsonBody: {
+          error: "File size exceeds limit",
+          message: `This is a demo environment with file size limits of up to ${process.env.MAX_FILE_SIZE_MB}MB.`,
+        },
+      };
+    }
+
+    // Get standardized file name (e.g., BETTER_LIVING-11-25.pdf)
+    const standardFileName = getVendorFileName(vendorName);
     const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const filePath = `${getVendorPath(vendorId)}/${crypto.randomUUID()}-${fileName}`;
+    const filePath = `${getVendorPath(vendorName)}/${standardFileName}`;
+
+    // CHECK FOR DUPLICATE: One-to-one mapping enforcement
+    let pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+    await pool.connect();
+
+    const existingCheck = await pool.request().input("vendorName", sql.NVarChar, vendorName).query(`
+        SELECT result_id, document_name, processing_status
+        FROM vvocr.document_processing_results
+        WHERE vendor_name = @vendorName
+      `);
+
+    if (existingCheck.recordset.length > 0) {
+      await pool.close();
+      const existing = existingCheck.recordset[0];
+      return {
+        status: 409, // Conflict
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        jsonBody: {
+          error: "Vendor already exists",
+          message: `A document already exists for vendor ${vendorName}. Please delete the existing document first using DELETE /api/deleteVendor?vendorName=${vendorName}`,
+          existingDocument: {
+            resultId: existing.result_id,
+            documentName: existing.document_name,
+            status: existing.processing_status,
+          },
+        },
+      };
+    }
+
+    await pool.close();
 
     // 1. Upload to Blob Storage
     const blobServiceClient = BlobServiceClient.fromConnectionString(
@@ -78,25 +240,29 @@ export async function uploadHandler(
     await blockBlobClient.upload(fileBuffer, fileBuffer.length);
 
     // 2. Register in Database
-    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+    pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
     await pool.connect();
 
     try {
       const result = await pool
         .request()
-        .input("vendorId", sql.NVarChar, vendorId)
-        .input("documentName", sql.NVarChar, fileName)
+        .input("vendorName", sql.NVarChar, vendorName)
+        .input("documentName", sql.NVarChar, standardFileName)
         .input("documentPath", sql.NVarChar, filePath)
         .input("fileSize", sql.BigInt, fileBuffer.length)
         .input("fileType", sql.NVarChar, file.type).query(`
                   INSERT INTO vvocr.document_processing_results 
                   (document_name, document_path, document_size_bytes, document_type, processing_status, vendor_name)
                   OUTPUT INSERTED.result_id
-                  VALUES (@documentName, @documentPath, @fileSize, @fileType, 'pending', @vendorId)
+                  VALUES (@documentName, @documentPath, @fileSize, @fileType, 'pending', @vendorName)
               `);
 
       const resultId = result.recordset[0].result_id;
       await pool.close();
+
+      // Increment usage counters (both daily and IP-based)
+      await incrementDailyUploadCount();
+      await incrementIpUploadCount(clientIp);
 
       return {
         status: 201,
@@ -104,14 +270,16 @@ export async function uploadHandler(
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Headers": "Content-Type, x-api-key",
         },
-        body: JSON.stringify({
+        jsonBody: {
           message: "Document uploaded successfully",
           resultId,
+          documentName: standardFileName,
+          vendorName: vendorName,
           filePath,
-          vendorId,
-        }),
+          status: "pending",
+        },
       };
     } catch (dbError: any) {
       await pool.close();
@@ -125,7 +293,7 @@ export async function uploadHandler(
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify({ error: error.message }),
+      jsonBody: { error: error.message },
     };
   }
 }
@@ -171,12 +339,12 @@ export async function deleteVendorHandler(
   context.log(`Processing delete request for ${req.url}`);
 
   try {
-    const vendorId = req.query.get("vendorId");
+    const vendorName = req.query.get("vendorName");
 
-    if (!vendorId) {
+    if (!vendorName) {
       return {
         status: 400,
-        body: "Missing vendorId query parameter",
+        body: "Missing vendorName query parameter",
       };
     }
 
@@ -185,10 +353,10 @@ export async function deleteVendorHandler(
     await pool.connect();
 
     try {
-      const result = await pool.request().input("vendorId", sql.NVarChar, vendorId).query(`
+      const result = await pool.request().input("vendorName", sql.NVarChar, vendorName).query(`
           SELECT result_id, document_path 
           FROM vvocr.document_processing_results 
-          WHERE vendor_name = @vendorId
+          WHERE vendor_name = @vendorName
         `);
 
       const documents = result.recordset;
@@ -202,7 +370,7 @@ export async function deleteVendorHandler(
             "Access-Control-Allow-Origin": "*",
           },
           body: JSON.stringify({
-            message: `No documents found for vendor: ${vendorId}`,
+            message: `No documents found for vendor: ${vendorName}`,
           }),
         };
       }
@@ -225,9 +393,10 @@ export async function deleteVendorHandler(
       }
 
       // 3. Delete database records
-      const deleteResult = await pool.request().input("vendorId", sql.NVarChar, vendorId).query(`
+      const deleteResult = await pool.request().input("vendorName", sql.NVarChar, vendorName)
+        .query(`
           DELETE FROM vvocr.document_processing_results 
-          WHERE vendor_name = @vendorId
+          WHERE vendor_name = @vendorName
         `);
 
       await pool.close();
@@ -239,7 +408,7 @@ export async function deleteVendorHandler(
           "Access-Control-Allow-Origin": "*",
         },
         body: JSON.stringify({
-          message: `Vendor ${vendorId} deleted successfully`,
+          message: `Vendor ${vendorName} deleted successfully`,
           documentsDeleted: deleteResult.rowsAffected[0],
           blobsDeleted,
         }),
@@ -355,7 +524,8 @@ export async function reprocessMappingHandler(
 
     const existing = existingResult.recordset[0];
 
-    // Determine the root parent (walk up the chain if this is already a reprocessed version)
+    // Find the root parent (creates a tree structure where all versions point to the original)
+    // If this document has a parent, that's the root. Otherwise, this document is the root.
     const rootParentId = existing.parent_document_id || documentId;
     const newVersion = (existing.reprocessing_count || 0) + 1;
 
@@ -432,7 +602,7 @@ export async function reprocessMappingHandler(
       body: JSON.stringify({
         message: `New version created for remapping (v${newVersion})`,
         originalDocumentId: documentId,
-        newDocumentId: newDocumentId,
+        newResultId: newDocumentId,
         version: newVersion,
         parentDocumentId: rootParentId,
         nextStep: "AI mapping will be queued automatically",
@@ -474,7 +644,7 @@ app.http("reprocessMapping", {
  *
  * PROCESS:
  * 1. Extract document_id from request body
- * 2. Retrieve llm_mapping_result from document_processing_results
+ * 2. Retrieve ai_mapping_result from document_processing_results
  * 3. Insert products into vvocr.vendor_products (production table)
  * 4. Update export_status to 'confirmed'
  * 5. Return confirmation with product count
@@ -512,7 +682,7 @@ export async function confirmMappingHandler(
             result_id,
             document_name,
             vendor_name,
-            llm_mapping_result,
+            ai_mapping_result,
             processing_status,
             export_status
           FROM vvocr.document_processing_results 
@@ -539,7 +709,30 @@ export async function confirmMappingHandler(
         };
       }
 
-      if (!document.llm_mapping_result) {
+      // Check if already exported (idempotency)
+      if (document.export_status === "confirmed") {
+        await pool.close();
+        context.log(`ℹ️ Document ${documentId} already confirmed, skipping re-export`);
+
+        const mappingData = JSON.parse(document.ai_mapping_result || "{}");
+        const productsCount = (mappingData.products || []).length;
+
+        return {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          body: JSON.stringify({
+            message: "Products already exported (idempotent operation)",
+            documentId,
+            vendor: document.vendor_name,
+            productsExported: productsCount,
+          }),
+        };
+      }
+
+      if (!document.ai_mapping_result) {
         await pool.close();
         return {
           status: 400,
@@ -547,7 +740,7 @@ export async function confirmMappingHandler(
         };
       }
 
-      const mappingData = JSON.parse(document.llm_mapping_result);
+      const mappingData = JSON.parse(document.ai_mapping_result);
       const products = mappingData.products || [];
 
       if (products.length === 0) {
@@ -1027,5 +1220,84 @@ app.http("deleteDocument", {
       };
     }
     return deleteDocumentHandler(request, context);
+  },
+});
+
+/**
+ * Demo endpoint for usage tracking cleanup and stats
+ *
+ * GET /api/demo/usage - Get usage statistics
+ * POST /api/demo/cleanup?daysToKeep=30 - Trigger cleanup
+ *
+ */
+async function demoUsageHandler(
+  req: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
+  try {
+    if (req.method === "GET") {
+      // Get usage stats
+      const stats = await getUsageStats();
+      return {
+        status: 200,
+        jsonBody: {
+          stats,
+          message: "Usage statistics retrieved",
+        },
+      };
+    } else if (req.method === "POST") {
+      // Trigger cleanup
+      const daysToKeep = parseInt(req.query.get("daysToKeep") || "30");
+
+      context.log(`🧹 Cleanup triggered: keeping ${daysToKeep} days`);
+
+      const statsBefore = await getUsageStats();
+      const cleanupResult = await cleanupOldUsageRecords(daysToKeep);
+      const statsAfter = await getUsageStats();
+
+      return {
+        status: 200,
+        jsonBody: {
+          message: "Cleanup completed successfully",
+          daysRetained: daysToKeep,
+          deleted: cleanupResult,
+          before: statsBefore,
+          after: statsAfter,
+        },
+      };
+    }
+
+    return {
+      status: 405,
+      jsonBody: { error: "Method not allowed" },
+    };
+  } catch (error: any) {
+    context.error("Demo operation failed:", error);
+    return {
+      status: 500,
+      jsonBody: {
+        error: "Demo operation failed",
+        details: error.message,
+      },
+    };
+  }
+}
+
+app.http("demoUsage", {
+  methods: ["GET", "POST", "OPTIONS"],
+  authLevel: "anonymous",
+  route: "demo/usage",
+  handler: async (request: HttpRequest, context: InvocationContext) => {
+    if (request.method === "OPTIONS") {
+      return {
+        status: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      };
+    }
+    return demoUsageHandler(request, context);
   },
 });

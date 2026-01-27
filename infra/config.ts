@@ -1,8 +1,16 @@
+import * as pulumi from "@pulumi/pulumi";
+
 /**
  * Azure resource configuration
  * Uses client's existing Azure resources (dragonfruit - Meir's credentials)
  * Non-sensitive values only - secrets should use SST Secret
  */
+
+// Demo mode configuration
+// Set via: pulumi config set demoMode true
+// Default: false (client mode - no rate limiting, no API keys)
+const config = new pulumi.Config();
+export const isDemoMode = config.getBoolean("demoMode") || false;
 
 export interface AzureConfig {
   // Azure Region
@@ -27,7 +35,7 @@ export interface AzureConfig {
   aiProjectName: string;
   cognitiveServicesName: string;
   documentIntelligenceEndpoint: string;
-  
+
   // Existing Function App Resources (Created by Client)
   functionAppName: string;
   functionAppPlanName: string;

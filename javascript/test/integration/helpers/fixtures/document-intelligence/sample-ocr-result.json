@@ -1,0 +1,79 @@
+{
+  "status": "succeeded",
+  "createdDateTime": "2024-01-01T12:00:00Z",
+  "lastUpdatedDateTime": "2024-01-01T12:00:15Z",
+  "analyzeResult": {
+    "apiVersion": "2023-07-31",
+    "modelId": "prebuilt-layout",
+    "stringIndexType": "textElements",
+    "content": "ACME CORPORATION\\nProduct Price List\\nEffective Date: January 2024\\n\\nProduct Code | Description | Unit Price | Case Pack | UOM\\nACME-001 | Premium Widget | $12.99 | 24 | EA\\nACME-002 | Deluxe Gadget | $24.50 | 12 | EA\\nACME-003 | Super Doohickey | $8.75 | 48 | EA\\n\\nTerms: Net 30\\nContact: sales@acme.com",
+    "pages": [
+      {
+        "pageNumber": 1,
+        "angle": 0,
+        "width": 8.5,
+        "height": 11,
+        "unit": "inch",
+        "words": [
+          {
+            "content": "ACME",
+            "boundingBox": [1.0, 1.0, 2.5, 1.0, 2.5, 1.5, 1.0, 1.5],
+            "confidence": 0.99
+          },
+          {
+            "content": "CORPORATION",
+            "boundingBox": [2.6, 1.0, 4.5, 1.0, 4.5, 1.5, 2.6, 1.5],
+            "confidence": 0.99
+          }
+        ],
+        "lines": [
+          {
+            "content": "ACME CORPORATION",
+            "boundingBox": [1.0, 1.0, 4.5, 1.0, 4.5, 1.5, 1.0, 1.5]
+          }
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "rowCount": 4,
+        "columnCount": 5,
+        "cells": [
+          {
+            "rowIndex": 0,
+            "columnIndex": 0,
+            "content": "Product Code",
+            "kind": "columnHeader"
+          },
+          {
+            "rowIndex": 0,
+            "columnIndex": 1,
+            "content": "Description",
+            "kind": "columnHeader"
+          },
+          {
+            "rowIndex": 0,
+            "columnIndex": 2,
+            "content": "Unit Price",
+            "kind": "columnHeader"
+          },
+          {
+            "rowIndex": 1,
+            "columnIndex": 0,
+            "content": "ACME-001"
+          },
+          {
+            "rowIndex": 1,
+            "columnIndex": 1,
+            "content": "Premium Widget"
+          },
+          {
+            "rowIndex": 1,
+            "columnIndex": 2,
+            "content": "$12.99"
+          }
+        ]
+      }
+    ]
+  }
+}

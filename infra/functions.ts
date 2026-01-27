@@ -1,6 +1,6 @@
 import * as azurenative from "@pulumi/azure-native";
 import * as pulumi from "@pulumi/pulumi";
-import { azureConfig } from "./config";
+import { azureConfig, isDemoMode } from "./config";
 
 export interface FunctionAppResources {
   functionApp: azurenative.web.WebApp;
@@ -65,6 +65,16 @@ export function createFunctionAppResources(
         // OpenAI GPT-4o settings (for product mapping)
         { name: "AI_PROJECT_ENDPOINT", value: aiProjectEndpoint },
         { name: "AI_PROJECT_KEY", value: aiProjectKey },
+
+        // Demo mode protection (controlled via pulumi config: demoMode)
+        // Default: 0 (disabled) for client deployments
+        // Demo: Set via 'pulumi config set demoMode true'
+        { name: "IS_DEMO_MODE", value: "" + isDemoMode },
+        { name: "MAX_DAILY_UPLOADS", value: isDemoMode ? "50" : "0" },
+        { name: "MAX_FILE_SIZE_MB", value: isDemoMode ? "10" : "0" },
+        { name: "MAX_UPLOADS_PER_IP_PER_HOUR", value: isDemoMode ? "10" : "0" },
+        { name: "DEMO_API_KEY", value: isDemoMode ? "demo-key-change-me" : "" },
+        { name: "USAGE_RETENTION_DAYS", value: "30" },
       ],
       http20Enabled: true,
       nodeVersion: "~20",
