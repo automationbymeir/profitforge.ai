@@ -19,7 +19,24 @@ export async function getResults(
     const resultId = request.query.get("resultId");
     const vendorName = request.query.get("vendor");
     const showAllVersions = request.query.get("allVersions") === "true";
-    const limit = parseInt(request.query.get("limit") || "10");
+    const limitParam = request.query.get("limit") || "10";
+    const limit = parseInt(limitParam, 10) || 10; // Default to 10 if invalid
+
+    // Validate UUID format if resultId is provided
+    if (resultId) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(resultId)) {
+        // Return empty array for invalid UUID instead of throwing error
+        return {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          body: JSON.stringify([]),
+        };
+      }
+    }
 
     const results = await withDatabase(async (pool) => {
       let query: string;
@@ -41,12 +58,11 @@ export async function getResults(
           doc_intel_table_count,
           doc_intel_cost_usd,
           doc_intel_confidence_score,
-          ai_model_analysis,
+          ai_mapping_result,
           ai_model_used,
           ai_model_cost_usd,
           ai_confidence_score,
           ai_completeness_score,
-          llm_mapping_result,
           product_count,
           created_at,
           updated_at
@@ -78,12 +94,11 @@ export async function getResults(
           d.doc_intel_table_count,
           d.doc_intel_cost_usd,
           d.doc_intel_confidence_score,
-          d.ai_model_analysis,
+          d.ai_mapping_result,
           d.ai_model_used,
           d.ai_model_cost_usd,
           d.ai_confidence_score,
           d.ai_completeness_score,
-          d.llm_mapping_result,
           d.product_count,
           d.created_at,
           d.updated_at
@@ -114,10 +129,7 @@ export async function getResults(
       // Parse JSON fields
       return result.recordset.map((record) => ({
         ...record,
-        ai_model_analysis: record.ai_model_analysis ? JSON.parse(record.ai_model_analysis) : null,
-        llm_mapping_result: record.llm_mapping_result
-          ? JSON.parse(record.llm_mapping_result)
-          : null,
+        ai_mapping_result: record.ai_mapping_result ? JSON.parse(record.ai_mapping_result) : null,
       }));
     });
 

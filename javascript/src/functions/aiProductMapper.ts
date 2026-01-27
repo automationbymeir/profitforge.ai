@@ -43,7 +43,7 @@ const BRONZE_LAYER_CONTAINER = "bronze-layer";
  *
  * 5. DATABASE UPDATE
  *    - Update document_processing_results table with:
- *      * llm_mapping_result: Product JSON array
+ *      * ai_mapping_result: Product JSON array
  *      * ai_model_name: 'gpt-4o'
  *      * ai_prompt_used: Full prompt text
  *      * ai_prompt_tokens, ai_completion_tokens, ai_total_tokens
@@ -381,12 +381,12 @@ Context: ${fullText.substring(0, 2000)}`;
       .input("totalTokens", sql.Int, totalTokens)
       .input("aiCost", sql.Decimal(10, 6), aiCost)
       .input("productCount", sql.Int, products.length)
-      .input("vendorName", sql.NVarChar, mappingResult.vendor || document.vendor_name)
+      .input("vendorName", sql.NVarChar, document.vendor_name) // Preserve original vendor name
       .input("completenessScore", sql.Decimal(5, 2), completenessScore)
       .input("confidenceScore", sql.Decimal(5, 2), confidenceScore).query(`
         UPDATE vvocr.document_processing_results 
         SET 
-            llm_mapping_result = @mappingResult,
+            ai_mapping_result = @mappingResult,
             ai_model_used = 'gpt-4o',
             ai_prompt_used = @promptUsed,
             ai_prompt_tokens = @promptTokens,

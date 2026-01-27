@@ -1,0 +1,21 @@
+{
+  "id": "chatcmpl-test123",
+  "object": "chat.completion",
+  "created": 1704067200,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "```json\n[\n  {\n    \"code\": \"ACME-001\",\n    \"description\": \"Premium Widget\",\n    \"price\": 12.99,\n    \"casePack\": 24,\n    \"uom\": \"EA\"\n  },\n  {\n    \"code\": \"ACME-002\",\n    \"description\": \"Deluxe Gadget\",\n    \"price\": 24.50,\n    \"casePack\": 12,\n    \"uom\": \"EA\"\n  },\n  {\n    \"code\": \"ACME-003\",\n    \"description\": \"Super Doohickey\",\n    \"price\": 8.75,\n    \"casePack\": 48,\n    \"uom\": \"EA\"\n  }\n]\n```"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1250,
+    "completion_tokens": 180,
+    "total_tokens": 1430
+  }
+}

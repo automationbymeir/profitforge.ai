@@ -1,0 +1,21 @@
+{
+  "status": "succeeded",
+  "createdDateTime": "2024-01-01T12:00:00Z",
+  "lastUpdatedDateTime": "2024-01-01T12:00:10Z",
+  "analyzeResult": {
+    "apiVersion": "2023-07-31",
+    "modelId": "prebuilt-layout",
+    "stringIndexType": "textElements",
+    "content": "[Corrupted or unreadable text]\\n##@$%^&*()\\nError processing document",
+    "pages": [
+      {
+        "pageNumber": 1,
+        "angle": 0,
+        "width": 8.5,
+        "height": 11,
+        "unit": "inch",
+        "words": []
+      }
+    ]
+  }
+}
