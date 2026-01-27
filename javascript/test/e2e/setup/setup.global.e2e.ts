@@ -8,8 +8,10 @@
  */
 
 import { ChildProcess } from "child_process";
+import { config } from "dotenv";
 import { existsSync, unlinkSync, writeFileSync } from "fs";
-import { testConfig, TestMode } from "../../config.js";
+import { resolve } from "path";
+import { getTestConfig, TestMode } from "../../config.js";
 import { cleanBlobs, cleanQueue } from "../../tools/cleanup";
 import {
   registerSignalHandlers,
@@ -79,6 +81,16 @@ export default async function globalSetup() {
   const mode = "e2e" as TestMode;
   console.log("\n🔧 Setting up e2e test environment...\n");
 
+  // Load .env.e2e file if it exists (local development)
+  const envPath = resolve(process.cwd(), ".env.e2e");
+  if (existsSync(envPath)) {
+    config({ path: envPath });
+    console.log("✓ Loaded .env.e2e");
+  } else if (useLocalFunctions) {
+    console.warn("⚠️  Warning: .env.e2e not found. E2E tests require real Azure credentials.");
+    console.warn("   Create .env.e2e from .env.e2e.example\n");
+  }
+
   // Register signal handlers for Ctrl+C and other interrupts
   registerSignalHandlers(cleanup);
 
@@ -91,7 +103,7 @@ export default async function globalSetup() {
 
       const settings = {
         IsEncrypted: false,
-        Values: testConfig[mode],
+        Values: getTestConfig(mode),
       };
 
       writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));

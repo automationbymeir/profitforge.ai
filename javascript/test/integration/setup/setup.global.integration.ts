@@ -12,7 +12,7 @@ import { BlobServiceClient } from "@azure/storage-blob";
 import { ChildProcess, spawn } from "child_process";
 import { existsSync, unlinkSync, writeFileSync } from "fs";
 import sql from "mssql";
-import { testConfig, type TestMode } from "../../config.js";
+import { getTestConfig } from "../../config.js";
 import {
   registerSignalHandlers,
   startFunctions,
@@ -23,6 +23,7 @@ import {
 const SETTINGS_PATH = "local.settings.json";
 const FUNC_LOG_PATH = "test/functions-integration-output.log";
 const FUNC_ERROR_LOG_PATH = "test/functions-integration-error.log";
+const config = getTestConfig("integration");
 
 let dockerProcess: ChildProcess | null = null;
 let functionsProcess: ChildProcess | null = null;
@@ -50,7 +51,7 @@ async function cleanup() {
 }
 
 async function waitForDatabase(maxAttempts = 30): Promise<void> {
-  const connectionString = testConfig.integration.SQL_CONNECTION_STRING;
+  const connectionString = config.SQL_CONNECTION_STRING;
 
   for (let i = 0; i < maxAttempts; i++) {
     try {
@@ -67,7 +68,7 @@ async function waitForDatabase(maxAttempts = 30): Promise<void> {
 }
 
 async function setupAzuriteContainers(): Promise<void> {
-  const storageConnectionString = testConfig.integration.STORAGE_CONNECTION_STRING;
+  const storageConnectionString = config.STORAGE_CONNECTION_STRING;
   const blobServiceClient = BlobServiceClient.fromConnectionString(storageConnectionString);
 
   // Create the "uploads" container that Functions app expects
@@ -137,7 +138,7 @@ function stopDocker(): Promise<void> {
 }
 
 export default async function globalSetup() {
-  const mode = "integration" as TestMode;
+  const mode = "integration";
 
   console.log(`\n🔧 Setting up ${mode} test environment...\n`);
 
@@ -146,8 +147,9 @@ export default async function globalSetup() {
 
   const settings = {
     IsEncrypted: false,
-    Values: testConfig[mode],
+    Values: config,
   };
+
   try {
     writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));
     console.log(`✓ Configured local.settings.json for ${mode} tests`);
