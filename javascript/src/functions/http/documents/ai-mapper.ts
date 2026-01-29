@@ -1,7 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { withCors, withErrorHandler } from '../middleware/index.js';
-import { getAIService } from '../services/index.js';
-import { errorResponse, successResponse } from '../utils/httpHelpers.js';
+import { withCors, withErrorHandler } from '../../../middleware/index.js';
+import { getAIService } from '../../../services/index.js';
+import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
 
 // Type definitions
 interface RequestBody {

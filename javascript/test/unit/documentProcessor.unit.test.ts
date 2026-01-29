@@ -5,7 +5,7 @@ vi.mock('../../src/services/index.js', () => ({
   getOCRService: vi.fn(),
 }));
 
-import { processDocument } from '../../src/functions/documentProcessor';
+import { processDocument } from '../../src/functions/blobs/document-processor';
 import { getOCRService } from '../../src/services/index.js';
 import { mockInvocationContext } from './setup/mocks';
 

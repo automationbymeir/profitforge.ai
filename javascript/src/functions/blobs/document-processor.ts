@@ -1,5 +1,5 @@
 import { app, InvocationContext } from '@azure/functions';
-import { getOCRService } from '../services/index.js';
+import { getOCRService } from '../../services/index.js';
 
 // Connection strings from environment variables
 const STORAGE_CONTAINER_DOCUMENTS = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';

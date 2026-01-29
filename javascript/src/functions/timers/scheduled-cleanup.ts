@@ -1,5 +1,5 @@
 import { app, InvocationContext, Timer } from '@azure/functions';
-import { cleanupOldUsageRecords, getUsageStats } from '../utils/usageTracker.js';
+import { cleanupOldUsageRecords, getUsageStats } from '../../utils/usageTracker.js';
 
 /**
  * Scheduled cleanup function

@@ -7,12 +7,10 @@ vi.mock('../../src/services/index.js', () => ({
   getVersionService: vi.fn(),
 }));
 
-import {
-  confirmMappingHandler,
-  deleteVendorHandler,
-  reprocessMappingHandler,
-  uploadHandler,
-} from '../../src/functions/api';
+import { confirmMappingHandler } from '../../src/functions/http/documents/confirm';
+import { reprocessMappingHandler } from '../../src/functions/http/documents/reprocess';
+import { uploadHandler } from '../../src/functions/http/documents/upload';
+import { deleteVendorHandler } from '../../src/functions/http/vendors/delete';
 import { getDocumentService, getVendorService } from '../../src/services/index.js';
 import { mockHttpRequest, mockInvocationContext } from './setup/mocks';
 

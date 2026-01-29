@@ -1,8 +1,8 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import sql from 'mssql';
-import { withCors, withErrorHandler } from '../middleware/index.js';
-import { withDatabase } from '../utils/database.js';
-import { successResponse } from '../utils/httpHelpers.js';
+import { withCors, withErrorHandler } from '../../../middleware/index.js';
+import { withDatabase } from '../../../utils/database.js';
+import { successResponse } from '../../../utils/httpHelpers.js';
 
 /**
  * HTTP GET endpoint to retrieve processed document results

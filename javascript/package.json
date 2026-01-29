@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Azure Functions v4 app",
   "type": "module",
-  "main": "dist/functions/*.js",
+  "main": "dist/functions/**/*.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",

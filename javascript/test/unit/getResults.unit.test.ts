@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('mssql');
 vi.mock('../../src/utils/database');
 
-import { getResults } from '../../src/functions/getResults';
+import { getResults } from '../../src/functions/http/documents/get-results';
 import { withDatabase } from '../../src/utils/database';
 import { mockInvocationContext } from './setup/mocks';
 

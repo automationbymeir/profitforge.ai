@@ -1,0 +1,50 @@
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
+import { withCors, withErrorHandler } from '../../../middleware/index.js';
+import { getDocumentService } from '../../../services/index.js';
+import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
+
+/**
+ * Delete Document Handler - HTTP DELETE endpoint to remove document and ALL versions
+ */
+async function deleteDocumentHandlerCore(
+  req: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
+  context.log(`Delete document request received`);
+
+  const documentId = req.query.get('documentId');
+
+  if (!documentId) {
+    return errorResponse('Missing documentId query parameter', 400);
+  }
+
+  try {
+    // For now, use DocumentService.deleteDocument which handles single document deletion
+    // TODO: In Phase 3 refactoring, enhance DocumentService to handle cascade deletion of all versions
+    const documentService = getDocumentService();
+    const result = await documentService.deleteDocument(documentId);
+
+    context.log(`✅ Deleted document with ${result.documentsDeleted} record(s)`);
+
+    return successResponse({
+      message: 'Document deleted successfully',
+      documentsDeleted: result.documentsDeleted,
+      blobsDeleted: result.blobsDeleted,
+    });
+  } catch (error: unknown) {
+    // Handle custom error codes from service
+    if (error instanceof Error && 'statusCode' in error) {
+      const customError = error as Error & { statusCode: number };
+      return errorResponse(error.message, customError.statusCode);
+    }
+    throw error;
+  }
+}
+
+export const deleteDocumentHandler = withErrorHandler(withCors(deleteDocumentHandlerCore));
+
+app.http('deleteDocument', {
+  methods: ['DELETE', 'OPTIONS'],
+  authLevel: 'anonymous',
+  handler: deleteDocumentHandler,
+});

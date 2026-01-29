@@ -5,7 +5,7 @@ vi.mock('../../src/services/index.js', () => ({
   getAIService: vi.fn(),
 }));
 
-import { aiProductMapperQueueTrigger } from '../../src/functions/aiProductMapperQueue';
+import { aiProductMapperQueueTrigger } from '../../src/functions/queues/ai-product-mapper';
 import { getAIService } from '../../src/services/index.js';
 import { mockInvocationContext } from './setup/mocks';
 

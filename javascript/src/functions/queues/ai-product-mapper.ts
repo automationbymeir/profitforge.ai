@@ -1,5 +1,5 @@
 import { app, InvocationContext } from '@azure/functions';
-import { getAIService } from '../services/index.js';
+import { getAIService } from '../../services/index.js';
 
 /**
  * AI Product Mapper Queue Trigger
