@@ -12,9 +12,6 @@ Generate an implementation plan for new features or refactoring existing code.
 **@plan**  
 Strategic planning and architecture assistant focused on thoughtful analysis before implementation. Helps understand codebases, clarify requirements, and develop comprehensive implementation strategies.
 
-**@planner**  
-Generate an implementation plan for new features or refactoring existing code. General planning assistance.
-
 **@prd**  
 Generate a comprehensive Product Requirements Document (PRD) in Markdown, detailing user stories, acceptance criteria, technical considerations, and metrics. Optionally creates GitHub issues upon user confirmation.
 

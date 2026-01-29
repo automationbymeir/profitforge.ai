@@ -19,50 +19,67 @@
 ## Running Tests
 
 ```bash
-# Unit tests (default)
+# Unit tests (no infrastructure needed)
 npm test
 
-# Integration tests
-npm run db:test:up              # Start Docker
+# Integration tests (Docker auto-starts/stops)
 npm run test:integration
-npm run db:test:down            # Stop Docker
 
-# E2E tests
-npm run test:e2e                # Requires .env.e2e with Azure creds
+# E2E tests (requires Azure credentials)
+npm run test:e2e
 
 # Watch mode
 npm run test:watch
 npm run test:integration:watch
 ```
 
+**Infrastructure is fully automated:**
+
+- Unit tests: No infrastructure needed
+- Integration tests: Docker containers automatically start before tests and stop after
+- E2E tests: Azure Functions automatically start locally (unless FUNCTION_APP_URL is set)
+
+**Manual Docker control (optional, for debugging):**
+
+```bash
+npm run db:test:up    # Manually start Docker containers
+npm run db:test:down  # Manually stop Docker containers
+```
+
 ## Local Test Setup
 
 ### Integration Tests
 
-**Requirements:** Docker Desktop running, Azure Functions **must be running locally**
+**Requirements:** Docker Compose, Azure Functions Core Tools installed
 
-Integration tests require **two processes running simultaneously**:
+**Infrastructure is fully automated:**
 
-1. **Docker containers** (SQL Server + Azurite) - Auto-started by test setup
-2. **Azure Functions** (local runtime) - Must start manually
+1. **Docker containers** (SQL Server + Azurite) - Auto-started by global setup
+2. **Azure Functions** (local runtime) - Auto-started by global setup
+3. **Database schema** - Auto-initialized from `infra/vvocr-schema.sql`
+4. **Blob containers** - Auto-created (uploads, bronze-layer)
 
-**Setup:**
+**Running tests:**
 
 ```bash
-# Terminal 1: Start Azure Functions (keep running)
-cd javascript
-npm start
-# Wait for "Host started" and "Functions available at http://localhost:7071"
-
-# Terminal 2: Run integration tests
+# Simply run tests - everything starts automatically
 npm run test:integration
 ```
+
+The global setup (`test/integration/setup/setup.global.integration.ts`) handles:
+
+- Starting Docker containers via docker-compose
+- Waiting for SQL Server to be ready
+- Starting Azure Functions runtime
+- Waiting for Functions to be ready
+- Creating required blob containers
+- Cleaning up everything when tests complete
 
 **Docker lifecycle:**
 
 - Containers auto-start when tests begin (`docker-compose up -d`)
-- Containers auto-stop when tests complete (`docker-compose down`)
-- Manual control: `npm run db:test:up` / `npm run db:test:down`
+- Containers auto-stop when tests complete (`docker-compose down -v`)
+- Manual control available for debugging: `npm run db:test:up` / `npm run db:test:down`
 
 **Configuration:**
 

@@ -18,26 +18,22 @@ Upload PDF → Azure Blob → Document Intelligence (OCR) → GPT-4o (Product Ex
 
 ## Quick Start
 
-**Prerequisites:** Node.js 20+, Docker, Azure CLI
+**Prerequisites:** Node.js 20+, Docker, Azure Functions Core Tools, Azure CLI
 
 ```bash
 # 1. Clone and install
 npm install
 
-# 2. Configure environment
-cp javascript/.env.integration.example javascript/.env.integration
+# 2. Configure environment (for E2E tests only)
 cp javascript/.env.e2e.example javascript/.env.e2e
 # Edit .env.e2e with real Azure credentials
 
-# 3. Start local infrastructure
-npm run db:test:up
+# 3. Run tests (infrastructure auto-starts)
+npm test                    # Unit tests (no infrastructure needed)
+npm run test:integration    # Integration tests (Docker auto-starts)
+npm run test:e2e            # E2E tests (requires Azure credentials)
 
-# 4. Run tests
-npm test                    # Unit tests only
-npm run test:integration    # Integration tests (Docker)
-npm run test:e2e           # E2E tests (requires Azure credentials)
-
-# 5. Start local functions
+# 4. Start local functions for development
 cd javascript
 npm run build
 npm run start
