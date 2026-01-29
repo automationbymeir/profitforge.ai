@@ -290,15 +290,15 @@ This proposal outlines the development of a containerized AI-powered data collec
 
 ## Investment Breakdown
 
-| Component | Value | Description |
-|-----------|-------|-------------|
-| **Azure Infrastructure Setup** | $2,000 | Complete cloud infrastructure provisioning and configuration |
-| **AI Processing Engine** | $2,500 | Document Intelligence integration, LLM mapping, template system |
-| **User Interface & Portal** | $2,000 | Complete React admin portal with all features |
-| **API & Integration** | $500 | RESTful API with authentication and documentation |
-| **Data Factory Orchestration** | $300 | Automated pipeline workflows |
-| **Documentation & Training** | $200 | Technical docs, user guides, training session |
-| **TOTAL PROJECT COST** | **$7,500** | Complete turnkey solution |
+| Component                      | Value      | Description                                                     |
+| ------------------------------ | ---------- | --------------------------------------------------------------- |
+| **Azure Infrastructure Setup** | $2,000     | Complete cloud infrastructure provisioning and configuration    |
+| **AI Processing Engine**       | $2,500     | Document Intelligence integration, LLM mapping, template system |
+| **User Interface & Portal**    | $2,000     | Complete React admin portal with all features                   |
+| **API & Integration**          | $500       | RESTful API with authentication and documentation               |
+| **Data Factory Orchestration** | $300       | Automated pipeline workflows                                    |
+| **Documentation & Training**   | $200       | Technical docs, user guides, training session                   |
+| **TOTAL PROJECT COST**         | **$7,500** | Complete turnkey solution                                       |
 
 ---
 
@@ -306,17 +306,17 @@ This proposal outlines the development of a containerized AI-powered data collec
 
 After deployment, you will be responsible for Azure monthly costs:
 
-| Service | Estimated Monthly Cost |
-|---------|----------------------|
-| Azure SQL Database (Standard S1) | $30 |
-| Data Lake Gen2 (100GB) | $5 |
-| Blob Storage (50GB) | $2 |
-| Azure Functions (Consumption) | $10-50 |
-| Document Intelligence (S0 tier) | $50-100 |
-| Application Insights | $5 |
-| **Total Estimated** | **$100-200/month** |
+| Service                          | Estimated Monthly Cost |
+| -------------------------------- | ---------------------- |
+| Azure SQL Database (Standard S1) | $30                    |
+| Data Lake Gen2 (100GB)           | $5                     |
+| Blob Storage (50GB)              | $2                     |
+| Azure Functions (Consumption)    | $10-50                 |
+| Document Intelligence (S0 tier)  | $50-100                |
+| Application Insights             | $5                     |
+| **Total Estimated**              | **$100-200/month**     |
 
-*Note: Costs scale with usage. Document Intelligence pricing is based on pages processed ($1.50 per 1,000 pages).*
+_Note: Costs scale with usage. Document Intelligence pricing is based on pages processed ($1.50 per 1,000 pages)._
 
 ---
 
@@ -460,7 +460,7 @@ After deployment, you will be responsible for Azure monthly costs:
 
 ---
 
-*This proposal is valid for 30 days from the date above.*
+_This proposal is valid for 30 days from the date above._
 
 ---
 

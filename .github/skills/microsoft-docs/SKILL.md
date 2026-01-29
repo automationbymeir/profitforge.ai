@@ -8,10 +8,10 @@ compatibility: Requires Microsoft Learn MCP Server (https://learn.microsoft.com/
 
 ## Tools
 
-| Tool | Use For |
-|------|---------|
+| Tool                    | Use For                                                       |
+| ----------------------- | ------------------------------------------------------------- |
 | `microsoft_docs_search` | Find documentation—concepts, guides, tutorials, configuration |
-| `microsoft_docs_fetch` | Get full page content (when search excerpts aren't enough) |
+| `microsoft_docs_fetch`  | Get full page content (when search excerpts aren't enough)    |
 
 ## When to Use
 
@@ -37,6 +37,7 @@ Good queries are specific:
 ```
 
 Include context:
+
 - **Version** when relevant (`.NET 8`, `EF Core 8`)
 - **Task intent** (`quickstart`, `tutorial`, `overview`, `limits`)
 - **Platform** for multi-platform docs (`Linux`, `Windows`)
@@ -44,6 +45,7 @@ Include context:
 ## When to Fetch Full Page
 
 Fetch after search when:
+
 - **Tutorials** — need complete step-by-step instructions
 - **Configuration guides** — need all options listed
 - **Deep dives** — user wants comprehensive coverage

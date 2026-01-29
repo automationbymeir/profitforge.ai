@@ -87,7 +87,6 @@ node query.js "SELECT processing_status, COUNT(*) as count FROM vvocr.document_p
    ```
 
 2. **VS Code Extension: "SQL Server (mssql)"**
-
    - Install from VS Code marketplace
    - Connect to: `dev-eitan-vvocr-sql0d3c18e3.database.windows.net`
 
@@ -99,11 +98,9 @@ node query.js "SELECT processing_status, COUNT(*) as count FROM vvocr.document_p
 ### For Blob Storage:
 
 1. **Azure Storage Explorer** - Free GUI tool
-
    - Download: https://azure.microsoft.com/features/storage-explorer/
 
 2. **VS Code Extension: "Azure Storage"**
-
    - Browse containers directly in VS Code
 
 3. **Azure CLI with watch**

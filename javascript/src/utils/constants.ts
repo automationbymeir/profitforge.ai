@@ -5,7 +5,7 @@
 
 // File Upload Configuration
 export const ALLOWED_FILE_TYPES = ['application/pdf'] as const;
-export type AllowedFileType = typeof ALLOWED_FILE_TYPES[number];
+export type AllowedFileType = (typeof ALLOWED_FILE_TYPES)[number];
 
 // Container Names
 export const STORAGE_CONTAINER_DOCUMENTS = 'uploads';
@@ -23,7 +23,7 @@ export const PROCESSING_STATUS = {
   FAILED: 'failed',
 } as const;
 
-export type ProcessingStatus = typeof PROCESSING_STATUS[keyof typeof PROCESSING_STATUS];
+export type ProcessingStatus = (typeof PROCESSING_STATUS)[keyof typeof PROCESSING_STATUS];
 
 // Export Status Values
 export const EXPORT_STATUS = {
@@ -32,7 +32,7 @@ export const EXPORT_STATUS = {
   FAILED: 'failed',
 } as const;
 
-export type ExportStatus = typeof EXPORT_STATUS[keyof typeof EXPORT_STATUS];
+export type ExportStatus = (typeof EXPORT_STATUS)[keyof typeof EXPORT_STATUS];
 
 // AI Model Configuration
 export const AI_MODELS = {

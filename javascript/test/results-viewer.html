@@ -7,7 +7,7 @@
     <style>
       body {
         font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         line-height: 1.6;
         max-width: 1400px;
         margin: 40px auto;
@@ -291,7 +291,7 @@
         color: #333;
       }
       .product-sku {
-        font-family: "Courier New", monospace;
+        font-family: 'Courier New', monospace;
         color: #666;
         font-size: 0.9em;
       }
@@ -311,20 +311,20 @@
         font-size: 1.2em;
       }
       .loading:after {
-        content: "...";
+        content: '...';
         animation: dots 1.5s steps(4, end) infinite;
       }
       @keyframes dots {
         0%,
         20% {
-          content: ".";
+          content: '.';
         }
         40% {
-          content: "..";
+          content: '..';
         }
         60%,
         100% {
-          content: "...";
+          content: '...';
         }
       }
       .error {
@@ -405,10 +405,10 @@
       let currentVersions = {};
 
       async function loadResults() {
-        const content = document.getElementById("content");
-        const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
-        const resultId = document.getElementById("resultId").value.trim();
-        const vendor = document.getElementById("vendor").value.trim();
+        const content = document.getElementById('content');
+        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+        const resultId = document.getElementById('resultId').value.trim();
+        const vendor = document.getElementById('vendor').value.trim();
 
         let url = `${baseUrl}/api/getResults?limit=10`;
         if (resultId) url += `&resultId=${encodeURIComponent(resultId)}`;
@@ -431,7 +431,7 @@
             await loadVersionHistory(result.result_id, baseUrl);
           }
 
-          content.innerHTML = results.map((result) => renderResultCard(result, baseUrl)).join("");
+          content.innerHTML = results.map((result) => renderResultCard(result, baseUrl)).join('');
         } catch (error) {
           content.innerHTML = `<div class="error"><strong>Error loading results:</strong><br/>${error.message}</div>`;
         }
@@ -445,7 +445,7 @@
             currentVersions[data.rootDocumentId] = data.versions;
           }
         } catch (error) {
-          console.error("Failed to load version history:", error);
+          console.error('Failed to load version history:', error);
         }
       }
 
@@ -456,7 +456,7 @@
         let mappingResult = null;
         if (result.ai_mapping_result) {
           mappingResult =
-            typeof result.ai_mapping_result === "string"
+            typeof result.ai_mapping_result === 'string'
               ? JSON.parse(result.ai_mapping_result)
               : result.ai_mapping_result;
         } else {
@@ -465,8 +465,8 @@
 
         const products = mappingResult?.products || [];
         const qualityMetrics = mappingResult?.qualityMetrics || {};
-        const vendor = result.vendor_name || mappingResult?.vendor || "Unknown";
-        const statusClass = result.processing_status || "pending";
+        const vendor = result.vendor_name || mappingResult?.vendor || 'Unknown';
+        const statusClass = result.processing_status || 'pending';
         const confidenceScore = result.ai_confidence_score || qualityMetrics.confidenceScore || 0;
         const completenessScore =
           result.ai_completeness_score || qualityMetrics.completenessScore || 0;
@@ -487,7 +487,7 @@
                 </div>
                 <div class="info-item">
                   <span class="info-label">Export Status</span>
-                  <span class="info-value"><span class="status ${result.export_status || "pending"}">${result.export_status || "pending"}</span></span>
+                  <span class="info-value"><span class="status ${result.export_status || 'pending'}">${result.export_status || 'pending'}</span></span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">AI Confidence</span>
@@ -505,7 +505,7 @@
                 </div>
                 <div class="info-item">
                   <span class="info-label">AI Model</span>
-                  <span class="info-value">${result.ai_model_used || "N/A"}</span>
+                  <span class="info-value">${result.ai_model_used || 'N/A'}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">OCR Cost</span>
@@ -522,9 +522,9 @@
               </div>
 
               <div class="action-buttons">
-                ${result.processing_status === "completed" && result.export_status === "pending" ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export</button>` : ""}
-                ${result.processing_status === "completed" || result.processing_status === "ocr_complete" ? `<button class="secondary" onclick="reprocessMapping('${result.result_id}')">🔄 Rerun AI</button>` : ""}
-                ${result.parent_document_id ? `<button class="danger small" onclick="deleteRun('${result.result_id}')">🗑️ Delete Run</button>` : ""}
+                ${result.processing_status === 'completed' && result.export_status === 'pending' ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export</button>` : ''}
+                ${result.processing_status === 'completed' || result.processing_status === 'ocr_complete' ? `<button class="secondary" onclick="reprocessMapping('${result.result_id}')">🔄 Rerun AI</button>` : ''}
+                ${result.parent_document_id ? `<button class="danger small" onclick="deleteRun('${result.result_id}')">🗑️ Delete Run</button>` : ''}
                 <button class="danger" onclick="deleteDocument('${result.result_id}')">🗑️ Delete All</button>
               </div>
 
@@ -539,13 +539,13 @@
                         <tr><th>SKU</th><th>Product Name</th><th>Price</th><th>Unit/Dimensions</th></tr>
                       </thead>
                       <tbody>
-                        ${products.map((p) => `<tr><td><span class="product-sku">${p.sku || "N/A"}</span></td><td><span class="product-name">${p.name || "N/A"}</span></td><td><span class="product-price">$${(p.price || 0).toFixed(2)}</span></td><td><span class="product-unit">${p.unit || "N/A"}</span></td></tr>`).join("")}
+                        ${products.map((p) => `<tr><td><span class="product-sku">${p.sku || 'N/A'}</span></td><td><span class="product-name">${p.name || 'N/A'}</span></td><td><span class="product-price">$${(p.price || 0).toFixed(2)}</span></td><td><span class="product-unit">${p.unit || 'N/A'}</span></td></tr>`).join('')}
                       </tbody>
                     </table>
                   </div>
                 </details>
               `
-                  : `<div class="empty-state" style="margin-top: 20px;"><h3>No products extracted</h3><p>${result.processing_status === "completed" ? "Document processed but no products found" : "Processing not yet complete"}</p></div>`
+                  : `<div class="empty-state" style="margin-top: 20px;"><h3>No products extracted</h3><p>${result.processing_status === 'completed' ? 'Document processed but no products found' : 'Processing not yet complete'}</p></div>`
               }
             </div>
           </div>
@@ -553,7 +553,7 @@
       }
 
       function renderVersionCarousel(versions, currentVersion, rootId, baseUrl) {
-        if (versions.length <= 1) return "";
+        if (versions.length <= 1) return '';
 
         return `
           <div class="version-carousel">
@@ -564,7 +564,7 @@
               ${versions
                 .sort((a, b) => (b.reprocessing_count || 0) - (a.reprocessing_count || 0))
                 .map((v) => renderVersionCard(v, currentVersion, rootId))
-                .join("")}
+                .join('')}
             </div>
           </div>
         `;
@@ -579,10 +579,10 @@
         const confidence = version.ai_confidence_score || 0;
 
         return `
-          <div class="version-card ${isActive ? "active" : ""}" onclick="switchVersion('${version.result_id}')">
+          <div class="version-card ${isActive ? 'active' : ''}" onclick="switchVersion('${version.result_id}')">
             <div class="version-card-header">
               <span class="version-number">v${version.reprocessing_count || 0}</span>
-              ${isLatest ? '<span class="version-badge">Latest</span>' : ""}
+              ${isLatest ? '<span class="version-badge">Latest</span>' : ''}
             </div>
             <div class="version-stats">
               <div>📦 ${version.product_count || 0} products</div>
@@ -596,33 +596,33 @@
       }
 
       function getConfidenceClass(score) {
-        if (score >= 80) return "high";
-        if (score >= 60) return "medium";
-        return "low";
+        if (score >= 80) return 'high';
+        if (score >= 60) return 'medium';
+        return 'low';
       }
 
       function switchVersion(versionId) {
-        document.getElementById("resultId").value = versionId;
+        document.getElementById('resultId').value = versionId;
         loadResults();
       }
 
-      window.addEventListener("DOMContentLoaded", () => {
+      window.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(window.location.search);
-        const resultId = params.get("resultId");
-        const vendor = params.get("vendor");
-        if (resultId) document.getElementById("resultId").value = resultId;
-        if (vendor) document.getElementById("vendor").value = vendor;
+        const resultId = params.get('resultId');
+        const vendor = params.get('vendor');
+        if (resultId) document.getElementById('resultId').value = resultId;
+        if (vendor) document.getElementById('vendor').value = vendor;
         if (resultId || vendor) loadResults();
       });
 
       async function confirmMapping(documentId) {
-        if (!confirm("Export products to production catalog? This action cannot be undone."))
+        if (!confirm('Export products to production catalog? This action cannot be undone.'))
           return;
-        const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
+        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
         try {
           const response = await fetch(`${baseUrl}/api/confirmMapping`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ documentId }),
           });
           const data = await response.json();
@@ -640,12 +640,12 @@
       }
 
       async function reprocessMapping(documentId) {
-        if (!confirm("Create new version for AI remapping? Original results preserved.")) return;
-        const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
+        if (!confirm('Create new version for AI remapping? Original results preserved.')) return;
+        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
         try {
           const reprocessResponse = await fetch(`${baseUrl}/api/reprocessMapping`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ documentId }),
           });
           const reprocessData = await reprocessResponse.json();
@@ -656,8 +656,8 @@
           const newDocumentId = reprocessData.newDocumentId;
           alert(`✅ New version created (v${reprocessData.version})! Triggering AI mapping...`);
           const mapResponse = await fetch(`${baseUrl}/api/aiProductMapper`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ documentId: newDocumentId }),
           });
           const mapData = await mapResponse.json();
@@ -675,12 +675,12 @@
       }
 
       async function deleteRun(documentId) {
-        if (!confirm("Delete this specific run version? This cannot be undone.")) return;
-        const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
+        if (!confirm('Delete this specific run version? This cannot be undone.')) return;
+        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
         try {
           const response = await fetch(
             `${baseUrl}/api/deleteRun?documentId=${encodeURIComponent(documentId)}`,
-            { method: "DELETE" }
+            { method: 'DELETE' }
           );
           const data = await response.json();
           if (response.ok) {
@@ -697,15 +697,15 @@
       async function deleteDocument(documentId) {
         if (
           !confirm(
-            "Delete ALL versions of this document? This will remove all processing runs and the original file. This cannot be undone."
+            'Delete ALL versions of this document? This will remove all processing runs and the original file. This cannot be undone.'
           )
         )
           return;
-        const baseUrl = document.getElementById("functionUrl").value.replace(/\/$/, "");
+        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
         try {
           const response = await fetch(
             `${baseUrl}/api/deleteDocument?documentId=${encodeURIComponent(documentId)}`,
-            { method: "DELETE" }
+            { method: 'DELETE' }
           );
           const data = await response.json();
           if (response.ok) {

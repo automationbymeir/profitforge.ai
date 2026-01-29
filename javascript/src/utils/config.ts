@@ -11,16 +11,16 @@ interface AppConfig {
   storageConnectionString: string;
   storageAccountName: string;
   storageContainerDocuments: string;
-  
+
   // Database
   sqlConnectionString: string;
-  
+
   // Azure AI Services
   documentIntelligenceEndpoint: string;
   documentIntelligenceKey: string;
   aiProjectEndpoint: string;
   aiProjectKey: string;
-  
+
   // Security & Rate Limiting
   isDemoMode: boolean;
   demoApiKey?: string;
@@ -61,38 +61,42 @@ export function getConfig(): AppConfig {
     process.env.AI_PROJECT_ENDPOINT,
     'AI_PROJECT_ENDPOINT environment variable is required'
   );
-  assertDefined(
-    process.env.AI_PROJECT_KEY,
-    'AI_PROJECT_KEY environment variable is required'
-  );
+  assertDefined(process.env.AI_PROJECT_KEY, 'AI_PROJECT_KEY environment variable is required');
 
   const isDemoMode = process.env.IS_DEMO_MODE === 'true';
-  
+
   // Demo mode requires API key
   if (isDemoMode) {
-    assertDefined(
-      process.env.DEMO_API_KEY,
-      'DEMO_API_KEY is required when IS_DEMO_MODE=true'
-    );
+    assertDefined(process.env.DEMO_API_KEY, 'DEMO_API_KEY is required when IS_DEMO_MODE=true');
   }
 
   cachedConfig = {
     storageConnectionString: process.env.STORAGE_CONNECTION_STRING,
     storageAccountName: process.env.STORAGE_ACCOUNT_NAME || '',
     storageContainerDocuments: process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads',
-    
+
     sqlConnectionString: process.env.SQL_CONNECTION_STRING,
-    
+
     documentIntelligenceEndpoint: process.env.DOCUMENT_INTELLIGENCE_ENDPOINT,
     documentIntelligenceKey: process.env.DOCUMENT_INTELLIGENCE_KEY,
     aiProjectEndpoint: process.env.AI_PROJECT_ENDPOINT,
     aiProjectKey: process.env.AI_PROJECT_KEY,
-    
+
     isDemoMode,
     demoApiKey: process.env.DEMO_API_KEY,
-    maxDailyUploads: parseInt(process.env.MAX_DAILY_UPLOADS || String(DEFAULT_RATE_LIMITS.MAX_DAILY_UPLOADS), 10),
-    maxUploadsPerIpPerHour: parseInt(process.env.MAX_UPLOADS_PER_IP_PER_HOUR || String(DEFAULT_RATE_LIMITS.MAX_UPLOADS_PER_IP_PER_HOUR), 10),
-    maxFileSizeMB: parseInt(process.env.MAX_FILE_SIZE_MB || String(DEFAULT_RATE_LIMITS.MAX_FILE_SIZE_MB), 10),
+    maxDailyUploads: parseInt(
+      process.env.MAX_DAILY_UPLOADS || String(DEFAULT_RATE_LIMITS.MAX_DAILY_UPLOADS),
+      10
+    ),
+    maxUploadsPerIpPerHour: parseInt(
+      process.env.MAX_UPLOADS_PER_IP_PER_HOUR ||
+        String(DEFAULT_RATE_LIMITS.MAX_UPLOADS_PER_IP_PER_HOUR),
+      10
+    ),
+    maxFileSizeMB: parseInt(
+      process.env.MAX_FILE_SIZE_MB || String(DEFAULT_RATE_LIMITS.MAX_FILE_SIZE_MB),
+      10
+    ),
   };
 
   return cachedConfig;

@@ -97,7 +97,7 @@ You WILL present alternatives succinctly to guide user decision-making. You MUST
 
 ## Operational Constraints
 
-You WILL use read tools throughout the entire workspace and external sources. You MUST create and edit files ONLY in `./.copilot-tracking/research/`. You MUST NOT modify any source code, configurations, or other project files.
+You WILL use read tools throughout the entire workspace and external sources. You MUST create and edit files ONLY in [project-management/research/](../../project-management/research/). You MUST NOT modify any source code, configurations, or other project files.
 
 You WILL provide brief, focused updates without overwhelming details. You WILL present discoveries and guide user toward single solution selection. You WILL keep all conversation focused on research activities and findings. You WILL NEVER repeat information already documented in research files.
 
@@ -230,7 +230,7 @@ For each research activity, you MUST:
 
 You MUST maintain research files as living documents:
 
-1. Search for existing research files in `./.copilot-tracking/research/`
+1. Search for existing research files in `project-management/research/`
 2. Create new research file if none exists for the topic
 3. Initialize with comprehensive research template structure
 

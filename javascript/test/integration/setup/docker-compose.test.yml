@@ -4,14 +4,14 @@ services:
     image: mcr.microsoft.com/azure-sql-edge:latest
     container_name: profitforge-test-db
     environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "TestPassword123!"
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: 'TestPassword123!'
     ports:
-      - "1433:1433"
+      - '1433:1433'
     volumes:
       - ../../../../infra/vvocr-schema.sql:/tmp/vvocr-schema.sql
       - ./entrypoint.sh:/usr/local/bin/entrypoint.sh
-    entrypoint: ["/bin/bash", "/usr/local/bin/entrypoint.sh"]
+    entrypoint: ['/bin/bash', '/usr/local/bin/entrypoint.sh']
     healthcheck:
       test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'TestPassword123!' -Q 'SELECT 1' || exit 1
       interval: 10s
@@ -25,11 +25,11 @@ services:
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite:latest
     container_name: profitforge-azurite
-    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --loose --skipApiVersionCheck --blobPort 10000 --queuePort 10001 --tablePort 10002"
+    command: 'azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --loose --skipApiVersionCheck --blobPort 10000 --queuePort 10001 --tablePort 10002'
     ports:
-      - "10000:10000" # Blob service
-      - "10001:10001" # Queue service
-      - "10002:10002" # Table service
+      - '10000:10000' # Blob service
+      - '10001:10001' # Queue service
+      - '10002:10002' # Table service
     volumes:
       - azurite-data:/data
     networks:

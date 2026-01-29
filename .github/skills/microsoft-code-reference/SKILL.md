@@ -8,11 +8,11 @@ compatibility: Requires Microsoft Learn MCP Server (https://learn.microsoft.com/
 
 ## Tools
 
-| Need | Tool | Example |
-|------|------|---------|
-| API method/class lookup | `microsoft_docs_search` | `"BlobClient UploadAsync Azure.Storage.Blobs"` |
-| Working code sample | `microsoft_code_sample_search` | `query: "upload blob managed identity", language: "python"` |
-| Full API reference | `microsoft_docs_fetch` | Fetch URL from `microsoft_docs_search` (for overloads, full signatures) |
+| Need                    | Tool                           | Example                                                                 |
+| ----------------------- | ------------------------------ | ----------------------------------------------------------------------- |
+| API method/class lookup | `microsoft_docs_search`        | `"BlobClient UploadAsync Azure.Storage.Blobs"`                          |
+| Working code sample     | `microsoft_code_sample_search` | `query: "upload blob managed identity", language: "python"`             |
+| Full API reference      | `microsoft_docs_fetch`         | Fetch URL from `microsoft_docs_search` (for overloads, full signatures) |
 
 ## Finding Code Samples
 
@@ -25,6 +25,7 @@ microsoft_code_sample_search(query: "send message service bus", language: "javas
 ```
 
 **When to use:**
+
 - Before writing code—find a working pattern to follow
 - After errors—compare your code against a known-good sample
 - Unsure of initialization/setup—samples show complete context
@@ -50,18 +51,19 @@ Fetch full page when method has multiple overloads or you need complete paramete
 
 Use `microsoft_code_sample_search` to find working code samples and compare with your implementation. For specific errors, use `microsoft_docs_search` and `microsoft_docs_fetch`:
 
-| Error Type | Query |
-|------------|-------|
-| Method not found | `"[ClassName] methods [Namespace]"` |
-| Type not found | `"[TypeName] NuGet package namespace"` |
-| Wrong signature | `"[ClassName] [MethodName] overloads"` → fetch full page |
-| Deprecated warning | `"[OldType] migration v12"` |
-| Auth failure | `"DefaultAzureCredential troubleshooting"` |
-| 403 Forbidden | `"[ServiceName] RBAC permissions"` |
+| Error Type         | Query                                                    |
+| ------------------ | -------------------------------------------------------- |
+| Method not found   | `"[ClassName] methods [Namespace]"`                      |
+| Type not found     | `"[TypeName] NuGet package namespace"`                   |
+| Wrong signature    | `"[ClassName] [MethodName] overloads"` → fetch full page |
+| Deprecated warning | `"[OldType] migration v12"`                              |
+| Auth failure       | `"DefaultAzureCredential troubleshooting"`               |
+| 403 Forbidden      | `"[ServiceName] RBAC permissions"`                       |
 
 ## When to Verify
 
 Always verify when:
+
 - Method name seems "too convenient" (`UploadFile` vs actual `Upload`)
 - Mixing SDK versions (v11 `CloudBlobClient` vs v12 `BlobServiceClient`)
 - Package name doesn't follow conventions (`Azure.*` for .NET, `azure-*` for Python)

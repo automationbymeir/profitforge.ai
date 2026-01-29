@@ -102,16 +102,16 @@
 
 We will develop directly in a dedicated Azure resource group provided by the client:
 
-| Component | Integration Method | Notes |
-|-----------|-------------------|-------|
-| **Dedicated Resource Group** | Client creates, we get service principal access | Isolated environment for this project |
-| **Azure Functions** | Deploy directly to Azure | Use client's existing Functions plan |
-| **Client's Azure SQL Server** | Connection string via Key Vault | Add new database/schema to existing server |
-| **Client's Azure Blob Storage** | Connection string + managed identity | Write to client's storage account |
-| **Azure Document Intelligence** | API key from client | Client provides when ready (Week 3) |
-| **Claude/GPT-4 API** | API key from client | Client provides when ready (Week 3) |
-| **Azure Monitor Logs** | Log Analytics workspace endpoint | Client provides for centralized logging |
-| **Infrastructure as Code** | SST v3 (convertible to Terraform later) | Client can Terraform-ify after handoff |
+| Component                       | Integration Method                              | Notes                                      |
+| ------------------------------- | ----------------------------------------------- | ------------------------------------------ |
+| **Dedicated Resource Group**    | Client creates, we get service principal access | Isolated environment for this project      |
+| **Azure Functions**             | Deploy directly to Azure                        | Use client's existing Functions plan       |
+| **Client's Azure SQL Server**   | Connection string via Key Vault                 | Add new database/schema to existing server |
+| **Client's Azure Blob Storage** | Connection string + managed identity            | Write to client's storage account          |
+| **Azure Document Intelligence** | API key from client                             | Client provides when ready (Week 3)        |
+| **Claude/GPT-4 API**            | API key from client                             | Client provides when ready (Week 3)        |
+| **Azure Monitor Logs**          | Log Analytics workspace endpoint                | Client provides for centralized logging    |
+| **Infrastructure as Code**      | SST v3 (convertible to Terraform later)         | Client can Terraform-ify after handoff     |
 
 **Access Requirements:**
 
@@ -157,9 +157,9 @@ We will develop directly in a dedicated Azure resource group provided by the cli
    - Field extraction accuracy: >95%
    - Confidence score calibration
    - Processing time benchmarks
-| **Application Insights** | Monitoring and logging | Basic |
-| **Azure API Management** | API Gateway (optional, can use Functions directly) | Consumption |
-| **Azure Functions** | Serverless compute for processing | Consumption plan |
+     | **Application Insights** | Monitoring and logging | Basic |
+     | **Azure API Management** | API Gateway (optional, can use Functions directly) | Consumption |
+     | **Azure Functions** | Serverless compute for processing | Consumption plan |
 
 ### 0.2 Resource Group Structure
 
@@ -668,32 +668,32 @@ def process_vendor_document(myblob: func.InputStream):
     Processes the document through OCR and AI mapping.
     """
     logging.info(f"Processing file: {myblob.name}")
-    
+
     # Extract vendor_id and filename from path
     path_parts = myblob.name.split('/')
     vendor_id = path_parts[1]
     filename = path_parts[2]
-    
+
     try:
         # Step 1: OCR Extraction
         raw_extraction = extract_document_content(myblob)
-        
+
         # Step 2: Save raw extraction to Data Lake
         raw_json_path = save_to_datalake(
             f"raw/{vendor_id}/{get_date()}/{filename}_extraction.json",
             raw_extraction
         )
-        
+
         # Step 3: Check for existing vendor mapping template
         mapping_template = get_vendor_mapping_template(vendor_id)
-        
+
         # Step 4: Map to schema (using template or AI)
         if mapping_template:
             mapped_data = apply_mapping_template(raw_extraction, mapping_template)
             confidence = 0.95  # High confidence for known mappings
         else:
             mapped_data, confidence = ai_map_to_schema(raw_extraction)
-        
+
         # Step 5: Save mapped data to Data Lake
         mapped_json_path = save_to_datalake(
             f"mapped/{vendor_id}/{get_date()}/{filename}_mapped.json",
@@ -704,7 +704,7 @@ def process_vendor_document(myblob: func.InputStream):
                 "processed_at": get_timestamp()
             }
         )
-        
+
         # Step 6: Insert to staging table
         insert_to_staging(
             vendor_id=vendor_id,
@@ -714,12 +714,12 @@ def process_vendor_document(myblob: func.InputStream):
             mapped_path=mapped_json_path,
             source_file=filename
         )
-        
+
         # Step 7: Update batch status
         update_batch_status(vendor_id, filename, "Completed", len(mapped_data))
-        
+
         logging.info(f"Successfully processed {filename}: {len(mapped_data)} products")
-        
+
     except Exception as e:
         logging.error(f"Error processing {filename}: {str(e)}")
         update_batch_status(vendor_id, filename, "Failed", error=str(e))
@@ -736,20 +736,20 @@ def extract_document_content(blob_content) -> dict:
         endpoint=os.environ["DOCUMENT_INTELLIGENCE_ENDPOINT"],
         credential=credential
     )
-    
+
     # Use prebuilt-layout for general documents or prebuilt-invoice for price lists
     poller = client.begin_analyze_document(
         "prebuilt-layout",  # or "prebuilt-document" for more structure
         document=blob_content.read()
     )
     result = poller.result()
-    
+
     extracted_data = {
         "tables": [],
         "key_value_pairs": [],
         "paragraphs": []
     }
-    
+
     # Extract tables
     for table in result.tables:
         table_data = {
@@ -765,7 +765,7 @@ def extract_document_content(blob_content) -> dict:
                 "is_header": cell.kind == "columnHeader"
             })
         extracted_data["tables"].append(table_data)
-    
+
     # Extract key-value pairs
     for kv_pair in result.key_value_pairs:
         if kv_pair.key and kv_pair.value:
@@ -773,7 +773,7 @@ def extract_document_content(blob_content) -> dict:
                 "key": kv_pair.key.content,
                 "value": kv_pair.value.content
             })
-    
+
     return extracted_data
 
 
@@ -783,8 +783,8 @@ def ai_map_to_schema(raw_extraction: dict) -> tuple[list, float]:
     Returns (mapped_products, average_confidence)
     """
     client = anthropic.Anthropic()  # or OpenAI client
-    
-    prompt = f"""You are a data transformation expert. Analyze this extracted vendor document data 
+
+    prompt = f"""You are a data transformation expert. Analyze this extracted vendor document data
 and map it to our product schema.
 
 TARGET SCHEMA (required fields marked with *):
@@ -827,19 +827,19 @@ OUTPUT FORMAT (JSON):
     "notes": "Any observations about data quality or issues"
 }}
 """
-    
+
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=4096,
         messages=[{"role": "user", "content": prompt}]
     )
-    
+
     result = json.loads(response.content[0].text)
-    
+
     # Calculate average confidence
     confidences = [m["confidence"] for m in result["field_mappings"].values()]
     avg_confidence = sum(confidences) / len(confidences) if confidences else 0.5
-    
+
     return result["products"], avg_confidence
 
 
@@ -861,7 +861,7 @@ def apply_mapping_template(raw_extraction: dict, template: dict) -> list:
     """
     products = []
     field_mappings = template["field_mappings"]
-    
+
     # Find the main data table
     for table in raw_extraction.get("tables", []):
         # Build header mapping
@@ -869,7 +869,7 @@ def apply_mapping_template(raw_extraction: dict, template: dict) -> list:
         for cell in table["cells"]:
             if cell.get("is_header"):
                 headers[cell["column"]] = cell["content"]
-        
+
         # Extract rows
         rows_data = {}
         for cell in table["cells"]:
@@ -879,7 +879,7 @@ def apply_mapping_template(raw_extraction: dict, template: dict) -> list:
                 if row not in rows_data:
                     rows_data[row] = {}
                 rows_data[row][headers.get(col, f"col_{col}")] = cell["content"]
-        
+
         # Map to schema
         for row_data in rows_data.values():
             product = {}
@@ -893,10 +893,10 @@ def apply_mapping_template(raw_extraction: dict, template: dict) -> list:
                     elif mapping.get("transform") == "uppercase":
                         value = value.upper().strip()
                     product[target_field] = value
-            
+
             if product.get("SKU"):  # Only add if has SKU
                 products.append(product)
-    
+
     return products
 ```
 
@@ -906,60 +906,60 @@ When a user confirms a mapping, save it for future use:
 
 ```json
 {
-    "vendor_id": "ace-hardware-001",
-    "vendor_name": "ACE Hardware",
-    "version": 1,
-    "created_at": "2025-12-20T10:30:00Z",
-    "created_by": "admin@company.com",
-    "last_used": "2025-12-28T14:22:00Z",
-    "use_count": 5,
-    "field_mappings": {
-        "SKU": {
-            "source_columns": ["Item #", "Part Number", "SKU"],
-            "transform": "uppercase",
-            "confidence": 0.98
-        },
-        "Description": {
-            "source_columns": ["Product Name", "Item Description", "Description"],
-            "transform": null,
-            "confidence": 0.95
-        },
-        "Cost": {
-            "source_columns": ["Dealer Cost", "Net Price", "Wholesale"],
-            "transform": "decimal",
-            "confidence": 0.97
-        },
-        "MAP": {
-            "source_columns": ["MAP", "Min Advertised", "Minimum Price"],
-            "transform": "decimal",
-            "confidence": 0.92
-        },
-        "MSRP": {
-            "source_columns": ["List Price", "MSRP", "Retail", "SRP"],
-            "transform": "decimal",
-            "confidence": 0.94
-        },
-        "Category": {
-            "source_columns": ["Category", "Product Category", "Cat"],
-            "transform": null,
-            "confidence": 0.88
-        },
-        "MOQ": {
-            "source_columns": ["Min Qty", "MOQ", "Minimum Order"],
-            "transform": "integer",
-            "confidence": 0.90
-        },
-        "UPC": {
-            "source_columns": ["UPC", "UPC-A", "Barcode", "GTIN"],
-            "transform": "digits_only",
-            "confidence": 0.99
-        }
+  "vendor_id": "ace-hardware-001",
+  "vendor_name": "ACE Hardware",
+  "version": 1,
+  "created_at": "2025-12-20T10:30:00Z",
+  "created_by": "admin@company.com",
+  "last_used": "2025-12-28T14:22:00Z",
+  "use_count": 5,
+  "field_mappings": {
+    "SKU": {
+      "source_columns": ["Item #", "Part Number", "SKU"],
+      "transform": "uppercase",
+      "confidence": 0.98
     },
-    "default_values": {
-        "MOQ": 1,
-        "LeadTimeDays": 14
+    "Description": {
+      "source_columns": ["Product Name", "Item Description", "Description"],
+      "transform": null,
+      "confidence": 0.95
     },
-    "notes": "ACE uses 'Dealer Cost' for wholesale pricing. Category codes need manual review."
+    "Cost": {
+      "source_columns": ["Dealer Cost", "Net Price", "Wholesale"],
+      "transform": "decimal",
+      "confidence": 0.97
+    },
+    "MAP": {
+      "source_columns": ["MAP", "Min Advertised", "Minimum Price"],
+      "transform": "decimal",
+      "confidence": 0.92
+    },
+    "MSRP": {
+      "source_columns": ["List Price", "MSRP", "Retail", "SRP"],
+      "transform": "decimal",
+      "confidence": 0.94
+    },
+    "Category": {
+      "source_columns": ["Category", "Product Category", "Cat"],
+      "transform": null,
+      "confidence": 0.88
+    },
+    "MOQ": {
+      "source_columns": ["Min Qty", "MOQ", "Minimum Order"],
+      "transform": "integer",
+      "confidence": 0.9
+    },
+    "UPC": {
+      "source_columns": ["UPC", "UPC-A", "Barcode", "GTIN"],
+      "transform": "digits_only",
+      "confidence": 0.99
+    }
+  },
+  "default_values": {
+    "MOQ": 1,
+    "LeadTimeDays": 14
+  },
+  "notes": "ACE uses 'Dealer Cost' for wholesale pricing. Category codes need manual review."
 }
 ```
 
@@ -995,39 +995,39 @@ def determine_review_level(confidence: float) -> str:
 ```typescript
 // Test runner that validates all code changes against golden dataset
 interface GoldenDatasetTest {
-    testId: string;
-    fileName: string;
-    expectedOutput: ProductRecord[];
-    minimumConfidence: number;
-    maxProcessingTimeMs: number;
+  testId: string;
+  fileName: string;
+  expectedOutput: ProductRecord[];
+  minimumConfidence: number;
+  maxProcessingTimeMs: number;
 }
 
 async function runGoldenDatasetTests(modelVersion: string, promptVersion: string) {
-    const testRun = await createTestRun(modelVersion, promptVersion);
-    
-    for (const test of goldenDatasetTests) {
-        const result = await processDocument(test.fileName);
-        
-        // Calculate accuracy metrics
-        const accuracy = calculateAccuracy(result.products, test.expectedOutput);
-        const avgConfidence = calculateAverageConfidence(result.products);
-        const processingTime = result.processingTimeMs;
-        
-        // Store results
-        await storeTestResult({
-            testRunId: testRun.id,
-            testId: test.testId,
-            accuracy: accuracy,
-            avgConfidence: avgConfidence,
-            processingTime: processingTime,
-            passed: accuracy >= 0.95 && avgConfidence >= test.minimumConfidence
-        });
-        
-        // Check for drift
-        await checkForDrift(test.testId, avgConfidence);
-    }
-    
-    return testRun;
+  const testRun = await createTestRun(modelVersion, promptVersion);
+
+  for (const test of goldenDatasetTests) {
+    const result = await processDocument(test.fileName);
+
+    // Calculate accuracy metrics
+    const accuracy = calculateAccuracy(result.products, test.expectedOutput);
+    const avgConfidence = calculateAverageConfidence(result.products);
+    const processingTime = result.processingTimeMs;
+
+    // Store results
+    await storeTestResult({
+      testRunId: testRun.id,
+      testId: test.testId,
+      accuracy: accuracy,
+      avgConfidence: avgConfidence,
+      processingTime: processingTime,
+      passed: accuracy >= 0.95 && avgConfidence >= test.minimumConfidence,
+    });
+
+    // Check for drift
+    await checkForDrift(test.testId, avgConfidence);
+  }
+
+  return testRun;
 }
 ```
 
@@ -1098,7 +1098,7 @@ CREATE TABLE TokenUsage (
 
 -- Cost Aggregation View
 CREATE VIEW vw_TokenCostSummary AS
-SELECT 
+SELECT
     CAST(ProcessedAt AS DATE) as ProcessingDate,
     ModelUsed,
     COUNT(*) as TotalFiles,
@@ -1127,30 +1127,30 @@ on:
     paths:
       - 'src/processing/**'
       - 'src/prompts/**'
-      
+
 jobs:
   validate-against-golden-dataset:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Run Golden Dataset Tests
         run: |
           npm run test:golden-dataset
-          
+
       - name: Check Quality Gates
         run: |
           # Fail if average accuracy < 95%
           # Fail if average confidence drops > 5% from baseline
           # Fail if any test completely fails
           npm run check:quality-gates
-          
+
       - name: Generate Test Report
         if: always()
         run: |
           npm run report:test-results
-          
+
       - name: Comment on PR
         uses: actions/github-script@v6
         with:
@@ -1179,9 +1179,9 @@ def check_for_drift(golden_file_id: str, current_confidence: float):
     Detect if model performance has degraded compared to baseline
     """
     baseline = get_baseline_metrics(golden_file_id)
-    
+
     confidence_delta = current_confidence - baseline.confidence
-    
+
     # Calculate drift severity
     if abs(confidence_delta) < 0.02:
         severity = "None"
@@ -1193,19 +1193,19 @@ def check_for_drift(golden_file_id: str, current_confidence: float):
         severity = "High"
     else:
         severity = "Critical"
-    
+
     if severity in ["High", "Critical"]:
         # Log drift event
-        log_drift_event(golden_file_id, baseline.confidence, 
+        log_drift_event(golden_file_id, baseline.confidence,
                        current_confidence, severity)
-        
+
         # Alert team
         send_alert(f"Model drift detected: {severity} for {golden_file_id}")
-        
+
         # Block deployment in CI/CD
         if severity == "Critical":
             raise Exception("Critical model drift detected - blocking deployment")
-    
+
     return severity
 ```
 
@@ -1222,38 +1222,38 @@ def check_for_drift(golden_file_id: str, current_confidence: float):
 ```typescript
 // Simple approval API endpoints
 app.post('/api/staging/approve-batch', async (req, res) => {
-    const { batchId, approvedBy } = req.body;
-    
-    // Move all products from staging to production
-    const result = await approveProductBatch(batchId, approvedBy);
-    
-    res.json({
-        success: true,
-        recordsMoved: result.count,
-        batchId: batchId
-    });
+  const { batchId, approvedBy } = req.body;
+
+  // Move all products from staging to production
+  const result = await approveProductBatch(batchId, approvedBy);
+
+  res.json({
+    success: true,
+    recordsMoved: result.count,
+    batchId: batchId,
+  });
 });
 
 app.post('/api/staging/reject-batch', async (req, res) => {
-    const { batchId, reason, rejectedBy } = req.body;
-    
-    // Mark batch as rejected
-    await rejectProductBatch(batchId, reason, rejectedBy);
-    
-    res.json({
-        success: true,
-        message: 'Batch rejected and flagged for review'
-    });
+  const { batchId, reason, rejectedBy } = req.body;
+
+  // Mark batch as rejected
+  await rejectProductBatch(batchId, reason, rejectedBy);
+
+  res.json({
+    success: true,
+    message: 'Batch rejected and flagged for review',
+  });
 });
 
 app.post('/api/staging/approve-product/:productId', async (req, res) => {
-    const { productId } = req.params;
-    const { approvedBy } = req.body;
-    
-    // Move single product to production
-    await approveProduct(productId, approvedBy);
-    
-    res.json({ success: true });
+  const { productId } = req.params;
+  const { approvedBy } = req.body;
+
+  // Move single product to production
+  await approveProduct(productId, approvedBy);
+
+  res.json({ success: true });
 });
 ```
 
@@ -1280,7 +1280,7 @@ app.post('/api/staging/approve-product/:productId', async (req, res) => {
 
 ```sql
 -- Review pending products
-SELECT 
+SELECT
     StagingID,
     VendorName = v.VendorName,
     SKU,
@@ -1296,7 +1296,7 @@ ORDER BY ConfidenceScore DESC;
 
 -- Approve entire batch
 UPDATE Products_Staging
-SET Status = 'Approved', 
+SET Status = 'Approved',
     ReviewedBy = 'admin@company.com',
     ReviewedAt = GETUTCDATE()
 WHERE BatchID = 'abc-123-def'
@@ -1312,71 +1312,71 @@ EXEC sp_MoveApprovedToProduction @BatchID = 'abc-123-def';
 
 ```typescript
 interface TokenUsageLog {
-    usageId: string;
-    batchId: string;
-    fileName: string;
-    modelUsed: string;           // "claude-3.5-sonnet", "gpt-4-turbo"
-    operationType: string;       // "ocr", "mapping", "validation"
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-    costPerToken: number;
-    estimatedCostUSD: number;
-    processingTimeMs: number;
-    timestamp: Date;
+  usageId: string;
+  batchId: string;
+  fileName: string;
+  modelUsed: string; // "claude-3.5-sonnet", "gpt-4-turbo"
+  operationType: string; // "ocr", "mapping", "validation"
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  costPerToken: number;
+  estimatedCostUSD: number;
+  processingTimeMs: number;
+  timestamp: Date;
 }
 
 async function trackTokenUsage(
-    operation: string,
-    model: string,
-    response: AIResponse,
-    context: ProcessingContext
+  operation: string,
+  model: string,
+  response: AIResponse,
+  context: ProcessingContext
 ) {
-    const pricing = getModelPricing(model);
-    
-    const usage: TokenUsageLog = {
-        usageId: generateId(),
-        batchId: context.batchId,
-        fileName: context.fileName,
-        modelUsed: model,
-        operationType: operation,
-        promptTokens: response.usage.prompt_tokens,
-        completionTokens: response.usage.completion_tokens,
-        totalTokens: response.usage.total_tokens,
-        costPerToken: pricing.perToken,
-        estimatedCostUSD: calculateCost(response.usage, pricing),
-        processingTimeMs: context.processingTime,
-        timestamp: new Date()
-    };
-    
-    // Store in database
-    await db.tokenUsage.insert(usage);
-    
-    // Log to Application Insights
-    appInsights.trackMetric({
-        name: 'TokenUsage',
-        value: usage.totalTokens,
-        properties: {
-            model: model,
-            operation: operation,
-            cost: usage.estimatedCostUSD
-        }
-    });
-    
-    // Check if approaching budget limit
-    await checkBudgetThreshold(context.batchId);
+  const pricing = getModelPricing(model);
+
+  const usage: TokenUsageLog = {
+    usageId: generateId(),
+    batchId: context.batchId,
+    fileName: context.fileName,
+    modelUsed: model,
+    operationType: operation,
+    promptTokens: response.usage.prompt_tokens,
+    completionTokens: response.usage.completion_tokens,
+    totalTokens: response.usage.total_tokens,
+    costPerToken: pricing.perToken,
+    estimatedCostUSD: calculateCost(response.usage, pricing),
+    processingTimeMs: context.processingTime,
+    timestamp: new Date(),
+  };
+
+  // Store in database
+  await db.tokenUsage.insert(usage);
+
+  // Log to Application Insights
+  appInsights.trackMetric({
+    name: 'TokenUsage',
+    value: usage.totalTokens,
+    properties: {
+      model: model,
+      operation: operation,
+      cost: usage.estimatedCostUSD,
+    },
+  });
+
+  // Check if approaching budget limit
+  await checkBudgetThreshold(context.batchId);
 }
 
 // Model pricing (as of December 2024)
 const MODEL_PRICING = {
-    "claude-3.5-sonnet": {
-        input: 0.003 / 1000,   // $3 per million tokens
-        output: 0.015 / 1000   // $15 per million tokens
-    },
-    "gpt-4-turbo": {
-        input: 0.01 / 1000,    // $10 per million tokens
-        output: 0.03 / 1000    // $30 per million tokens
-    }
+  'claude-3.5-sonnet': {
+    input: 0.003 / 1000, // $3 per million tokens
+    output: 0.015 / 1000, // $15 per million tokens
+  },
+  'gpt-4-turbo': {
+    input: 0.01 / 1000, // $10 per million tokens
+    output: 0.03 / 1000, // $30 per million tokens
+  },
 };
 ```
 
@@ -1384,7 +1384,7 @@ const MODEL_PRICING = {
 
 ```sql
 -- Daily token usage summary
-SELECT 
+SELECT
     CAST(ProcessedAt AS DATE) as Date,
     ModelUsed,
     COUNT(*) as TotalFiles,
@@ -1396,7 +1396,7 @@ GROUP BY CAST(ProcessedAt AS DATE), ModelUsed
 ORDER BY Date DESC;
 
 -- Cost per vendor
-SELECT 
+SELECT
     v.VendorName,
     COUNT(DISTINCT tu.BatchID) as TotalBatches,
     SUM(tu.TotalTokens) as TotalTokens,
@@ -1409,7 +1409,7 @@ GROUP BY v.VendorName
 ORDER BY TotalCost DESC;
 
 -- Monthly projection
-SELECT 
+SELECT
     DATEPART(month, GETUTCDATE()) as CurrentMonth,
     SUM(EstimatedCostUSD) as MonthToDateCost,
     SUM(EstimatedCostUSD) / DATEPART(day, GETUTCDATE()) * DAY(EOMONTH(GETUTCDATE())) as ProjectedMonthlyCost
@@ -1422,26 +1422,26 @@ AND DATEPART(year, ProcessedAt) = DATEPART(year, GETUTCDATE());
 
 ```typescript
 async function checkBudgetThreshold(batchId: string) {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    
-    const monthlySpend = await db.tokenUsage
-        .where('processingMonth', currentMonth)
-        .where('processingYear', currentYear)
-        .sum('estimatedCostUSD');
-    
-    const MONTHLY_BUDGET = 500; // $500 monthly budget
-    const ALERT_THRESHOLD = 0.8; // Alert at 80%
-    
-    if (monthlySpend >= MONTHLY_BUDGET * ALERT_THRESHOLD) {
-        await sendAlert({
-            severity: monthlySpend >= MONTHLY_BUDGET ? 'Critical' : 'Warning',
-            message: `Token budget at ${(monthlySpend / MONTHLY_BUDGET * 100).toFixed(0)}%`,
-            currentSpend: monthlySpend,
-            budget: MONTHLY_BUDGET,
-            daysRemaining: getDaysRemainingInMonth()
-        });
-    }
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const monthlySpend = await db.tokenUsage
+    .where('processingMonth', currentMonth)
+    .where('processingYear', currentYear)
+    .sum('estimatedCostUSD');
+
+  const MONTHLY_BUDGET = 500; // $500 monthly budget
+  const ALERT_THRESHOLD = 0.8; // Alert at 80%
+
+  if (monthlySpend >= MONTHLY_BUDGET * ALERT_THRESHOLD) {
+    await sendAlert({
+      severity: monthlySpend >= MONTHLY_BUDGET ? 'Critical' : 'Warning',
+      message: `Token budget at ${((monthlySpend / MONTHLY_BUDGET) * 100).toFixed(0)}%`,
+      currentSpend: monthlySpend,
+      budget: MONTHLY_BUDGET,
+      daysRemaining: getDaysRemainingInMonth(),
+    });
+  }
 }
 ```
 
@@ -1451,15 +1451,15 @@ async function checkBudgetThreshold(batchId: string) {
 
 ### 3.1 UI Components Overview
 
-| Component | Purpose | Priority |
-|-----------|---------|----------|
-| **Vendor Management** | Add/edit vendors, view history | High |
-| **CSV Template Upload** | Upload pre-formatted CSVs | High |
-| **Document Upload** | Upload PDFs/catalogs for AI processing | High |
-| **Field Mapping Review** | Review/confirm AI field mappings | Critical |
-| **Product Staging Review** | Browse/approve/reject staged products | Critical |
-| **Batch Status Dashboard** | Monitor processing status | Medium |
-| **Outreach Tracker** | Manage vendor communications | Low |
+| Component                  | Purpose                                | Priority |
+| -------------------------- | -------------------------------------- | -------- |
+| **Vendor Management**      | Add/edit vendors, view history         | High     |
+| **CSV Template Upload**    | Upload pre-formatted CSVs              | High     |
+| **Document Upload**        | Upload PDFs/catalogs for AI processing | High     |
+| **Field Mapping Review**   | Review/confirm AI field mappings       | Critical |
+| **Product Staging Review** | Browse/approve/reject staged products  | Critical |
+| **Batch Status Dashboard** | Monitor processing status              | Medium   |
+| **Outreach Tracker**       | Manage vendor communications           | Low      |
 
 ### 3.2 Field Mapping Review UI (Critical)
 
@@ -1626,88 +1626,88 @@ src/
 
 ```json
 {
-    "name": "PL_VendorDataIngestion",
-    "properties": {
-        "activities": [
-            {
-                "name": "CopyRawToDataLake",
-                "type": "Copy",
-                "inputs": [{"referenceName": "DS_BlobUpload"}],
-                "outputs": [{"referenceName": "DS_DataLakeRaw"}],
-                "typeProperties": {
-                    "source": {"type": "BlobSource"},
-                    "sink": {"type": "AzureDataLakeStoreGen2Sink"}
-                }
-            },
-            {
-                "name": "TriggerAIProcessing",
-                "type": "AzureFunctionActivity",
-                "dependsOn": [{"activity": "CopyRawToDataLake"}],
-                "typeProperties": {
-                    "functionName": "DocumentProcessor",
-                    "method": "POST",
-                    "body": {
-                        "vendorId": "@pipeline().parameters.vendorId",
-                        "fileName": "@pipeline().parameters.fileName",
-                        "filePath": "@activity('CopyRawToDataLake').output.dataWritten"
-                    }
-                }
-            },
-            {
-                "name": "WaitForApproval",
-                "type": "Until",
-                "dependsOn": [{"activity": "TriggerAIProcessing"}],
-                "typeProperties": {
-                    "expression": {
-                        "value": "@equals(activity('CheckBatchStatus').output.status, 'Approved')"
-                    },
-                    "timeout": "7.00:00:00",
-                    "activities": [
-                        {
-                            "name": "CheckBatchStatus",
-                            "type": "Lookup",
-                            "typeProperties": {
-                                "source": {
-                                    "type": "AzureSqlSource",
-                                    "sqlReaderQuery": "SELECT Status FROM UploadBatches WHERE BatchID = '@{pipeline().parameters.batchId}'"
-                                }
-                            }
-                        },
-                        {
-                            "name": "Wait15Minutes",
-                            "type": "Wait",
-                            "typeProperties": {"waitTimeInSeconds": 900}
-                        }
-                    ]
-                }
-            },
-            {
-                "name": "MoveToProduction",
-                "type": "SqlServerStoredProcedure",
-                "dependsOn": [{"activity": "WaitForApproval"}],
-                "typeProperties": {
-                    "storedProcedureName": "sp_ApproveAndMoveProducts",
-                    "storedProcedureParameters": {
-                        "BatchID": {"value": "@pipeline().parameters.batchId"}
-                    }
-                }
-            },
-            {
-                "name": "ArchiveFiles",
-                "type": "Copy",
-                "dependsOn": [{"activity": "MoveToProduction"}],
-                "typeProperties": {
-                    "source": {"type": "AzureDataLakeStoreGen2Source"},
-                    "sink": {"type": "AzureDataLakeStoreGen2Sink"}
-                }
-            }
-        ],
-        "parameters": {
-            "vendorId": {"type": "String"},
-            "fileName": {"type": "String"},
-            "batchId": {"type": "String"}
+  "name": "PL_VendorDataIngestion",
+  "properties": {
+    "activities": [
+      {
+        "name": "CopyRawToDataLake",
+        "type": "Copy",
+        "inputs": [{ "referenceName": "DS_BlobUpload" }],
+        "outputs": [{ "referenceName": "DS_DataLakeRaw" }],
+        "typeProperties": {
+          "source": { "type": "BlobSource" },
+          "sink": { "type": "AzureDataLakeStoreGen2Sink" }
         }
+      },
+      {
+        "name": "TriggerAIProcessing",
+        "type": "AzureFunctionActivity",
+        "dependsOn": [{ "activity": "CopyRawToDataLake" }],
+        "typeProperties": {
+          "functionName": "DocumentProcessor",
+          "method": "POST",
+          "body": {
+            "vendorId": "@pipeline().parameters.vendorId",
+            "fileName": "@pipeline().parameters.fileName",
+            "filePath": "@activity('CopyRawToDataLake').output.dataWritten"
+          }
+        }
+      },
+      {
+        "name": "WaitForApproval",
+        "type": "Until",
+        "dependsOn": [{ "activity": "TriggerAIProcessing" }],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(activity('CheckBatchStatus').output.status, 'Approved')"
+          },
+          "timeout": "7.00:00:00",
+          "activities": [
+            {
+              "name": "CheckBatchStatus",
+              "type": "Lookup",
+              "typeProperties": {
+                "source": {
+                  "type": "AzureSqlSource",
+                  "sqlReaderQuery": "SELECT Status FROM UploadBatches WHERE BatchID = '@{pipeline().parameters.batchId}'"
+                }
+              }
+            },
+            {
+              "name": "Wait15Minutes",
+              "type": "Wait",
+              "typeProperties": { "waitTimeInSeconds": 900 }
+            }
+          ]
+        }
+      },
+      {
+        "name": "MoveToProduction",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [{ "activity": "WaitForApproval" }],
+        "typeProperties": {
+          "storedProcedureName": "sp_ApproveAndMoveProducts",
+          "storedProcedureParameters": {
+            "BatchID": { "value": "@pipeline().parameters.batchId" }
+          }
+        }
+      },
+      {
+        "name": "ArchiveFiles",
+        "type": "Copy",
+        "dependsOn": [{ "activity": "MoveToProduction" }],
+        "typeProperties": {
+          "source": { "type": "AzureDataLakeStoreGen2Source" },
+          "sink": { "type": "AzureDataLakeStoreGen2Sink" }
+        }
+      }
+    ],
+    "parameters": {
+      "vendorId": { "type": "String" },
+      "fileName": { "type": "String" },
+      "batchId": { "type": "String" }
     }
+  }
 }
 ```
 
@@ -1719,9 +1719,9 @@ CREATE PROCEDURE sp_ApproveAndMoveProducts
 AS
 BEGIN
     SET NOCOUNT ON;
-    
+
     BEGIN TRANSACTION;
-    
+
     BEGIN TRY
         -- Move approved products from Staging to Production
         INSERT INTO Products (
@@ -1730,7 +1730,7 @@ BEGIN
             UPC, Weight, PackSize, AdditionalAttributes, SourceStagingID,
             CreatedAt
         )
-        SELECT 
+        SELECT
             NEWID(), VendorID, SKU, Description, Cost, MAP, MSRP,
             Category, SubCategory, MOQ, LeadTimeDays, FreightTerms,
             UPC, Weight, PackSize, AdditionalAttributes, StagingID,
@@ -1738,29 +1738,29 @@ BEGIN
         FROM Products_Staging
         WHERE BatchID = @BatchID
           AND Status = 'Approved';
-        
+
         -- Update batch statistics
         UPDATE UploadBatches
         SET ApprovedRecords = (
-                SELECT COUNT(*) FROM Products_Staging 
+                SELECT COUNT(*) FROM Products_Staging
                 WHERE BatchID = @BatchID AND Status = 'Approved'
             ),
             RejectedRecords = (
-                SELECT COUNT(*) FROM Products_Staging 
+                SELECT COUNT(*) FROM Products_Staging
                 WHERE BatchID = @BatchID AND Status = 'Rejected'
             ),
             Status = 'Completed'
         WHERE BatchID = @BatchID;
-        
+
         -- Mark staging records as processed
         UPDATE Products_Staging
         SET Status = 'Processed'
         WHERE BatchID = @BatchID AND Status = 'Approved';
-        
+
         COMMIT TRANSACTION;
-        
+
         SELECT 'Success' AS Result, @@ROWCOUNT AS RecordsProcessed;
-        
+
     END TRY
     BEGIN CATCH
         ROLLBACK TRANSACTION;
@@ -1835,7 +1835,7 @@ END;
 // Processing success rate by vendor
 customEvents
 | where name == "DocumentProcessed"
-| summarize 
+| summarize
     TotalProcessed = count(),
     Successful = countif(customDimensions.status == "Success"),
     Failed = countif(customDimensions.status == "Failed")
@@ -1852,7 +1852,7 @@ customMetrics
 // Processing time distribution
 customMetrics
 | where name == "ProcessingTimeMs"
-| summarize 
+| summarize
     P50 = percentile(value, 50),
     P90 = percentile(value, 90),
     P99 = percentile(value, 99)
@@ -1862,13 +1862,13 @@ customMetrics
 
 ### 5.2 Alerting Rules
 
-| Alert | Condition | Severity | Action |
-|-------|-----------|----------|--------|
-| Processing Failures | >5 failures in 1 hour | High | Email team, create ticket |
-| Low Confidence | Avg confidence <70% for batch | Medium | Flag for manual review |
-| Queue Backup | >100 pending files | Medium | Scale up Functions |
-| API Errors | Error rate >5% | High | Page on-call |
-| Storage Quota | >80% capacity | Low | Alert to add storage |
+| Alert               | Condition                     | Severity | Action                    |
+| ------------------- | ----------------------------- | -------- | ------------------------- |
+| Processing Failures | >5 failures in 1 hour         | High     | Email team, create ticket |
+| Low Confidence      | Avg confidence <70% for batch | Medium   | Flag for manual review    |
+| Queue Backup        | >100 pending files            | Medium   | Scale up Functions        |
+| API Errors          | Error rate >5%                | High     | Page on-call              |
+| Storage Quota       | >80% capacity                 | Low      | Alert to add storage      |
 
 ### 5.3 Dashboard Metrics
 
@@ -1911,13 +1911,13 @@ customMetrics
 
 ## Implementation Timeline
 
-| Week | Dates | Focus Areas | Key Deliverables |
-|------|-------|-------------|------------------|
-| **Week 1** | Dec 15-21 | Foundation & Infrastructure | Azure resources provisioned, database schema finalized, API endpoints defined, authentication configured |
-| **Week 2** | Dec 22-28 | AI Pipeline Development | Document Intelligence integration, LLM mapping functional, JSON outputs validated, template storage working |
-| **Week 3** | Dec 29 - Jan 4 | User Interface Development | Upload UI complete, field mapping review UI functional, staging review UI complete, basic dashboard |
-| **Week 4** | Jan 5-11 | Integration & Testing | ADF pipelines configured, end-to-end flow tested, sample vendor files processed successfully |
-| **Week 5** | Jan 12-15 | Polish & Handoff | Bug fixes, documentation complete, user training, production deployment |
+| Week       | Dates          | Focus Areas                 | Key Deliverables                                                                                            |
+| ---------- | -------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Week 1** | Dec 15-21      | Foundation & Infrastructure | Azure resources provisioned, database schema finalized, API endpoints defined, authentication configured    |
+| **Week 2** | Dec 22-28      | AI Pipeline Development     | Document Intelligence integration, LLM mapping functional, JSON outputs validated, template storage working |
+| **Week 3** | Dec 29 - Jan 4 | User Interface Development  | Upload UI complete, field mapping review UI functional, staging review UI complete, basic dashboard         |
+| **Week 4** | Jan 5-11       | Integration & Testing       | ADF pipelines configured, end-to-end flow tested, sample vendor files processed successfully                |
+| **Week 5** | Jan 12-15      | Polish & Handoff            | Bug fixes, documentation complete, user training, production deployment                                     |
 
 ### Detailed Week 1 Tasks
 
@@ -1980,18 +1980,18 @@ customMetrics
 
 ### Cost Breakdown by Component (Updated Post-Feedback)
 
-| Component | Estimated Hours | Hourly Rate | Cost |
-|-----------|-----------------|-------------|------|
-| **Phase 0: Golden Dataset Creation** | 10 hrs | $50/hr | $500 |
-| **Phase 1: Data Ingestion Layer** | 18 hrs | $50/hr | $900 |
-| **Phase 2: AI/OCR Pipeline** | 25 hrs | $50/hr | $1,250 |
-| **Phase 3: Testing Framework** | 20 hrs | $50/hr | $1,000 |
-| **Phase 4: Approval APIs & Token Tracking** | 18 hrs | $50/hr | $900 |
-| **Phase 5: Integration & Hardening** | 20 hrs | $50/hr | $1,000 |
-| **Phase 6: Documentation & Handoff** | 12 hrs | $50/hr | $600 |
-| **Contingency** | 10 hrs | $50/hr | $500 |
-| **Azure Setup & Integration** | 7 hrs | $50/hr | $350 |
-| **TOTAL** | **140 hrs** | | **$7,000** |
+| Component                                   | Estimated Hours | Hourly Rate | Cost       |
+| ------------------------------------------- | --------------- | ----------- | ---------- |
+| **Phase 0: Golden Dataset Creation**        | 10 hrs          | $50/hr      | $500       |
+| **Phase 1: Data Ingestion Layer**           | 18 hrs          | $50/hr      | $900       |
+| **Phase 2: AI/OCR Pipeline**                | 25 hrs          | $50/hr      | $1,250     |
+| **Phase 3: Testing Framework**              | 20 hrs          | $50/hr      | $1,000     |
+| **Phase 4: Approval APIs & Token Tracking** | 18 hrs          | $50/hr      | $900       |
+| **Phase 5: Integration & Hardening**        | 20 hrs          | $50/hr      | $1,000     |
+| **Phase 6: Documentation & Handoff**        | 12 hrs          | $50/hr      | $600       |
+| **Contingency**                             | 10 hrs          | $50/hr      | $500       |
+| **Azure Setup & Integration**               | 7 hrs           | $50/hr      | $350       |
+| **TOTAL**                                   | **140 hrs**     |             | **$7,000** |
 
 **Note:** $500 reserved for contingency to handle unexpected complexity during golden dataset validation or integration issues.
 
@@ -2023,11 +2023,11 @@ customMetrics
 
 **New Services Required:**
 
-| Service | SKU | Est. Monthly Cost |
-|---------|-----|-------------------|
-| Azure Document Intelligence | S0 tier | $50-100 |
-| Blob Storage (additional usage) | Hot tier | $5-10 |
-| **Additional Monthly Cost** | | **$55-110/month** |
+| Service                         | SKU      | Est. Monthly Cost |
+| ------------------------------- | -------- | ----------------- |
+| Azure Document Intelligence     | S0 tier  | $50-100           |
+| Blob Storage (additional usage) | Hot tier | $5-10             |
+| **Additional Monthly Cost**     |          | **$55-110/month** |
 
 **LLM API Costs (Variable):**
 
@@ -2042,18 +2042,18 @@ customMetrics
 
 ### Backend
 
-| Layer | Technology | Notes |
-|-------|------------|-------|
-| **Runtime** | Node.js 20 + TypeScript | Azure Functions |
-| **API** | Azure Functions HTTP Triggers | Serverless compute |
-| **OCR** | Azure AI Document Intelligence | Prebuilt-layout model |
-| **LLM** | Claude 3.5 Sonnet (or GPT-4 Turbo) | Straight-shot prompting |
-| **Database** | Azure SQL Server (client's existing) | Add new database/schema |
-| **File Storage** | Azure Blob Storage (client's existing) | Bronze-layer retention |
-| **Infrastructure** | SST v3 (client converts to Terraform) | Infrastructure as Code |
-| **Auth** | JWT / Azure AD | Token-based auth |
-| **Secrets** | Azure Key Vault | API keys, connections |
-| **Monitoring** | Application Insights | Logging, metrics, alerts |
+| Layer              | Technology                             | Notes                    |
+| ------------------ | -------------------------------------- | ------------------------ |
+| **Runtime**        | Node.js 20 + TypeScript                | Azure Functions          |
+| **API**            | Azure Functions HTTP Triggers          | Serverless compute       |
+| **OCR**            | Azure AI Document Intelligence         | Prebuilt-layout model    |
+| **LLM**            | Claude 3.5 Sonnet (or GPT-4 Turbo)     | Straight-shot prompting  |
+| **Database**       | Azure SQL Server (client's existing)   | Add new database/schema  |
+| **File Storage**   | Azure Blob Storage (client's existing) | Bronze-layer retention   |
+| **Infrastructure** | SST v3 (client converts to Terraform)  | Infrastructure as Code   |
+| **Auth**           | JWT / Azure AD                         | Token-based auth         |
+| **Secrets**        | Azure Key Vault                        | API keys, connections    |
+| **Monitoring**     | Application Insights                   | Logging, metrics, alerts |
 
 **Key Architectural Decisions:**
 
@@ -2063,28 +2063,28 @@ customMetrics
 
 ### Frontend
 
-| Layer | Technology | Notes |
-|-------|------------|-------|
-| **Framework** | React 18 | SPA architecture |
-| **Language** | TypeScript | Type safety |
-| **Styling** | Tailwind CSS | Utility-first |
-| **State** | React Query + Zustand | Server/client state |
-| **Tables** | TanStack Table | Sorting, filtering |
-| **Forms** | React Hook Form | Form handling |
-| **UI Components** | Radix UI | Accessible primitives |
+| Layer             | Technology            | Notes                 |
+| ----------------- | --------------------- | --------------------- |
+| **Framework**     | React 18              | SPA architecture      |
+| **Language**      | TypeScript            | Type safety           |
+| **Styling**       | Tailwind CSS          | Utility-first         |
+| **State**         | React Query + Zustand | Server/client state   |
+| **Tables**        | TanStack Table        | Sorting, filtering    |
+| **Forms**         | React Hook Form       | Form handling         |
+| **UI Components** | Radix UI              | Accessible primitives |
 
 **Note:** Initial release focuses on API endpoints with simple approval mechanism. Full UI can be Phase 2 based on client preference.
 
 ### Development
 
-| Tool | Purpose |
-|------|---------|
-| VS Code | Development |
-| Docker Desktop | Container development |
-| Azure CLI | Testing connections |
+| Tool           | Purpose                      |
+| -------------- | ---------------------------- |
+| VS Code        | Development                  |
+| Docker Desktop | Container development        |
+| Azure CLI      | Testing connections          |
 | GitHub Actions | CI/CD & golden dataset tests |
-| Postman | API testing |
-| Jest | Unit testing |
+| Postman        | API testing                  |
+| Jest           | Unit testing                 |
 
 ---
 
@@ -2113,11 +2113,11 @@ profitforge-vendor-processing/
 
 ### Azure Resources Deployed
 
-| Resource | Purpose | Location |
-|----------|---------|----------|
-| **Azure Functions** | API & processing endpoints | Client's existing plan |
-| **SQL Database** | VendorData schema | Client's existing SQL Server |
-| **Blob Storage** | Raw/processed files | Client's existing storage account |
+| Resource            | Purpose                    | Location                          |
+| ------------------- | -------------------------- | --------------------------------- |
+| **Azure Functions** | API & processing endpoints | Client's existing plan            |
+| **SQL Database**    | VendorData schema          | Client's existing SQL Server      |
+| **Blob Storage**    | Raw/processed files        | Client's existing storage account |
 
 ### Environment Variables Required
 
@@ -2181,28 +2181,28 @@ resource "azurerm_container_group" "vendor_processing" {
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   os_type             = "Linux"
-  
+
   container {
     name   = "api"
     image  = "profitforge/vendor-api:latest"
     cpu    = "1"
     memory = "2"
-    
+
     ports {
       port     = 3000
       protocol = "TCP"
     }
-    
+
     environment_variables = {
       NODE_ENV = "production"
     }
-    
+
     secure_environment_variables = {
       SQL_PASSWORD = azurerm_key_vault_secret.sql_password.value
       ANTHROPIC_API_KEY = azurerm_key_vault_secret.anthropic_key.value
     }
   }
-  
+
   container {
     name   = "processor"
     image  = "profitforge/vendor-processor:latest"
@@ -2229,37 +2229,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run unit tests
         run: npm test
-      
+
       - name: Run golden dataset tests
         run: npm run test:golden-dataset
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      
+
       - name: Check quality gates
         run: npm run check:quality-gates
-  
+
   build:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Build Docker images
         run: |
           docker-compose build
-      
+
       - name: Push to registry
         run: |
           docker push profitforge/vendor-api:latest
@@ -2360,38 +2360,38 @@ Download template: [vendor_product_template.csv]
 
 ### B. API Error Codes
 
-| Code | Message | Resolution |
-|------|---------|------------|
-| 400 | Invalid file format | Upload CSV, PDF, XLSX, or XLS |
-| 400 | Missing required fields | Ensure SKU, Description, Cost present |
-| 401 | Unauthorized | Check API key or login |
-| 404 | Vendor not found | Create vendor first |
-| 413 | File too large | Max 100MB per file |
-| 422 | Validation failed | Check error details |
-| 500 | Processing error | Retry or contact support |
+| Code | Message                 | Resolution                            |
+| ---- | ----------------------- | ------------------------------------- |
+| 400  | Invalid file format     | Upload CSV, PDF, XLSX, or XLS         |
+| 400  | Missing required fields | Ensure SKU, Description, Cost present |
+| 401  | Unauthorized            | Check API key or login                |
+| 404  | Vendor not found        | Create vendor first                   |
+| 413  | File too large          | Max 100MB per file                    |
+| 422  | Validation failed       | Check error details                   |
+| 500  | Processing error        | Retry or contact support              |
 
 ### C. Confidence Score Guide
 
-| Score | Meaning | Action |
-|-------|---------|--------|
-| 95-100% | High confidence | Auto-approve available |
-| 85-94% | Good confidence | Standard review |
-| 70-84% | Medium confidence | Detailed review recommended |
-| 50-69% | Low confidence | Manual verification required |
-| <50% | Very low | Reject, use CSV template |
+| Score   | Meaning           | Action                       |
+| ------- | ----------------- | ---------------------------- |
+| 95-100% | High confidence   | Auto-approve available       |
+| 85-94%  | Good confidence   | Standard review              |
+| 70-84%  | Medium confidence | Detailed review recommended  |
+| 50-69%  | Low confidence    | Manual verification required |
+| <50%    | Very low          | Reject, use CSV template     |
 
 ### D. Glossary
 
-| Term | Definition |
-|------|------------|
-| **SKU** | Stock Keeping Unit - unique product identifier |
-| **MAP** | Minimum Advertised Price |
-| **MSRP** | Manufacturer's Suggested Retail Price |
-| **MOQ** | Minimum Order Quantity |
-| **Staging** | Temporary holding area before approval |
-| **Mapping Template** | Saved field mappings for repeat vendors |
-| **Confidence Score** | AI's certainty about data extraction (0-100%) |
-| **Batch** | Group of products from single file upload |
+| Term                 | Definition                                     |
+| -------------------- | ---------------------------------------------- |
+| **SKU**              | Stock Keeping Unit - unique product identifier |
+| **MAP**              | Minimum Advertised Price                       |
+| **MSRP**             | Manufacturer's Suggested Retail Price          |
+| **MOQ**              | Minimum Order Quantity                         |
+| **Staging**          | Temporary holding area before approval         |
+| **Mapping Template** | Saved field mappings for repeat vendors        |
+| **Confidence Score** | AI's certainty about data extraction (0-100%)  |
+| **Batch**            | Group of products from single file upload      |
 
 ### E. Contact & Support
 
@@ -2401,6 +2401,6 @@ Download template: [vendor_product_template.csv]
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: December 2025*  
-*Author: AI Implementation Team*
+_Document Version: 1.0_  
+_Last Updated: December 2025_  
+_Author: AI Implementation Team_
