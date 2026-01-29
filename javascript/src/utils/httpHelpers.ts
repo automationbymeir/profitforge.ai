@@ -67,7 +67,13 @@ export function validationError(
   message: string,
   details?: unknown
 ): HttpResponseInit {
-  return errorResponse('Validation Error', 400, message);
+  // For backward compatibility with existing tests,
+  // use the message as the error field directly
+  return {
+    status: 400,
+    headers: DEFAULT_CORS_HEADERS,
+    jsonBody: { error: message, ...(details ? { details } : {}) },
+  };
 }
 
 /**

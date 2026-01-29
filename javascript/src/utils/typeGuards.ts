@@ -76,7 +76,7 @@ export function hasErrorCode(error: unknown): error is { code: string } {
  * Validate and extract string from FormData
  */
 export function getFormDataString(
-  formData: FormData,
+  formData: FormData | Map<string, unknown>,
   key: string
 ): string | null {
   const value = formData.get(key);
@@ -87,7 +87,7 @@ export function getFormDataString(
  * Validate and extract File from FormData
  */
 export function getFormDataFile(
-  formData: FormData,
+  formData: FormData | Map<string, unknown>,
   key: string
 ): File | null {
   const value = formData.get(key);
