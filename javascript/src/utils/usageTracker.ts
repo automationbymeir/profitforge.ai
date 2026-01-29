@@ -1,12 +1,32 @@
 import { TableClient } from '@azure/data-tables';
+import { hasStatusCode } from './typeGuards.js';
+import { 
+  USAGE_TABLE_NAME, 
+  USAGE_PARTITION_KEYS,
+  DEFAULT_RETENTION_DAYS,
+  DEFAULT_RATE_LIMITS 
+} from './constants.js';
 
 let tableClient: TableClient | null = null;
+
+/**
+ * Get storage connection string (allow falling back to process.env for tests)
+ */
+function getStorageConnectionStringForUsage(): string {
+  // In production, this should always be set
+  // In tests, it's set directly in process.env
+  const connectionString = process.env.STORAGE_CONNECTION_STRING;
+  if (!connectionString) {
+    throw new Error('STORAGE_CONNECTION_STRING is required');
+  }
+  return connectionString;
+}
 
 function getTableClient(): TableClient {
   if (!tableClient) {
     tableClient = TableClient.fromConnectionString(
-      process.env.STORAGE_CONNECTION_STRING!,
-      'DemoUsageTracking'
+      getStorageConnectionStringForUsage(),
+      USAGE_TABLE_NAME
     );
   }
   return tableClient;
@@ -16,8 +36,9 @@ export async function initializeUsageTable(): Promise<void> {
   try {
     await getTableClient().createTable();
   } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode !== 409)
+    if (hasStatusCode(error) && error.statusCode !== 409) {
       throw error; // 409 = already exists
+    }
   }
 }
 
@@ -27,14 +48,17 @@ export async function checkDailyUploadLimit(): Promise<{
   limit: number;
 }> {
   const today = new Date().toISOString().split('T')[0];
-  const MAX_DAILY_UPLOADS = parseInt(process.env.MAX_DAILY_UPLOADS || '0'); // 0 = no limit (client mode)
+  const MAX_DAILY_UPLOADS = parseInt(
+    process.env.MAX_DAILY_UPLOADS || String(DEFAULT_RATE_LIMITS.MAX_DAILY_UPLOADS),
+    10
+  );
 
   if (MAX_DAILY_UPLOADS === 0) {
     return { allowed: true, current: 0, limit: 0 }; // Client mode: no limits
   }
 
   try {
-    const entity = await getTableClient().getEntity('daily', today);
+    const entity = await getTableClient().getEntity(USAGE_PARTITION_KEYS.DAILY, today);
     const currentCount = (entity.uploadCount as number) || 0;
 
     return {
@@ -43,7 +67,7 @@ export async function checkDailyUploadLimit(): Promise<{
       limit: MAX_DAILY_UPLOADS,
     };
   } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 404) {
+    if (hasStatusCode(error) && error.statusCode === 404) {
       return { allowed: true, current: 0, limit: MAX_DAILY_UPLOADS };
     }
     // Fail open if Table Storage unavailable
@@ -53,7 +77,12 @@ export async function checkDailyUploadLimit(): Promise<{
 }
 
 export async function incrementDailyUploadCount(): Promise<number> {
-  if (parseInt(process.env.MAX_DAILY_UPLOADS || '0') === 0) {
+  const maxUploads = parseInt(
+    process.env.MAX_DAILY_UPLOADS || String(DEFAULT_RATE_LIMITS.MAX_DAILY_UPLOADS),
+    10
+  );
+  
+  if (maxUploads === 0) {
     return 0; // Client mode: don't track
   }
 
@@ -62,17 +91,18 @@ export async function incrementDailyUploadCount(): Promise<number> {
   try {
     let currentCount = 0;
     try {
-      const entity = await getTableClient().getEntity('daily', today);
+      const entity = await getTableClient().getEntity(USAGE_PARTITION_KEYS.DAILY, today);
       currentCount = (entity.uploadCount as number) || 0;
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode !== 404)
+      if (hasStatusCode(error) && error.statusCode !== 404) {
         throw error;
+      }
     }
 
     const newCount = currentCount + 1;
     await getTableClient().upsertEntity(
       {
-        partitionKey: 'daily',
+        partitionKey: USAGE_PARTITION_KEYS.DAILY,
         rowKey: today,
         uploadCount: newCount,
         lastUpdated: new Date(),
@@ -100,7 +130,10 @@ export async function checkIpRateLimit(clientIp: string): Promise<{
   limit: number;
   resetTime: string;
 }> {
-  const MAX_UPLOADS_PER_IP_PER_HOUR = parseInt(process.env.MAX_UPLOADS_PER_IP_PER_HOUR || '0');
+  const MAX_UPLOADS_PER_IP_PER_HOUR = parseInt(
+    process.env.MAX_UPLOADS_PER_IP_PER_HOUR || String(DEFAULT_RATE_LIMITS.MAX_UPLOADS_PER_IP_PER_HOUR),
+    10
+  );
 
   // 0 = no IP rate limit (client mode)
   if (MAX_UPLOADS_PER_IP_PER_HOUR === 0) {
@@ -115,7 +148,7 @@ export async function checkIpRateLimit(clientIp: string): Promise<{
   const resetTime = `${nextHour.getUTCHours().toString().padStart(2, '0')}:00 UTC`;
 
   try {
-    const entity = await getTableClient().getEntity('ip-rate', rowKey);
+    const entity = await getTableClient().getEntity(USAGE_PARTITION_KEYS.IP_RATE, rowKey);
     const currentCount = (entity.uploadCount as number) || 0;
 
     return {
@@ -125,7 +158,7 @@ export async function checkIpRateLimit(clientIp: string): Promise<{
       resetTime,
     };
   } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 404) {
+    if (hasStatusCode(error) && error.statusCode === 404) {
       // First upload this hour from this IP
       return {
         allowed: true,
@@ -150,7 +183,12 @@ export async function checkIpRateLimit(clientIp: string): Promise<{
  * Increment IP-based upload counter
  */
 export async function incrementIpUploadCount(clientIp: string): Promise<number> {
-  if (parseInt(process.env.MAX_UPLOADS_PER_IP_PER_HOUR || '0') === 0) {
+  const maxUploads = parseInt(
+    process.env.MAX_UPLOADS_PER_IP_PER_HOUR || String(DEFAULT_RATE_LIMITS.MAX_UPLOADS_PER_IP_PER_HOUR),
+    10
+  );
+  
+  if (maxUploads === 0) {
     return 0; // Client mode: don't track
   }
 
@@ -161,17 +199,18 @@ export async function incrementIpUploadCount(clientIp: string): Promise<number> 
   try {
     let currentCount = 0;
     try {
-      const entity = await getTableClient().getEntity('ip-rate', rowKey);
+      const entity = await getTableClient().getEntity(USAGE_PARTITION_KEYS.IP_RATE, rowKey);
       currentCount = (entity.uploadCount as number) || 0;
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode !== 404)
+      if (hasStatusCode(error) && error.statusCode !== 404) {
         throw error;
+      }
     }
 
     const newCount = currentCount + 1;
     await getTableClient().upsertEntity(
       {
-        partitionKey: 'ip-rate',
+        partitionKey: USAGE_PARTITION_KEYS.IP_RATE,
         rowKey,
         uploadCount: newCount,
         clientIp,
@@ -193,7 +232,7 @@ export async function incrementIpUploadCount(clientIp: string): Promise<number> 
  * @param daysToKeep - Number of days of history to retain (default: 30)
  * @returns Number of records deleted
  */
-export async function cleanupOldUsageRecords(daysToKeep: number = 30): Promise<{
+export async function cleanupOldUsageRecords(daysToKeep: number = DEFAULT_RETENTION_DAYS): Promise<{
   dailyRecordsDeleted: number;
   ipRecordsDeleted: number;
 }> {
@@ -209,12 +248,12 @@ export async function cleanupOldUsageRecords(daysToKeep: number = 30): Promise<{
     // Clean up daily records
     const dailyEntities = client.listEntities({
       queryOptions: {
-        filter: `PartitionKey eq 'daily' and RowKey lt '${cutoffDateStr}'`,
+        filter: `PartitionKey eq '${USAGE_PARTITION_KEYS.DAILY}' and RowKey lt '${cutoffDateStr}'`,
       },
     });
 
     for await (const entity of dailyEntities) {
-      await client.deleteEntity('daily', entity.rowKey as string);
+      await client.deleteEntity(USAGE_PARTITION_KEYS.DAILY, entity.rowKey as string);
       dailyDeleted++;
     }
 
@@ -222,7 +261,7 @@ export async function cleanupOldUsageRecords(daysToKeep: number = 30): Promise<{
     // RowKey format: {ip}-{YYYY-MM-DD}-{HH}
     const ipEntities = client.listEntities({
       queryOptions: {
-        filter: `PartitionKey eq 'ip-rate'`,
+        filter: `PartitionKey eq '${USAGE_PARTITION_KEYS.IP_RATE}'`,
       },
     });
 
@@ -233,7 +272,7 @@ export async function cleanupOldUsageRecords(daysToKeep: number = 30): Promise<{
       const recordDate = withoutHour.slice(-10); // Get last 10 chars (YYYY-MM-DD)
 
       if (recordDate < cutoffDateStr) {
-        await client.deleteEntity('ip-rate', rowKey);
+        await client.deleteEntity(USAGE_PARTITION_KEYS.IP_RATE, rowKey);
         ipDeleted++;
       }
     }
@@ -266,7 +305,7 @@ export async function getUsageStats(): Promise<{
 
     // Count daily records
     const dailyEntities = client.listEntities({
-      queryOptions: { filter: `PartitionKey eq 'daily'` },
+      queryOptions: { filter: `PartitionKey eq '${USAGE_PARTITION_KEYS.DAILY}'` },
     });
 
     for await (const entity of dailyEntities) {
@@ -278,7 +317,7 @@ export async function getUsageStats(): Promise<{
 
     // Count IP records
     const ipEntities = client.listEntities({
-      queryOptions: { filter: `PartitionKey eq 'ip-rate'` },
+      queryOptions: { filter: `PartitionKey eq '${USAGE_PARTITION_KEYS.IP_RATE}'` },
     });
 
     for await (const _entity of ipEntities) {

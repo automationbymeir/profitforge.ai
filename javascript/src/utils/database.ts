@@ -1,10 +1,7 @@
 import sql from 'mssql';
-
-const SQL_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING;
-
-if (!SQL_CONNECTION_STRING) {
-  throw new Error('SQL_CONNECTION_STRING environment variable is required');
-}
+import { getSqlConnectionString } from './config.js';
+import { isTransientError } from './typeGuards.js';
+import { RETRY_CONFIG } from './constants.js';
 
 // Singleton connection pool
 let globalPool: sql.ConnectionPool | null = null;
@@ -31,7 +28,8 @@ export async function getConnectionPool(): Promise<sql.ConnectionPool> {
     try {
       // Create pool if it doesn't exist - mssql accepts connection string directly
       if (!globalPool) {
-        globalPool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+        const connectionString = getSqlConnectionString();
+        globalPool = new sql.ConnectionPool(connectionString);
 
         // Handle connection errors
         globalPool.on('error', (err) => {
@@ -62,7 +60,7 @@ export async function getConnectionPool(): Promise<sql.ConnectionPool> {
  */
 export async function withDatabase<T>(
   operation: (pool: sql.ConnectionPool) => Promise<T>,
-  retries = 3
+  retries: number = RETRY_CONFIG.MAX_RETRIES
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -74,18 +72,11 @@ export async function withDatabase<T>(
       lastError = error as Error;
 
       // Check if error is transient (should retry)
-      const errorCode = (error as { code?: string }).code;
-      const errorMsg = error instanceof Error ? error.message : '';
-      const isTransient =
-        errorCode === 'ESOCKET' ||
-        errorCode === 'ETIMEDOUT' ||
-        errorCode === 'ECONNRESET' ||
-        errorCode === 'EAI_AGAIN' ||
-        errorMsg.includes('timeout') ||
-        errorMsg.includes('connection');
-
-      if (isTransient && attempt < retries) {
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff, max 5s
+      if (isTransientError(error) && attempt < retries) {
+        const delay = Math.min(
+          RETRY_CONFIG.BASE_DELAY_MS * Math.pow(2, attempt - 1),
+          RETRY_CONFIG.MAX_DELAY_MS
+        );
         console.log(
           `[DB] Transient error on attempt ${attempt}/${retries}, retrying in ${delay}ms...`
         );
