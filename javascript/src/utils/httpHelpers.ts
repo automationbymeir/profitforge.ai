@@ -63,10 +63,7 @@ export function errorResponse(
 /**
  * Create a validation error response (400)
  */
-export function validationError(
-  message: string,
-  details?: unknown
-): HttpResponseInit {
+export function validationError(message: string, details?: unknown): HttpResponseInit {
   // For backward compatibility with existing tests,
   // use the message as the error field directly
   return {
@@ -87,11 +84,7 @@ export function notFoundError(resource: string): HttpResponseInit {
  * Create an unauthorized error response (401)
  */
 export function unauthorizedError(message?: string): HttpResponseInit {
-  return errorResponse(
-    'Unauthorized',
-    401,
-    message || 'Authentication required'
-  );
+  return errorResponse('Unauthorized', 401, message || 'Authentication required');
 }
 
 /**
@@ -118,10 +111,7 @@ export function rateLimitError(
 /**
  * Create a conflict error response (409)
  */
-export function conflictError(
-  message: string,
-  existingResource?: unknown
-): HttpResponseInit {
+export function conflictError(message: string, existingResource?: unknown): HttpResponseInit {
   return {
     status: 409,
     headers: DEFAULT_CORS_HEADERS,
@@ -147,11 +137,7 @@ export function corsPreflightResponse(): HttpResponseInit {
  * Create a payload too large error response (413)
  */
 export function payloadTooLargeError(maxSizeMB: number): HttpResponseInit {
-  return errorResponse(
-    'Payload Too Large',
-    413,
-    `File size exceeds limit of ${maxSizeMB}MB`
-  );
+  return errorResponse('Payload Too Large', 413, `File size exceeds limit of ${maxSizeMB}MB`);
 }
 
 /**

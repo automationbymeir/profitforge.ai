@@ -39,12 +39,13 @@ export function isPositiveInteger(value: unknown): value is number {
  * Type guard for File objects (FormData)
  */
 export function isFile(value: unknown): value is File {
-  return value instanceof File || (
-    typeof value === 'object' &&
-    value !== null &&
-    'name' in value &&
-    'size' in value &&
-    'type' in value
+  return (
+    value instanceof File ||
+    (typeof value === 'object' &&
+      value !== null &&
+      'name' in value &&
+      'size' in value &&
+      'type' in value)
   );
 }
 
@@ -120,7 +121,7 @@ export function isTransientError(error: unknown): boolean {
 
   return (
     (errorCode !== undefined && transientCodes.includes(errorCode)) ||
-    transientKeywords.some(keyword => errorMsg.includes(keyword))
+    transientKeywords.some((keyword) => errorMsg.includes(keyword))
   );
 }
 

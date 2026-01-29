@@ -1,11 +1,11 @@
 import { TableClient } from '@azure/data-tables';
-import { hasStatusCode } from './typeGuards.js';
-import { 
-  USAGE_TABLE_NAME, 
-  USAGE_PARTITION_KEYS,
+import {
+  DEFAULT_RATE_LIMITS,
   DEFAULT_RETENTION_DAYS,
-  DEFAULT_RATE_LIMITS 
+  USAGE_PARTITION_KEYS,
+  USAGE_TABLE_NAME,
 } from './constants.js';
+import { hasStatusCode } from './typeGuards.js';
 
 let tableClient: TableClient | null = null;
 
@@ -81,7 +81,7 @@ export async function incrementDailyUploadCount(): Promise<number> {
     process.env.MAX_DAILY_UPLOADS || String(DEFAULT_RATE_LIMITS.MAX_DAILY_UPLOADS),
     10
   );
-  
+
   if (maxUploads === 0) {
     return 0; // Client mode: don't track
   }
@@ -131,7 +131,8 @@ export async function checkIpRateLimit(clientIp: string): Promise<{
   resetTime: string;
 }> {
   const MAX_UPLOADS_PER_IP_PER_HOUR = parseInt(
-    process.env.MAX_UPLOADS_PER_IP_PER_HOUR || String(DEFAULT_RATE_LIMITS.MAX_UPLOADS_PER_IP_PER_HOUR),
+    process.env.MAX_UPLOADS_PER_IP_PER_HOUR ||
+      String(DEFAULT_RATE_LIMITS.MAX_UPLOADS_PER_IP_PER_HOUR),
     10
   );
 
@@ -184,10 +185,11 @@ export async function checkIpRateLimit(clientIp: string): Promise<{
  */
 export async function incrementIpUploadCount(clientIp: string): Promise<number> {
   const maxUploads = parseInt(
-    process.env.MAX_UPLOADS_PER_IP_PER_HOUR || String(DEFAULT_RATE_LIMITS.MAX_UPLOADS_PER_IP_PER_HOUR),
+    process.env.MAX_UPLOADS_PER_IP_PER_HOUR ||
+      String(DEFAULT_RATE_LIMITS.MAX_UPLOADS_PER_IP_PER_HOUR),
     10
   );
-  
+
   if (maxUploads === 0) {
     return 0; // Client mode: don't track
   }

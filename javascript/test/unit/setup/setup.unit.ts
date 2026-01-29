@@ -27,8 +27,7 @@ process.env.AZURE_OPENAI_API_VERSION = '2024-02-15-preview';
 process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT =
   'https://mock-doc-intel.cognitiveservices.azure.com/';
 process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY = 'mock-doc-intel-key-12345';
-process.env.DOCUMENT_INTELLIGENCE_ENDPOINT =
-  'https://mock-doc-intel.cognitiveservices.azure.com/';
+process.env.DOCUMENT_INTELLIGENCE_ENDPOINT = 'https://mock-doc-intel.cognitiveservices.azure.com/';
 process.env.DOCUMENT_INTELLIGENCE_KEY = 'mock-doc-intel-key-12345';
 
 // Storage (mocked credentials for unit tests)

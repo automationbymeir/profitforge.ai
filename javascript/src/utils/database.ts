@@ -1,7 +1,7 @@
 import sql from 'mssql';
 import { getSqlConnectionString } from './config.js';
-import { isTransientError } from './typeGuards.js';
 import { RETRY_CONFIG } from './constants.js';
+import { isTransientError } from './typeGuards.js';
 
 // Singleton connection pool
 let globalPool: sql.ConnectionPool | null = null;
