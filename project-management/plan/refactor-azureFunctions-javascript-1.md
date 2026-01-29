@@ -111,29 +111,29 @@ The refactoring is structured in 5 progressive phases, each independently deploy
 
 - **GOAL-002**: Extract business logic from HTTP handlers into reusable service classes to enable testability and code reuse across triggers
 
-| Task     | Description                                                                                                             | Completed | Date |
-| -------- | ----------------------------------------------------------------------------------------------------------------------- | --------- | ---- |
-| TASK-017 | Create `src/services/` directory structure                                                                              |           |      |
-| TASK-018 | Implement `src/services/document-service.ts` with DocumentService class (upload, delete, getResults, reprocess methods) |           |      |
-| TASK-019 | Implement `src/services/vendor-service.ts` with VendorService class (delete, validate methods)                          |           |      |
-| TASK-020 | Implement `src/services/version-service.ts` with VersionService class (getHistory, deleteRun methods)                   |           |      |
-| TASK-021 | Implement `src/services/ai-service.ts` with AIService class (mapProducts, singleton OpenAI client)                      |           |      |
-| TASK-022 | Implement `src/services/ocr-service.ts` with OCRService class (processDocument, singleton Document Intelligence client) |           |      |
-| TASK-023 | Implement `src/services/storage-service.ts` with StorageService class (uploadBlob, deleteBlob, bronze-layer methods)    |           |      |
-| TASK-024 | Create `src/services/index.ts` barrel export                                                                            |           |      |
-| TASK-025 | Pilot migration: Refactor `uploadHandler` to use DocumentService                                                        |           |      |
-| TASK-026 | Pilot migration: Refactor `deleteVendorHandler` to use VendorService                                                    |           |      |
-| TASK-027 | Pilot migration: Refactor `aiProductMapperHandler` to use AIService                                                     |           |      |
-| TASK-028 | Create unit tests for DocumentService                                                                                   |           |      |
-| TASK-029 | Create unit tests for VendorService                                                                                     |           |      |
-| TASK-030 | Create unit tests for AIService                                                                                         |           |      |
-| TASK-031 | Run integration tests to verify pilot services work correctly                                                           |           |      |
-| TASK-032 | Roll out service layer to all remaining handlers                                                                        |           |      |
-| TASK-033 | Update `documentProcessor.ts` to use OCRService                                                                         |           |      |
-| TASK-034 | Update `aiProductMapperQueue.ts` to use AIService (code reuse verification)                                             |           |      |
-| TASK-035 | Verify all handlers are now thin routing layers (<100 lines each)                                                       |           |      |
-| TASK-036 | Run full test suite to verify Phase 2 completion                                                                        |           |      |
-| TASK-037 | Update documentation with service layer architecture                                                                    |           |      |
+| Task     | Description                                                                                                             | Completed | Date       |
+| -------- | ----------------------------------------------------------------------------------------------------------------------- | --------- | ---------- |
+| TASK-017 | Create `src/services/` directory structure                                                                              | ✅        | 2026-01-29 |
+| TASK-018 | Implement `src/services/document-service.ts` with DocumentService class (upload, delete, getResults, reprocess methods) | ✅        | 2026-01-29 |
+| TASK-019 | Implement `src/services/vendor-service.ts` with VendorService class (delete, validate methods)                          | ✅        | 2026-01-29 |
+| TASK-020 | Implement `src/services/version-service.ts` with VersionService class (getHistory, deleteRun methods)                   | ✅        | 2026-01-29 |
+| TASK-021 | Implement `src/services/ai-service.ts` with AIService class (mapProducts, singleton OpenAI client)                      | ✅        | 2026-01-29 |
+| TASK-022 | Implement `src/services/ocr-service.ts` with OCRService class (processDocument, singleton Document Intelligence client) | ✅        | 2026-01-29 |
+| TASK-023 | Implement `src/services/storage-service.ts` with StorageService class (uploadBlob, deleteBlob, bronze-layer methods)    | ✅        | 2026-01-29 |
+| TASK-024 | Create `src/services/index.ts` barrel export                                                                            | ✅        | 2026-01-29 |
+| TASK-025 | Pilot migration: Refactor `uploadHandler` to use DocumentService                                                        | ✅        | 2026-01-29 |
+| TASK-026 | Pilot migration: Refactor `deleteVendorHandler` to use VendorService                                                    | ✅        | 2026-01-29 |
+| TASK-027 | Pilot migration: Refactor `aiProductMapperHandler` to use AIService                                                     | ✅        | 2026-01-29 |
+| TASK-028 | Create unit tests for DocumentService                                                                                   | ✅        | 2026-01-30 |
+| TASK-029 | Create unit tests for VendorService                                                                                     | ✅        | 2026-01-30 |
+| TASK-030 | Create unit tests for AIService                                                                                         | ✅        | 2026-01-30 |
+| TASK-031 | Run integration tests to verify pilot services work correctly                                                           | ✅        | 2026-01-30 |
+| TASK-032 | Roll out service layer to all remaining handlers                                                                        | ✅        | 2026-01-29 |
+| TASK-033 | Update `documentProcessor.ts` to use OCRService                                                                         | ✅        | 2026-01-29 |
+| TASK-034 | Update `aiProductMapperQueue.ts` to use AIService (code reuse verification)                                             | ✅        | 2026-01-29 |
+| TASK-035 | Verify all handlers are now thin routing layers (<100 lines each)                                                       | ✅        | 2026-01-29 |
+| TASK-036 | Run full test suite to verify Phase 2 completion                                                                        | ✅        | 2026-01-30 |
+| TASK-037 | Update documentation with service layer architecture                                                                    | ✅        | 2026-01-30 |
 
 ### Phase 3: Reorganize Folder Structure
 

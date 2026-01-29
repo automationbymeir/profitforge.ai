@@ -1,5 +1,5 @@
-import { app, HttpRequest, InvocationContext } from '@azure/functions';
-import { aiProductMapperHandler } from './aiProductMapper.js';
+import { app, InvocationContext } from '@azure/functions';
+import { getAIService } from '../services/index.js';
 
 /**
  * AI Product Mapper Queue Trigger
@@ -14,7 +14,7 @@ import { aiProductMapperHandler } from './aiProductMapper.js';
  * WORKFLOW:
  * 1. OCR completes → documentProcessor.ts sends message to queue
  * 2. Queue trigger fires → this function processes message
- * 3. Calls shared aiProductMapperHandler logic
+ * 3. Calls AIService.mapProducts() for business logic
  * 4. On success: message deleted from queue
  * 5. On failure: message returned to queue for retry (up to 5 times by default)
  *
@@ -25,7 +25,7 @@ import { aiProductMapperHandler } from './aiProductMapper.js';
  *
  * NOTES:
  * - HTTP endpoint /api/aiProductMapper still available for manual/UI reprocessing
- * - Both queue trigger and HTTP endpoint use same aiProductMapperHandler
+ * - Both queue trigger and HTTP endpoint use same AIService
  * - Queue provides automatic retry and poison message handling
  */
 export async function aiProductMapperQueueTrigger(
@@ -43,19 +43,10 @@ export async function aiProductMapperQueueTrigger(
       throw new Error('Queue message missing documentId');
     }
 
-    // Create mock HTTP request for handler
-    const mockRequest = {
-      json: async () => ({ documentId }),
-    } as unknown as HttpRequest;
+    // Use AIService for mapping logic
+    const aiService = getAIService();
+    const result = await aiService.mapProducts(documentId);
 
-    // Call shared handler logic
-    const response = await aiProductMapperHandler(mockRequest, context);
-
-    if (response.status !== 200) {
-      throw new Error(`AI mapping failed with status ${response.status}: ${response.body}`);
-    }
-
-    const result = JSON.parse(response.body as string);
     context.log(`✅ Queue processing complete: ${result.productCount} products extracted`);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);

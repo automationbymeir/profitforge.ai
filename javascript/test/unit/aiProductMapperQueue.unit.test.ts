@@ -1,26 +1,52 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock the aiProductMapper module
-vi.mock('../../src/functions/aiProductMapper');
+// Mock services BEFORE importing the handler
+vi.mock('../../src/services/index.js', () => ({
+  getAIService: vi.fn(),
+}));
 
-import { aiProductMapperHandler } from '../../src/functions/aiProductMapper';
 import { aiProductMapperQueueTrigger } from '../../src/functions/aiProductMapperQueue';
+import { getAIService } from '../../src/services/index.js';
 import { mockInvocationContext } from './setup/mocks';
 
 describe('AI Product Mapper Queue - Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Mock AIService
+    const mockAIService = {
+      mapProducts: vi.fn().mockResolvedValue({
+        documentId: 'test-uuid-1234',
+        vendor: 'TEST_VENDOR',
+        products: [
+          { name: 'Product 1', sku: 'SKU1', price: 10.0 },
+          { name: 'Product 2', sku: 'SKU2', price: 20.0 },
+        ],
+        productCount: 2,
+        processingDuration: 1500,
+        usage: {
+          promptTokens: 100,
+          completionTokens: 50,
+          totalTokens: 150,
+        },
+        cost: 0.15,
+        qualityMetrics: {
+          completenessScore: 95.5,
+          confidenceScore: 92.0,
+          productsWithSKU: 2,
+          productsWithPrice: 2,
+          productsWithValidPrice: 2,
+          productsWithName: 2,
+          productsWithUnit: 0,
+          productsWithDescription: 0,
+          emptyFields: 0,
+        },
+      }),
+    };
+    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
   });
 
   it('should process valid queue message with documentId', async () => {
-    vi.mocked(aiProductMapperHandler).mockResolvedValue({
-      status: 200,
-      body: JSON.stringify({
-        productCount: 5,
-        status: 'completed',
-      }),
-    } as any);
-
     const queueMessage = {
       documentId: 'test-uuid-1234',
     };
@@ -28,29 +54,19 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
 
     await aiProductMapperQueueTrigger(queueMessage, context as any);
 
-    expect(aiProductMapperHandler).toHaveBeenCalledWith(
-      expect.objectContaining({
-        json: expect.any(Function),
-      }),
-      context
-    );
+    // Verify AIService.mapProducts was called
+    const mockService = vi.mocked(getAIService)();
+    expect(mockService.mapProducts).toHaveBeenCalledWith('test-uuid-1234');
+
     expect(context.log).toHaveBeenCalledWith(
       expect.stringContaining('Queue trigger: Processing AI mapping')
     );
     expect(context.log).toHaveBeenCalledWith(
-      expect.stringContaining('Queue processing complete: 5 products extracted')
+      expect.stringContaining('Queue processing complete: 2 products extracted')
     );
   });
 
   it('should parse string-encoded JSON messages', async () => {
-    vi.mocked(aiProductMapperHandler).mockResolvedValue({
-      status: 200,
-      body: JSON.stringify({
-        productCount: 3,
-        status: 'completed',
-      }),
-    } as any);
-
     const queueMessage = JSON.stringify({
       documentId: 'test-uuid-5678',
     });
@@ -58,7 +74,8 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
 
     await aiProductMapperQueueTrigger(queueMessage, context as any);
 
-    expect(aiProductMapperHandler).toHaveBeenCalled();
+    const mockService = vi.mocked(getAIService)();
+    expect(mockService.mapProducts).toHaveBeenCalledWith('test-uuid-5678');
     expect(context.error).not.toHaveBeenCalled();
   });
 
@@ -76,11 +93,12 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
     expect(context.error).toHaveBeenCalledWith(expect.stringContaining('Queue processing failed'));
   });
 
-  it('should throw error when aiProductMapperHandler fails', async () => {
-    vi.mocked(aiProductMapperHandler).mockResolvedValue({
-      status: 500,
-      body: JSON.stringify({ error: 'Database error' }),
-    } as any);
+  it('should throw error when AIService fails', async () => {
+    // Mock service to throw error
+    const mockAIService = {
+      mapProducts: vi.fn().mockRejectedValue(new Error('Database error')),
+    };
+    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
 
     const queueMessage = {
       documentId: 'test-uuid-1234',
@@ -88,14 +106,18 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
     const context = mockInvocationContext();
 
     await expect(aiProductMapperQueueTrigger(queueMessage, context as any)).rejects.toThrow(
-      'AI mapping failed with status 500'
+      'Database error'
     );
 
     expect(context.error).toHaveBeenCalledWith(expect.stringContaining('Queue processing failed'));
   });
 
-  it('should throw error when aiProductMapperHandler throws', async () => {
-    vi.mocked(aiProductMapperHandler).mockRejectedValue(new Error('OpenAI timeout'));
+  it('should throw error when AIService throws', async () => {
+    // Mock service to throw OpenAI error
+    const mockAIService = {
+      mapProducts: vi.fn().mockRejectedValue(new Error('OpenAI timeout')),
+    };
+    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
 
     const queueMessage = {
       documentId: 'test-uuid-1234',
@@ -109,12 +131,7 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
     expect(context.error).toHaveBeenCalledWith(expect.stringContaining('OpenAI timeout'));
   });
 
-  it('should call handler with correct mock request structure', async () => {
-    vi.mocked(aiProductMapperHandler).mockResolvedValue({
-      status: 200,
-      body: JSON.stringify({ productCount: 1, status: 'completed' }),
-    } as any);
-
+  it('should call AIService with correct documentId', async () => {
     const queueMessage = {
       documentId: 'test-uuid-9999',
     };
@@ -122,22 +139,12 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
 
     await aiProductMapperQueueTrigger(queueMessage, context as any);
 
-    // Verify the mock request passed to handler
-    const mockRequest = vi.mocked(aiProductMapperHandler).mock.calls[0][0];
-    expect(mockRequest).toHaveProperty('json');
-    expect(typeof mockRequest.json).toBe('function');
-
-    // Verify the json() function returns correct documentId
-    const body = await mockRequest.json();
-    expect(body).toEqual({ documentId: 'test-uuid-9999' });
+    // Verify AIService.mapProducts was called with correct documentId
+    const mockService = vi.mocked(getAIService)();
+    expect(mockService.mapProducts).toHaveBeenCalledWith('test-uuid-9999');
   });
 
   it('should handle different documentId formats', async () => {
-    vi.mocked(aiProductMapperHandler).mockResolvedValue({
-      status: 200,
-      body: JSON.stringify({ productCount: 2, status: 'completed' }),
-    } as any);
-
     const testCases = [
       '123e4567-e89b-12d3-a456-426614174000', // Standard UUID
       'test-id-123', // Custom ID format
@@ -150,25 +157,38 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
 
       await aiProductMapperQueueTrigger(queueMessage, context as any);
 
-      expect(aiProductMapperHandler).toHaveBeenCalled();
+      const mockService = vi.mocked(getAIService)();
+      expect(mockService.mapProducts).toHaveBeenCalledWith(documentId);
       expect(context.error).not.toHaveBeenCalled();
       vi.clearAllMocks();
-      vi.mocked(aiProductMapperHandler).mockResolvedValue({
-        status: 200,
-        body: JSON.stringify({ productCount: 2, status: 'completed' }),
-      } as any);
     }
   });
 
   it('should log success message with product count', async () => {
-    vi.mocked(aiProductMapperHandler).mockResolvedValue({
-      status: 200,
-      body: JSON.stringify({
+    // Mock AIService to return 15 products
+    const mockAIService = {
+      mapProducts: vi.fn().mockResolvedValue({
+        documentId: 'test-uuid',
+        vendor: 'TEST',
+        products: new Array(15).fill({ name: 'Product', sku: 'SKU', price: 10 }),
         productCount: 15,
-        status: 'completed',
-        aiTokensUsed: 1200,
+        processingDuration: 2000,
+        usage: { promptTokens: 800, completionTokens: 400, totalTokens: 1200 },
+        cost: 0.2,
+        qualityMetrics: {
+          completenessScore: 100,
+          confidenceScore: 95,
+          productsWithSKU: 15,
+          productsWithPrice: 15,
+          productsWithValidPrice: 15,
+          productsWithName: 15,
+          productsWithUnit: 0,
+          productsWithDescription: 0,
+          emptyFields: 0,
+        },
       }),
-    } as any);
+    };
+    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
 
     const queueMessage = { documentId: 'test-uuid' };
     const context = mockInvocationContext();
@@ -180,7 +200,10 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
 
   it('should propagate errors for queue retry mechanism', async () => {
     // When an error is thrown, the queue should retry the message
-    vi.mocked(aiProductMapperHandler).mockRejectedValue(new Error('Temporary network issue'));
+    const mockAIService = {
+      mapProducts: vi.fn().mockRejectedValue(new Error('Temporary network issue')),
+    };
+    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
 
     const queueMessage = { documentId: 'test-uuid' };
     const context = mockInvocationContext();

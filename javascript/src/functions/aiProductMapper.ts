@@ -1,8 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { BlobServiceClient } from '@azure/storage-blob';
-import sql from 'mssql';
-import { OpenAI } from 'openai';
 import { withCors, withErrorHandler } from '../middleware/index.js';
+import { getAIService } from '../services/index.js';
 import { errorResponse, successResponse } from '../utils/httpHelpers.js';
 
 // Type definitions
@@ -10,96 +8,14 @@ interface RequestBody {
   documentId: string;
 }
 
-interface TableCell {
-  kind: string;
-  content?: string;
-  rowIndex: number;
-  columnIndex: number;
-}
-
-interface Table {
-  cells: TableCell[];
-}
-
-interface Product {
-  name: string;
-  sku: string;
-  price: number;
-  unit?: string;
-  description?: string;
-}
-
-// Connection strings from environment variables
-const SQL_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING;
-const AI_PROJECT_ENDPOINT = process.env.AI_PROJECT_ENDPOINT;
-const AI_PROJECT_KEY = process.env.AI_PROJECT_KEY;
-const BRONZE_LAYER_CONTAINER = 'bronze-layer';
-
 /**
  * AI Product Mapper - HTTP POST endpoint for AI-based product extraction
- *
- * TRIGGERED BY: HTTP POST with document_id
- *
- * STEP-BY-STEP PROCESS:
- * 1. INITIALIZATION
- *    - Extract document_id from request body
- *    - Validate AI project credentials
- *    - Query database for OCR results (doc_intel_structured_data)
- *
- * 2. COLUMN DETECTION (GPT-4o Phase 1)
- *    - Extract all table headers from OCR data
- *    - Send headers to GPT-4o for intelligent column mapping
- *    - Identify: SKU, name, price, unit, description columns
- *    - Handles vendor-specific naming variations
- *
- * 3. PRODUCT EXTRACTION (GPT-4o Phase 2)
- *    - Iterate through table rows using column mapping
- *    - Extract products with minimal required schema:
- *      * name (required)
- *      * SKU (required)
- *      * price (required)
- *      * unit (optional)
- *      * description (optional)
- *    - Parse prices (remove currency symbols, commas)
- *    - Filter out invalid rows (missing required fields)
- *
- * 4. BRONZE-LAYER STORAGE
- *    - Store AI mapping result in bronze-layer/ai-mapping/{document_id}-v{version}.json
- *    - Store prompt used in bronze-layer/prompts/{document_id}-mapping.txt
- *
- * 5. DATABASE UPDATE
- *    - Update document_processing_results table with:
- *      * ai_mapping_result: Product JSON array
- *      * ai_model_name: 'gpt-4o'
- *      * ai_prompt_used: Full prompt text
- *      * ai_prompt_tokens, ai_completion_tokens, ai_total_tokens
- *      * ai_model_cost_usd: Calculated cost
- *      * product_count: Number of products extracted
- *      * processing_status: 'ocr_complete' -> 'completed'
- *      * processing_completed_at: Timestamp
- *
- * COST CALCULATION:
- * - GPT-4o: $2.50/1M input tokens, $10.00/1M output tokens
- * - Cost = (prompt_tokens * 0.0025 + completion_tokens * 0.01) / 1000
- *
- * ERROR HANDLING:
- * - 400 Bad Request: Missing document_id
- * - 404 Not Found: Document not found or OCR not complete
- * - 500 Internal Server Error: AI or database errors
- * - Updates DB with 'failed' status on errors
- *
- * REPROCESSING:
- * - Can be called multiple times on same document_id
- * - Each run increments reprocessing_count
- * - Allows prompt/model iteration for accuracy improvement
  */
 async function aiProductMapperHandlerCore(
   req: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log(`AI Product Mapping request received`);
-
-  let pool: sql.ConnectionPool | null = null;
 
   const body = (await req.json()) as RequestBody;
   const documentId = body.documentId;
@@ -108,340 +24,30 @@ async function aiProductMapperHandlerCore(
     return errorResponse('Missing documentId in request body', 400);
   }
 
-  if (!AI_PROJECT_ENDPOINT || !AI_PROJECT_KEY) {
-    throw new Error('Missing AI project configuration');
-  }
+  try {
+    // Use AIService for mapping logic
+    const aiService = getAIService();
+    const result = await aiService.mapProducts(documentId);
 
-  // 1. Retrieve OCR results from database
-  pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
-  await pool.connect();
+    context.log(`✅ AI Product Mapping complete for document ${documentId}`);
 
-  const result = await pool.request().input('documentId', sql.UniqueIdentifier, documentId).query(`
-        SELECT 
-          result_id,
-          document_name,
-          vendor_name,
-          doc_intel_structured_data,
-          doc_intel_extracted_text,
-          processing_status,
-          reprocessing_count
-        FROM vvocr.document_processing_results 
-        WHERE result_id = @documentId
-      `);
-
-  if (result.recordset.length === 0) {
-    await pool.close();
-    return {
-      status: 404,
-      body: JSON.stringify({ error: 'Document not found' }),
-    };
-  }
-
-  const document = result.recordset[0];
-
-  if (document.processing_status !== 'ocr_complete' && document.processing_status !== 'completed') {
-    await pool.close();
-    return {
-      status: 400,
-      body: JSON.stringify({
-        error: `Document status is '${document.processing_status}'. Must be 'ocr_complete' to run AI mapping.`,
-      }),
-    };
-  }
-
-  const ocrData = JSON.parse(document.doc_intel_structured_data);
-  const tables = ocrData.tables || [];
-  const fullText = document.doc_intel_extracted_text || '';
-
-  context.log(`Processing document: ${document.document_name}, Tables: ${tables.length}`);
-
-  // 2. Initialize OpenAI client
-  const openai = new OpenAI({
-    apiKey: AI_PROJECT_KEY,
-    baseURL: `${AI_PROJECT_ENDPOINT}/openai/deployments/gpt-4o`,
-    defaultQuery: { 'api-version': '2024-08-01-preview' },
-    defaultHeaders: { 'api-key': AI_PROJECT_KEY },
-  });
-
-  // 3. Analyze ALL table headers to find common column patterns
-  const allHeaders: Array<{ tableIdx: number; colIdx: number; header: string }> = [];
-  tables.forEach((table: Table, tableIdx: number) => {
-    const headerCells = table.cells.filter((c: TableCell) => c.kind === 'columnHeader');
-    headerCells.forEach((cell: TableCell) => {
-      allHeaders.push({
-        tableIdx,
-        colIdx: cell.columnIndex,
-        header: cell.content || '',
-      });
+    return successResponse({
+      message: 'AI product mapping completed successfully',
+      documentId: result.documentId,
+      vendor: result.vendor,
+      productCount: result.productCount,
+      processingDuration: result.processingDuration,
+      usage: result.usage,
+      cost: result.cost,
     });
-  });
-
-  context.log(`Found ${allHeaders.length} header cells across ${tables.length} tables`);
-
-  // Build column mapping prompt (minimal required schema)
-  const headerMappingPrompt = `You are analyzing product catalog tables. Extract products with the following MINIMAL REQUIRED SCHEMA:
-- name (product name/description) - REQUIRED
-- SKU (item code/product code) - REQUIRED  
-- price (MSRP/cost) - REQUIRED
-- unit (dimensions/size/packaging) - OPTIONAL
-- description (additional details) - OPTIONAL
-
-Here are ALL the column headers found:
-${allHeaders.map((h) => `Table ${h.tableIdx}, Column ${h.colIdx}: "${h.header}"`).join('\n')}
-
-These tables have a CONSISTENT structure. Identify the column pattern:
-- Which column index is SKU? (look for "SKU", "Item Code", "Item #", etc.)
-- Which column index is Product Name? (look for product descriptions, NOT category headers)
-- Which column index is Price? (look for "MSRP", "Price", "Cost", "List Price", etc.)
-- Which column index is Unit/Dimensions? (look for "Dimensions", "Size", "Unit", "Pack", etc.)
-- Which column index is Description? (look for additional product details)
-
-IMPORTANT: 
-- Category headers (e.g., "QUILTED HAMMOCKS") are NOT column headers for product names
-- The actual product name is in the first data column with descriptive text
-- Ignore header-only rows or separator rows
-
-Return JSON:
-{
-  "vendor": "detected vendor name",
-  "columnMapping": {
-    "sku": column_index_number or null,
-    "name": column_index_number,
-    "price": column_index_number or null,
-    "unit": column_index_number or null,
-    "description": column_index_number or null
-  }
-}
-
-Context: ${fullText.substring(0, 2000)}`;
-
-  const startTime = Date.now();
-
-  const mappingResponse = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [{ role: 'user', content: headerMappingPrompt }],
-    response_format: { type: 'json_object' },
-    max_tokens: 500,
-    temperature: 0,
-  });
-
-  const mappingResult = JSON.parse(mappingResponse.choices[0].message.content || '{}');
-  context.log(`Column mapping: ${JSON.stringify(mappingResult.columnMapping)}`);
-
-  // 4. Extract products using column index mapping
-  const products: Array<{
-    name: string;
-    sku: string;
-    price: number;
-    unit?: string;
-    description?: string;
-  }> = [];
-
-  const colMap = mappingResult.columnMapping || {};
-
-  for (const table of tables) {
-    const contentCells = table.cells.filter((c: TableCell) => c.kind === 'content');
-    if (contentCells.length === 0) continue;
-
-    const rowCount = Math.max(...contentCells.map((c: TableCell) => c.rowIndex)) + 1;
-
-    for (let rowIdx = 1; rowIdx < rowCount; rowIdx++) {
-      const rowCells = contentCells.filter((c: TableCell) => c.rowIndex === rowIdx);
-
-      const sku = rowCells.find((c: TableCell) => c.columnIndex === colMap.sku)?.content?.trim();
-      const name = rowCells.find((c: TableCell) => c.columnIndex === colMap.name)?.content?.trim();
-      const priceStr = rowCells
-        .find((c: TableCell) => c.columnIndex === colMap.price)
-        ?.content?.trim();
-      const unit = rowCells.find((c: TableCell) => c.columnIndex === colMap.unit)?.content?.trim();
-      const description = rowCells
-        .find((c: TableCell) => c.columnIndex === colMap.description)
-        ?.content?.trim();
-
-      // Validate required fields
-      if (sku && name) {
-        // Parse price - remove currency symbols, commas
-        const priceMatch = priceStr?.match(/[\d,]+\.?\d*/);
-        const price = priceMatch ? parseFloat(priceMatch[0].replace(/,/g, '')) : 0;
-
-        const product: Product = {
-          name,
-          sku,
-          price,
-        };
-
-        if (unit) product.unit = unit;
-        if (description) product.description = description;
-
-        products.push(product);
-      }
+  } catch (error: unknown) {
+    // Handle custom error codes from service
+    if (error instanceof Error && 'statusCode' in error) {
+      const customError = error as Error & { statusCode: number };
+      return errorResponse(error.message, customError.statusCode);
     }
+    throw error;
   }
-
-  context.log(`✅ Extracted ${products.length} products from ${tables.length} tables`);
-
-  // 5. Calculate data quality and confidence metrics
-  let completenessScore = 0;
-  let confidenceScore = 0;
-  const qualityMetrics = {
-    productsWithSKU: 0,
-    productsWithPrice: 0,
-    productsWithValidPrice: 0,
-    productsWithName: 0,
-    productsWithUnit: 0,
-    productsWithDescription: 0,
-    emptyFields: 0,
-  };
-
-  products.forEach((p: Product) => {
-    if (p.sku && p.sku.trim()) qualityMetrics.productsWithSKU++;
-    if (p.name && p.name.trim()) qualityMetrics.productsWithName++;
-    if (p.price !== undefined && p.price !== null) {
-      qualityMetrics.productsWithPrice++;
-      if (p.price > 0 && p.price < 100000) qualityMetrics.productsWithValidPrice++;
-    }
-    if (p.unit && p.unit.trim()) qualityMetrics.productsWithUnit++;
-    if (p.description && p.description.trim()) qualityMetrics.productsWithDescription++;
-
-    // Count empty/missing fields
-    if (!p.sku || !p.sku.trim()) qualityMetrics.emptyFields++;
-    if (!p.name || !p.name.trim()) qualityMetrics.emptyFields++;
-    if (p.price === undefined || p.price === null || p.price <= 0) qualityMetrics.emptyFields++;
-  });
-
-  // Completeness score: % of required fields populated (SKU, name, price)
-  const requiredFieldCount = products.length * 3; // 3 required fields per product
-  const populatedRequiredFields =
-    qualityMetrics.productsWithSKU +
-    qualityMetrics.productsWithName +
-    qualityMetrics.productsWithPrice;
-  completenessScore =
-    requiredFieldCount > 0 ? (populatedRequiredFields / requiredFieldCount) * 100 : 0;
-
-  // Confidence score: weighted by data quality indicators
-  const skuScore =
-    products.length > 0 ? (qualityMetrics.productsWithSKU / products.length) * 30 : 0;
-  const priceScore =
-    products.length > 0 ? (qualityMetrics.productsWithValidPrice / products.length) * 40 : 0;
-  const nameScore =
-    products.length > 0 ? (qualityMetrics.productsWithName / products.length) * 30 : 0;
-  confidenceScore = Math.min(100, skuScore + priceScore + nameScore);
-
-  // 6. Calculate costs
-  const promptTokens = mappingResponse.usage?.prompt_tokens || 0;
-  const completionTokens = mappingResponse.usage?.completion_tokens || 0;
-  const totalTokens = promptTokens + completionTokens;
-
-  // GPT-4o pricing: $2.50/1M input, $10.00/1M output
-  const aiCost = (promptTokens * 0.0025 + completionTokens * 0.01) / 1000;
-
-  const processingDuration = Date.now() - startTime;
-
-  // 6. Store in bronze-layer
-  const blobServiceClient = BlobServiceClient.fromConnectionString(
-    process.env.STORAGE_CONNECTION_STRING!
-  );
-  const bronzeContainer = blobServiceClient.getContainerClient(BRONZE_LAYER_CONTAINER);
-
-  // Use the reprocessing_count from the record (already set correctly by reprocessMapping)
-  const version = document.reprocessing_count || 0;
-
-  // Store AI mapping result with quality metrics
-  const mappingResultJson = {
-    documentId,
-    timestamp: new Date().toISOString(),
-    vendor: mappingResult.vendor || document.vendor_name || 'Unknown',
-    products,
-    productCount: products.length,
-    columnMapping: mappingResult.columnMapping,
-    qualityMetrics: {
-      completenessScore: Math.round(completenessScore * 100) / 100, // Already 0-100%, just round to 2 decimals
-      confidenceScore: Math.round(confidenceScore * 100) / 100, // Already 0-100%, just round to 2 decimals
-      productsWithSKU: qualityMetrics.productsWithSKU,
-      productsWithPrice: qualityMetrics.productsWithPrice,
-      productsWithValidPrice: qualityMetrics.productsWithValidPrice,
-      productsWithName: qualityMetrics.productsWithName,
-      productsWithUnit: qualityMetrics.productsWithUnit,
-      productsWithDescription: qualityMetrics.productsWithDescription,
-      emptyFields: qualityMetrics.emptyFields,
-    },
-    usage: {
-      promptTokens,
-      completionTokens,
-      totalTokens,
-      cost: aiCost,
-    },
-  };
-
-  const mappingBlobPath = `ai-mapping/${documentId}-v${version}.json`;
-  const mappingBlobClient = bronzeContainer.getBlockBlobClient(mappingBlobPath);
-  await mappingBlobClient.upload(
-    Buffer.from(JSON.stringify(mappingResultJson, null, 2)),
-    Buffer.from(JSON.stringify(mappingResultJson, null, 2)).length
-  );
-
-  // Store prompt
-  const promptBlobPath = `prompts/${documentId}-mapping-v${version}.txt`;
-  const promptBlobClient = bronzeContainer.getBlockBlobClient(promptBlobPath);
-  await promptBlobClient.upload(
-    Buffer.from(headerMappingPrompt),
-    Buffer.from(headerMappingPrompt).length
-  );
-
-  context.log(`Bronze-layer storage complete: ${mappingBlobPath}, ${promptBlobPath}`);
-
-  // 7. Update database with AI mapping results and confidence scores
-  await pool
-    .request()
-    .input('documentId', sql.UniqueIdentifier, documentId)
-    .input('mappingResult', sql.NVarChar, JSON.stringify(mappingResultJson))
-    .input('promptUsed', sql.NVarChar, headerMappingPrompt)
-    .input('promptTokens', sql.Int, promptTokens)
-    .input('completionTokens', sql.Int, completionTokens)
-    .input('totalTokens', sql.Int, totalTokens)
-    .input('aiCost', sql.Decimal(10, 6), aiCost)
-    .input('productCount', sql.Int, products.length)
-    .input('vendorName', sql.NVarChar, document.vendor_name) // Preserve original vendor name
-    .input('completenessScore', sql.Decimal(5, 2), completenessScore)
-    .input('confidenceScore', sql.Decimal(5, 2), confidenceScore).query(`
-        UPDATE vvocr.document_processing_results 
-        SET 
-            ai_mapping_result = @mappingResult,
-            ai_model_used = 'gpt-4o',
-            ai_prompt_used = @promptUsed,
-            ai_prompt_tokens = @promptTokens,
-            ai_completion_tokens = @completionTokens,
-            ai_total_tokens = @totalTokens,
-            ai_model_cost_usd = @aiCost,
-            ai_completeness_score = @completenessScore,
-            ai_confidence_score = @confidenceScore,
-            product_count = @productCount,
-            vendor_name = @vendorName,
-            processing_status = 'completed',
-            processing_completed_at = GETUTCDATE(),
-            updated_at = GETUTCDATE()
-        WHERE result_id = @documentId
-      `);
-
-  await pool.close();
-
-  context.log(`✅ AI Product Mapping complete for ${document.document_name}`);
-
-  await pool.close();
-
-  return successResponse({
-    message: 'AI product mapping completed successfully',
-    documentId,
-    vendor: mappingResult.vendor || document.vendor_name,
-    productCount: products.length,
-    processingDuration,
-    usage: {
-      promptTokens,
-      completionTokens,
-      totalTokens,
-    },
-    cost: aiCost,
-  });
 }
 
 export const aiProductMapperHandler = withErrorHandler(withCors(aiProductMapperHandlerCore));

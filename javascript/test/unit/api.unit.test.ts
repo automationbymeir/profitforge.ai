@@ -1,35 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock Azure SDK modules BEFORE importing the handler
-vi.mock('@azure/storage-blob');
-vi.mock('mssql');
+// Mock services BEFORE importing the handler
+vi.mock('../../src/services/index.js', () => ({
+  getDocumentService: vi.fn(),
+  getVendorService: vi.fn(),
+  getVersionService: vi.fn(),
+}));
 
-import { BlobServiceClient } from '@azure/storage-blob';
-import sql from 'mssql';
 import {
   confirmMappingHandler,
   deleteVendorHandler,
   reprocessMappingHandler,
   uploadHandler,
 } from '../../src/functions/api';
-import {
-  mockBlobServiceClient,
-  mockHttpRequest,
-  mockInvocationContext,
-  mockSqlConnection,
-  resetMockState,
-} from './setup/mocks';
+import { getDocumentService, getVendorService } from '../../src/services/index.js';
+import { mockHttpRequest, mockInvocationContext } from './setup/mocks';
 
 describe('Upload Handler - Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetMockState(); // Reset global query counter
 
-    // Setup mocks for each test
-    vi.mocked(BlobServiceClient.fromConnectionString).mockReturnValue(
-      mockBlobServiceClient() as any
-    );
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockSqlConnection() as any);
+    // Mock DocumentService
+    const mockDocumentService = {
+      upload: vi.fn().mockResolvedValue({
+        resultId: 'test-uuid-1234',
+        documentName: 'BETTER_LIVING_11_25.pdf',
+        vendorName: 'BETTER_LIVING_11_25',
+        filePath: 'BETTER_LIVING_11_25/BETTER_LIVING_11_25.pdf',
+        status: 'pending',
+      }),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
   });
 
   it('should successfully upload a PDF file', async () => {
@@ -80,11 +81,31 @@ describe('Upload Handler - Unit Tests', () => {
 
     const response = await uploadHandler(request as any, context as any);
 
+    // Mock service to throw error for invalid file type
+    const mockDocumentService = {
+      upload: vi.fn().mockRejectedValue(
+        Object.assign(new Error('Unsupported file type: text/plain. Only PDF files are allowed.'), {
+          statusCode: 400,
+        })
+      ),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+
     expect(response.status).toBe(400);
     expect(response.jsonBody.error).toBe('Missing file or vendor name in request');
   });
 
   it('should return 400 for unsupported file type', async () => {
+    // Mock service to throw file type error
+    const mockDocumentService = {
+      upload: vi.fn().mockRejectedValue(
+        Object.assign(new Error('Unsupported file type: text/plain. Only PDF files are allowed.'), {
+          statusCode: 400,
+        })
+      ),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
         new Map<string, any>([
@@ -109,6 +130,16 @@ describe('Upload Handler - Unit Tests', () => {
   });
 
   it('should reject invalid vendor name format', async () => {
+    // Mock service to throw validation error
+    const mockDocumentService = {
+      upload: vi.fn().mockRejectedValue(
+        Object.assign(new Error('Invalid vendor name format. Expected format: VENDOR_NAME_MM_YY'), {
+          statusCode: 400,
+        })
+      ),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
         new Map<string, any>([
@@ -129,11 +160,22 @@ describe('Upload Handler - Unit Tests', () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toBe('Invalid vendor name format');
-    expect(response.jsonBody.message).toContain('VENDOR_NAME_MM_YY');
+    expect(response.jsonBody.error).toBe(
+      'Invalid vendor name format. Expected format: VENDOR_NAME_MM_YY'
+    );
   });
 
   it('should reject vendor with invalid month', async () => {
+    // Mock service to throw month validation error
+    const mockDocumentService = {
+      upload: vi.fn().mockRejectedValue(
+        Object.assign(new Error('Invalid month: 13. Month must be between 01 and 12'), {
+          statusCode: 400,
+        })
+      ),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
         new Map<string, any>([
@@ -154,24 +196,28 @@ describe('Upload Handler - Unit Tests', () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toBe('Invalid vendor name format');
-    expect(response.jsonBody.message).toContain('Invalid month: 13');
+    expect(response.jsonBody.error).toBe('Invalid month: 13. Month must be between 01 and 12');
   });
 
   it('should reject duplicate vendor upload', async () => {
-    // Mock SQL to return existing record
-    const mockPoolWithExisting = mockSqlConnection();
-    mockPoolWithExisting.request().query.mockResolvedValueOnce({
-      recordset: [
-        {
-          result_id: 'existing-uuid',
-          document_name: 'BETTER_LIVING-11-25.pdf',
-          processing_status: 'completed',
-        },
-      ],
-    });
-
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPoolWithExisting as any);
+    // Mock service to throw conflict error with details
+    const mockDocumentService = {
+      upload: vi.fn().mockRejectedValue(
+        Object.assign(new Error('Vendor already exists'), {
+          statusCode: 409,
+          details: {
+            message:
+              'A document already exists for vendor BETTER_LIVING_11_25. Please delete the existing document first.',
+            existingDocument: {
+              resultId: 'existing-uuid',
+              documentName: 'BETTER_LIVING-11-25.pdf',
+              status: 'completed',
+            },
+          },
+        })
+      ),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = mockHttpRequest();
     const context = mockInvocationContext();
@@ -180,21 +226,19 @@ describe('Upload Handler - Unit Tests', () => {
 
     expect(response.status).toBe(409); // Conflict
     expect(response.jsonBody.error).toBe('Vendor already exists');
-    expect(response.jsonBody.message).toContain('delete the existing document first');
-    expect(response.jsonBody.existingDocument).toBeDefined();
-    expect(response.jsonBody.existingDocument.resultId).toBe('existing-uuid');
+    // Details are stored in message field as JSON string
+    expect(response.jsonBody.message).toBeDefined();
+    const details = JSON.parse(response.jsonBody.message as string);
+    expect(details.existingDocument).toBeDefined();
+    expect(details.existingDocument.resultId).toBe('existing-uuid');
   });
 
   it('should handle blob upload errors gracefully', async () => {
-    const failingBlobClient = {
-      getContainerClient: vi.fn().mockReturnValue({
-        getBlockBlobClient: vi.fn().mockReturnValue({
-          upload: vi.fn().mockRejectedValue(new Error('Blob storage error')),
-        }),
-      }),
+    // Mock service to throw storage error
+    const mockDocumentService = {
+      upload: vi.fn().mockRejectedValue(new Error('Blob storage error')),
     };
-
-    vi.mocked(BlobServiceClient.fromConnectionString).mockReturnValue(failingBlobClient as any);
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = mockHttpRequest();
     const context = mockInvocationContext();
@@ -207,16 +251,11 @@ describe('Upload Handler - Unit Tests', () => {
   });
 
   it('should handle database errors gracefully', async () => {
-    const failingPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi.fn().mockRejectedValue(new Error('Database error: connection failed')),
-      }),
-      close: vi.fn().mockResolvedValue(undefined),
+    // Mock service to throw database error
+    const mockDocumentService = {
+      upload: vi.fn().mockRejectedValue(new Error('Database error: connection failed')),
     };
-
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => failingPool as any);
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = mockHttpRequest();
     const context = mockInvocationContext();
@@ -228,6 +267,21 @@ describe('Upload Handler - Unit Tests', () => {
   });
 
   it('should reject Excel files (PDF-only validation)', async () => {
+    // Mock service to throw file type error
+    const mockDocumentService = {
+      upload: vi
+        .fn()
+        .mockRejectedValue(
+          Object.assign(
+            new Error(
+              'Unsupported file type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet. Only PDF files are allowed.'
+            ),
+            { statusCode: 400 }
+          )
+        ),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
         new Map<string, any>([
@@ -252,6 +306,16 @@ describe('Upload Handler - Unit Tests', () => {
   });
 
   it('should reject image files (PDF-only validation)', async () => {
+    // Mock service to throw file type error
+    const mockDocumentService = {
+      upload: vi.fn().mockRejectedValue(
+        Object.assign(new Error('Unsupported file type: image/jpeg. Only PDF files are allowed.'), {
+          statusCode: 400,
+        })
+      ),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
         new Map<string, any>([
@@ -287,6 +351,21 @@ describe('Upload Handler - Unit Tests', () => {
   });
 
   it('should only accept PDF files after POC enhancement', async () => {
+    // Mock service to throw file type error
+    const mockDocumentService = {
+      upload: vi
+        .fn()
+        .mockRejectedValue(
+          Object.assign(
+            new Error(
+              'Unsupported file type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet. Only PDF files are allowed.'
+            ),
+            { statusCode: 400 }
+          )
+        ),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+
     const xlsxRequest = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
         new Map<string, any>([
@@ -311,52 +390,33 @@ describe('Upload Handler - Unit Tests', () => {
   });
 
   it('should store vendor_name in database on upload', async () => {
-    const mockPool = mockSqlConnection();
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
-
     const request = mockHttpRequest();
     const context = mockInvocationContext();
 
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(201);
-    // Verify vendor_name was included in SQL query
-    expect(mockPool.request().query).toHaveBeenCalled();
+    // Verify DocumentService.upload was called
+    const mockService = vi.mocked(getDocumentService)();
+    expect(mockService.upload).toHaveBeenCalled();
   });
 });
 
 describe('Delete Vendor Handler - Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(BlobServiceClient.fromConnectionString).mockReturnValue(
-      mockBlobServiceClient() as any
-    );
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockSqlConnection() as any);
+
+    // Mock VendorService
+    const mockVendorService = {
+      deleteVendor: vi.fn().mockResolvedValue({
+        documentsDeleted: 2,
+        blobsDeleted: 2,
+      }),
+    };
+    vi.mocked(getVendorService).mockReturnValue(mockVendorService as any);
   });
 
   it('should successfully delete vendor documents and blobs', async () => {
-    const mockPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi
-          .fn()
-          .mockResolvedValueOnce({
-            // First query: SELECT documents
-            recordset: [
-              { result_id: 'uuid-1', document_path: 'ACME/file1.pdf' },
-              { result_id: 'uuid-2', document_path: 'ACME/file2.pdf' },
-            ],
-          })
-          .mockResolvedValueOnce({
-            // Second query: DELETE
-            rowsAffected: [2],
-          }),
-      }),
-      close: vi.fn().mockResolvedValue(undefined),
-    };
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
-
     const request = {
       query: {
         get: vi.fn((key: string) => (key === 'vendorName' ? 'TEST_VENDOR_11_25' : null)),
@@ -386,17 +446,15 @@ describe('Delete Vendor Handler - Unit Tests', () => {
   });
 
   it('should return 404 when no documents found for vendor', async () => {
-    const mockPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi.fn().mockResolvedValue({
-          recordset: [], // No documents found
-        }),
-      }),
-      close: vi.fn().mockResolvedValue(undefined),
+    // Mock service to throw not found error
+    const mockVendorService = {
+      deleteVendor: vi.fn().mockRejectedValue(
+        Object.assign(new Error('No documents found for vendor NONEXISTENT_01_26'), {
+          statusCode: 404,
+        })
+      ),
     };
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
+    vi.mocked(getVendorService).mockReturnValue(mockVendorService as any);
 
     const request = {
       query: {
@@ -408,35 +466,18 @@ describe('Delete Vendor Handler - Unit Tests', () => {
     const response = await deleteVendorHandler(request as any, context as any);
 
     expect(response.status).toBe(404);
-    expect(response.jsonBody.message).toContain('No documents found');
+    expect(response.jsonBody.error).toBe('Not Found');
   });
 
   it('should handle blob deletion errors gracefully', async () => {
-    const failingBlobClient = {
-      getContainerClient: vi.fn().mockReturnValue({
-        getBlockBlobClient: vi.fn().mockReturnValue({
-          delete: vi.fn().mockRejectedValue(new Error('Blob not found')),
-        }),
+    // Mock service to succeed with warning
+    const mockVendorService = {
+      deleteVendor: vi.fn().mockResolvedValue({
+        documentsDeleted: 1,
+        blobsDeleted: 0, // Blob deletion failed but process continued
       }),
     };
-    vi.mocked(BlobServiceClient.fromConnectionString).mockReturnValue(failingBlobClient as any);
-
-    const mockPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi
-          .fn()
-          .mockResolvedValueOnce({
-            recordset: [{ result_id: 'uuid-1', document_path: 'ACME/file1.pdf' }],
-          })
-          .mockResolvedValueOnce({
-            rowsAffected: [1],
-          }),
-      }),
-      close: vi.fn().mockResolvedValue(undefined),
-    };
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
+    vi.mocked(getVendorService).mockReturnValue(mockVendorService as any);
 
     const request = {
       query: {
@@ -449,56 +490,25 @@ describe('Delete Vendor Handler - Unit Tests', () => {
 
     // Should still succeed even if some blobs fail
     expect(response.status).toBe(200);
-    expect(context.warn).toHaveBeenCalled(); // Warning logged for blob deletion failure
+    expect(response.jsonBody.documentsDeleted).toBe(1);
   });
 });
 
 describe('Reprocess Mapping Handler - Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockSqlConnection() as any);
+
+    // Mock DocumentService
+    const mockDocumentService = {
+      reprocess: vi.fn().mockResolvedValue({
+        newResultId: 'test-uuid-5678',
+        nextStep: 'Will be queued for AI mapping',
+      }),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
   });
 
-  it('should reset document status to ocr_complete', async () => {
-    const mockRequest = {
-      input: vi.fn().mockReturnThis(),
-      query: vi
-        .fn()
-        // First call - SELECT existing document
-        .mockResolvedValueOnce({
-          recordset: [
-            {
-              result_id: 'test-uuid-1234',
-              document_name: 'test.pdf',
-              document_path: 'vendor/test.pdf',
-              document_size_bytes: 1024,
-              document_type: 'application/pdf',
-              vendor_name: 'test-vendor',
-              doc_intel_extracted_text: 'test text',
-              doc_intel_structured_data: '{}',
-              doc_intel_confidence_score: 0.95,
-              doc_intel_page_count: 1,
-              doc_intel_table_count: 0,
-              doc_intel_cost_usd: 0.0015,
-              doc_intel_prompt_used: null,
-              reprocessing_count: 0,
-              parent_document_id: null,
-            },
-          ],
-        })
-        // Second call - INSERT new record
-        .mockResolvedValueOnce({
-          recordset: [{ result_id: 'test-uuid-5678' }],
-        }),
-    };
-
-    const mockPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue(mockRequest),
-      close: vi.fn().mockResolvedValue(undefined),
-    };
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
-
+  it('should successfully reprocess a document by creating immutable version', async () => {
     const request = {
       json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
     };
@@ -524,15 +534,11 @@ describe('Reprocess Mapping Handler - Unit Tests', () => {
   });
 
   it('should handle database errors', async () => {
-    const mockPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi.fn().mockRejectedValue(new Error('Database error')),
-      }),
-      close: vi.fn().mockResolvedValue(undefined),
+    // Mock service to throw error
+    const mockDocumentService = {
+      reprocess: vi.fn().mockRejectedValue(new Error('Database error')),
     };
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = {
       json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
@@ -548,43 +554,18 @@ describe('Reprocess Mapping Handler - Unit Tests', () => {
 describe('Confirm Mapping Handler - Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockSqlConnection() as any);
+
+    // Mock DocumentService
+    const mockDocumentService = {
+      confirmMapping: vi.fn().mockResolvedValue({
+        productsExported: 2,
+        vendor: 'ACME',
+      }),
+    };
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
   });
 
   it('should export products to vendor_products table', async () => {
-    const mockMappingResult = {
-      vendor: 'ACME',
-      products: [
-        { name: 'Widget A', sku: 'W001', price: 19.99, unit: 'ea' },
-        { name: 'Widget B', sku: 'W002', price: 29.99, unit: 'box' },
-      ],
-    };
-
-    const mockPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi
-          .fn()
-          .mockResolvedValueOnce({
-            // SELECT document
-            recordset: [
-              {
-                result_id: 'test-uuid-1234',
-                document_name: 'catalog.pdf',
-                vendor_name: 'ACME',
-                ai_mapping_result: JSON.stringify(mockMappingResult),
-                processing_status: 'completed',
-                export_status: 'not_exported',
-              },
-            ],
-          })
-          .mockResolvedValue({ rowsAffected: [1] }), // INSERT products & UPDATE status
-      }),
-      close: vi.fn().mockResolvedValue(undefined),
-    };
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
-
     const request = {
       json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
     };
@@ -610,17 +591,13 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
   });
 
   it('should return 404 when document not found', async () => {
-    const mockPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi.fn().mockResolvedValue({
-          recordset: [], // No document found
-        }),
-      }),
-      close: vi.fn().mockResolvedValue(undefined),
+    // Mock service to throw not found error
+    const mockDocumentService = {
+      confirmMapping: vi
+        .fn()
+        .mockRejectedValue(Object.assign(new Error('Document not found'), { statusCode: 404 })),
     };
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = {
       json: vi.fn().mockResolvedValue({ documentId: 'nonexistent-uuid' }),
@@ -630,27 +607,19 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
     const response = await confirmMappingHandler(request as any, context as any);
 
     expect(response.status).toBe(404);
-    expect(response.body).toContain('Document not found');
+    expect(response.jsonBody.error).toContain('Document not found');
   });
 
   it('should return 400 when document status is not completed', async () => {
-    const mockPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi.fn().mockResolvedValue({
-          recordset: [
-            {
-              result_id: 'test-uuid-1234',
-              processing_status: 'pending', // Not completed
-              ai_mapping_result: null,
-            },
-          ],
-        }),
-      }),
-      close: vi.fn().mockResolvedValue(undefined),
+    // Mock service to throw status error
+    const mockDocumentService = {
+      confirmMapping: vi.fn().mockRejectedValue(
+        Object.assign(new Error("Document status must be 'completed' to confirm mapping"), {
+          statusCode: 400,
+        })
+      ),
     };
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = {
       json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
@@ -660,27 +629,19 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
     const response = await confirmMappingHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain("Must be 'completed'");
+    expect(response.jsonBody.error).toContain("must be 'completed'");
   });
 
   it('should return 400 when no mapping result available', async () => {
-    const mockPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi.fn().mockResolvedValue({
-          recordset: [
-            {
-              result_id: 'test-uuid-1234',
-              processing_status: 'completed',
-              ai_mapping_result: null, // No result
-            },
-          ],
-        }),
-      }),
-      close: vi.fn().mockResolvedValue(undefined),
+    // Mock service to throw missing result error
+    const mockDocumentService = {
+      confirmMapping: vi
+        .fn()
+        .mockRejectedValue(
+          Object.assign(new Error('No products found in mapping result'), { statusCode: 400 })
+        ),
     };
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
+    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = {
       json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
@@ -690,41 +651,6 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
     const response = await confirmMappingHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain('No mapping result available');
-  });
-
-  it('should return 400 when products array is empty', async () => {
-    const mockMappingResult = {
-      vendor: 'ACME',
-      products: [], // Empty
-    };
-
-    const mockPool = {
-      connect: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockReturnValue({
-        input: vi.fn().mockReturnThis(),
-        query: vi.fn().mockResolvedValue({
-          recordset: [
-            {
-              result_id: 'test-uuid-1234',
-              processing_status: 'completed',
-              ai_mapping_result: JSON.stringify(mockMappingResult),
-            },
-          ],
-        }),
-      }),
-      close: vi.fn().mockResolvedValue(undefined),
-    };
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
-
-    const request = {
-      json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
-    };
-    const context = mockInvocationContext();
-
-    const response = await confirmMappingHandler(request as any, context as any);
-
-    expect(response.status).toBe(400);
-    expect(response.body).toContain('No products found');
+    expect(response.jsonBody.error).toContain('No products found');
   });
 });

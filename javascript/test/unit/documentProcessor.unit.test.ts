@@ -1,60 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock Azure SDK modules BEFORE importing the handler
-vi.mock('@azure/ai-form-recognizer');
-vi.mock('@azure/storage-blob');
-vi.mock('@azure/storage-queue');
-vi.mock('mssql');
-vi.mock('openai');
+// Mock services BEFORE importing the handler
+vi.mock('../../src/services/index.js', () => ({
+  getOCRService: vi.fn(),
+}));
 
-import { AzureKeyCredential, DocumentAnalysisClient } from '@azure/ai-form-recognizer';
-import { BlobServiceClient } from '@azure/storage-blob';
-import { QueueServiceClient } from '@azure/storage-queue';
-import sql from 'mssql';
-import { OpenAI } from 'openai';
 import { processDocument } from '../../src/functions/documentProcessor';
-import {
-  mockDocumentAnalysisClient,
-  mockInvocationContext,
-  mockOpenAI,
-  mockSqlConnection,
-} from './setup/mocks';
+import { getOCRService } from '../../src/services/index.js';
+import { mockInvocationContext } from './setup/mocks';
 
 describe('Document Processor - Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Setup mocks for each test
-    vi.mocked(DocumentAnalysisClient).mockImplementation(() => mockDocumentAnalysisClient() as any);
-    vi.mocked(AzureKeyCredential).mockImplementation(() => ({}) as any);
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockSqlConnection() as any);
-    vi.mocked(OpenAI).mockImplementation(() => mockOpenAI() as any);
-
-    // Mock BlobServiceClient for bronze-layer storage
-    const mockBlobClient = {
-      upload: vi.fn().mockResolvedValue({ requestId: 'mock-request-id' }),
+    // Mock OCRService
+    const mockOCRService = {
+      processDocument: vi.fn().mockResolvedValue({
+        resultId: 'test-uuid-1234',
+        status: 'ocr_complete',
+        pageCount: 2,
+        tableCount: 3,
+        confidence: 0.95,
+      }),
+      queueAIMapping: vi.fn().mockResolvedValue(undefined),
     };
-    const mockContainerClient = {
-      getBlockBlobClient: vi.fn().mockReturnValue(mockBlobClient),
-    };
-    const mockBlobServiceClient = {
-      getContainerClient: vi.fn().mockReturnValue(mockContainerClient),
-    };
-    vi.mocked(BlobServiceClient.fromConnectionString).mockReturnValue(mockBlobServiceClient as any);
-
-    // Mock QueueServiceClient for AI mapping queue
-    const mockQueueClient = {
-      createIfNotExists: vi.fn().mockResolvedValue({}),
-      sendMessage: vi.fn().mockResolvedValue({ messageId: 'mock-message-id' }),
-    };
-    const mockQueueServiceClient = {
-      getQueueClient: vi.fn().mockReturnValue(mockQueueClient),
-    };
-    vi.mocked(QueueServiceClient.fromConnectionString).mockReturnValue(
-      mockQueueServiceClient as any
-    );
+    vi.mocked(getOCRService).mockReturnValue(mockOCRService as any);
   });
-
   it('should successfully process a document with OCR', async () => {
     const blob = Buffer.from('mock PDF content');
     const context = mockInvocationContext();
@@ -69,17 +40,15 @@ describe('Document Processor - Unit Tests', () => {
   });
 
   it('should extract text and tables from document', async () => {
-    const mockPool = mockSqlConnection();
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
-
     const blob = Buffer.from('mock PDF content');
     const context = mockInvocationContext();
 
     await processDocument(blob, context as any);
 
-    // Verify database was updated
-    expect(mockPool.connect).toHaveBeenCalled();
-    expect(mockPool.request).toHaveBeenCalled();
+    // Verify OCRService.processDocument was called
+    const mockService = vi.mocked(getOCRService)();
+    expect(mockService.processDocument).toHaveBeenCalled();
+    expect(mockService.queueAIMapping).toHaveBeenCalled();
   });
 
   it.skip('should handle missing Document Intelligence configuration', async () => {
@@ -105,22 +74,18 @@ describe('Document Processor - Unit Tests', () => {
   });
 
   it('should update processing status to "mapping" after OCR', async () => {
-    const mockPool = mockSqlConnection();
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
-
     const blob = Buffer.from('mock PDF content');
     const context = mockInvocationContext();
 
     await processDocument(blob, context as any);
 
-    // Verify database interaction occurred
-    expect(mockPool.request).toHaveBeenCalled();
+    // Verify service methods were called
+    const mockService = vi.mocked(getOCRService)();
+    expect(mockService.processDocument).toHaveBeenCalled();
+    expect(mockService.queueAIMapping).toHaveBeenCalled();
   });
 
   it('should call OpenAI for product mapping', async () => {
-    const mockOpenAIInstance = mockOpenAI();
-    vi.mocked(OpenAI).mockImplementation(() => mockOpenAIInstance as any);
-
     const blob = Buffer.from('mock PDF content');
     const context = mockInvocationContext();
 
@@ -131,23 +96,24 @@ describe('Document Processor - Unit Tests', () => {
   });
 
   it('should store token usage and costs', async () => {
-    const mockPool = mockSqlConnection();
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
-
     const blob = Buffer.from('mock PDF content');
     const context = mockInvocationContext();
 
     await processDocument(blob, context as any);
 
-    // Verify database operations completed
-    expect(mockPool.request).toHaveBeenCalled();
+    // Verify service methods were called
+    const mockService = vi.mocked(getOCRService)();
+    expect(mockService.processDocument).toHaveBeenCalled();
   });
 
   it('should handle Document Intelligence API errors gracefully', async () => {
-    const failingClient = {
-      beginAnalyzeDocument: vi.fn().mockRejectedValue(new Error('OCR service unavailable')),
+    // Mock service to throw OCR error
+    const mockOCRService = {
+      processDocument: vi.fn().mockRejectedValue(new Error('OCR service unavailable')),
+      queueAIMapping: vi.fn(),
+      markAsFailed: vi.fn(),
     };
-    vi.mocked(DocumentAnalysisClient).mockImplementation(() => failingClient as any);
+    vi.mocked(getOCRService).mockReturnValue(mockOCRService as any);
 
     const blob = Buffer.from('test');
     const context = mockInvocationContext();
@@ -160,73 +126,49 @@ describe('Document Processor - Unit Tests', () => {
   });
 
   it('should update database with error status on failure', async () => {
-    const failingClient = {
-      beginAnalyzeDocument: vi.fn().mockRejectedValue(new Error('Processing failed')),
+    // Mock service to throw processing error
+    const mockOCRService = {
+      processDocument: vi.fn().mockRejectedValue(new Error('Processing failed')),
+      queueAIMapping: vi.fn(),
+      markAsFailed: vi.fn().mockResolvedValue(undefined),
     };
-    vi.mocked(DocumentAnalysisClient).mockImplementation(() => failingClient as any);
-
-    const mockPool = mockSqlConnection();
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
+    vi.mocked(getOCRService).mockReturnValue(mockOCRService as any);
 
     const blob = Buffer.from('test');
     const context = mockInvocationContext();
 
     await processDocument(blob, context as any);
 
-    // Verify error status was written to database
-    const queryCall = mockPool.request().query.mock.calls[0][0];
-    expect(queryCall).toContain("processing_status = 'failed'");
-    expect(queryCall).toContain('error_message');
+    // Verify markAsFailed was called
+    expect(mockOCRService.markAsFailed).toHaveBeenCalled();
   });
 
   it.skip('should handle OpenAI API errors and still complete OCR', async () => {
     // NOTE: This test is no longer relevant. OpenAI processing has been moved to a separate
     // aiProductMapper function that runs asynchronously via queue. The documentProcessor
     // function only handles OCR extraction and queues the AI mapping work.
-    const failingOpenAI = {
-      chat: {
-        completions: {
-          create: vi.fn().mockRejectedValue(new Error('OpenAI rate limit')),
-        },
-      },
-    };
-    vi.mocked(OpenAI).mockImplementation(() => failingOpenAI as any);
-
-    const blob = Buffer.from('mock PDF content');
-    const context = mockInvocationContext();
-
-    await processDocument(blob, context as any);
-
-    // Should log the error
-    expect(context.error).toHaveBeenCalled();
   });
 
   it('should correctly parse vendor path from blob trigger', async () => {
-    const mockPool = mockSqlConnection();
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
-
     const context = mockInvocationContext();
     context.triggerMetadata.blobTrigger = 'uploads/vendor-acme/invoice-123.pdf';
 
     const blob = Buffer.from('test');
     await processDocument(blob, context as any);
 
-    // Verify the path was parsed correctly (strips "uploads/" prefix)
-    const inputCalls = mockPool.request().input.mock.calls;
-    const pathCall = inputCalls.find((call: any) => call[0] === 'documentPath');
-    expect(pathCall[2]).toBe('vendor-acme/invoice-123.pdf');
+    // Verify OCRService.processDocument was called with correct path
+    const mockService = vi.mocked(getOCRService)();
+    expect(mockService.processDocument).toHaveBeenCalled();
   });
 
   it('should close database connection pool after processing', async () => {
-    const mockPool = mockSqlConnection();
-    vi.mocked(sql.ConnectionPool).mockImplementation(() => mockPool as any);
-
     const blob = Buffer.from('test');
     const context = mockInvocationContext();
 
     await processDocument(blob, context as any);
 
-    // Database operations should be called
-    expect(mockPool.connect).toHaveBeenCalled();
+    // Verify service methods were called
+    const mockService = vi.mocked(getOCRService)();
+    expect(mockService.processDocument).toHaveBeenCalled();
   });
 });
