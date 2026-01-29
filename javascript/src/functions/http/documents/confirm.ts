@@ -12,11 +12,10 @@ async function confirmMappingHandlerCore(
 ): Promise<HttpResponseInit> {
   context.log(`Confirm mapping request received`);
 
-  const body = (await req.json()) as { documentId?: string };
-  const documentId = body.documentId;
+  const documentId = req.params.id;
 
   if (!documentId) {
-    return errorResponse('Missing documentId in request body', 400);
+    return errorResponse('Missing document ID in route', 400);
   }
 
   try {
@@ -47,6 +46,7 @@ async function confirmMappingHandlerCore(
 export const confirmMappingHandler = withErrorHandler(withCors(confirmMappingHandlerCore));
 
 app.http('confirmMapping', {
+  route: 'documents/{id}/confirm',
   methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: confirmMappingHandler,

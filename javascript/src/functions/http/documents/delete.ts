@@ -12,10 +12,10 @@ async function deleteDocumentHandlerCore(
 ): Promise<HttpResponseInit> {
   context.log(`Delete document request received`);
 
-  const documentId = req.query.get('documentId');
+  const documentId = req.params.id;
 
   if (!documentId) {
-    return errorResponse('Missing documentId query parameter', 400);
+    return errorResponse('Missing document ID in route', 400);
   }
 
   try {
@@ -44,6 +44,7 @@ async function deleteDocumentHandlerCore(
 export const deleteDocumentHandler = withErrorHandler(withCors(deleteDocumentHandlerCore));
 
 app.http('deleteDocument', {
+  route: 'documents/{id}',
   methods: ['DELETE', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: deleteDocumentHandler,

@@ -220,7 +220,7 @@ describe('E2E Processing: Golden Dataset Validation', () => {
 
       console.log('📤 Uploading...');
       console.log(`   Vendor name: ${vendorName}`);
-      const uploadResponse = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+      const uploadResponse = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
         method: 'POST',
         body: formData,
       });

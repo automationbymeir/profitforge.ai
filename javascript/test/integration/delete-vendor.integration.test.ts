@@ -1,7 +1,7 @@
 /**
  * Integration Test - Delete Vendor API
  *
- * Tests the DELETE /api/deleteVendor endpoint using test database.
+ * Tests the DELETE /api/vendors endpoint using test database.
  * Uses Azurite for blob storage (not real Azure).
  */
 
@@ -44,7 +44,7 @@ describe('Integration: Delete Vendor API', () => {
     expect(beforeDocs).toHaveLength(2);
 
     // Act - Delete vendor
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/deleteVendor?vendorName=${testVendor}`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/vendors/${testVendor}`, {
       method: 'DELETE',
     });
 
@@ -62,7 +62,7 @@ describe('Integration: Delete Vendor API', () => {
   it('should return 404 when vendor has no documents', async () => {
     // Act
     const response = await fetch(
-      `${FUNCTION_BASE_URL}/api/deleteVendor?vendorName=NONEXISTENT_01_26`,
+      `${FUNCTION_BASE_URL}/api/vendors/NONEXISTENT_01_26`,
       { method: 'DELETE' }
     );
 
@@ -74,7 +74,7 @@ describe('Integration: Delete Vendor API', () => {
 
   it('should return 400 when vendorName is missing', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/deleteVendor`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/vendors`, {
       method: 'DELETE',
     });
 
@@ -104,7 +104,7 @@ describe('Integration: Delete Vendor API', () => {
     expect(beforeDocs).toHaveLength(2);
 
     // Act - Delete vendor
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/deleteVendor?vendorName=${testVendor}`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/vendors/${testVendor}`, {
       method: 'DELETE',
     });
 

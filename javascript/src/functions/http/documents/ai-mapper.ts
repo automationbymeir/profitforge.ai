@@ -17,11 +17,10 @@ async function aiProductMapperHandlerCore(
 ): Promise<HttpResponseInit> {
   context.log(`AI Product Mapping request received`);
 
-  const body = (await req.json()) as RequestBody;
-  const documentId = body.documentId;
+  const documentId = req.params.id;
 
   if (!documentId) {
-    return errorResponse('Missing documentId in request body', 400);
+    return errorResponse('Missing document ID in route', 400);
   }
 
   try {
@@ -53,6 +52,7 @@ async function aiProductMapperHandlerCore(
 export const aiProductMapperHandler = withErrorHandler(withCors(aiProductMapperHandlerCore));
 
 app.http('aiProductMapper', {
+  route: 'documents/{id}/mapping',
   methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: aiProductMapperHandler,

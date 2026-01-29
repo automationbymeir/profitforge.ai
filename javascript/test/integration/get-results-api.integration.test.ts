@@ -1,7 +1,7 @@
 /**
  * Integration Test - Get Results API
  *
- * Tests the /api/getResults endpoint using test database with pre-seeded data.
+ * Tests the /api/documents endpoint (GET) using test database with pre-seeded data.
  * No real AI processing - just testing the query/filter logic.
  */
 
@@ -47,7 +47,7 @@ describe('Integration: Get Results API', () => {
 
   it('should return all documents for a vendor', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}`);
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}`);
 
     // Assert
     expect(response.status).toBe(200);
@@ -58,7 +58,7 @@ describe('Integration: Get Results API', () => {
 
   it('should filter by resultId', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?resultId=${resultId1}`);
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?resultId=${resultId1}`);
 
     // Assert
     expect(response.status).toBe(200);
@@ -69,7 +69,7 @@ describe('Integration: Get Results API', () => {
 
   it('should return empty array for invalid UUID', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?resultId=not-a-uuid`);
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?resultId=not-a-uuid`);
 
     // Assert
     expect(response.status).toBe(200);
@@ -80,7 +80,7 @@ describe('Integration: Get Results API', () => {
   it('should limit results', async () => {
     // Act
     const response = await fetch(
-      `${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}&limit=2`
+      `${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}&limit=2`
     );
 
     // Assert
@@ -91,7 +91,7 @@ describe('Integration: Get Results API', () => {
 
   it('should filter by status (only completed)', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}`);
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}`);
 
     // Assert
     expect(response.status).toBe(200);
@@ -105,7 +105,7 @@ describe('Integration: Get Results API', () => {
 
   it('should handle vendor with no documents', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?vendor=nonexistent-vendor`);
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?vendor=nonexistent-vendor`);
 
     // Assert
     expect(response.status).toBe(200);
@@ -115,7 +115,7 @@ describe('Integration: Get Results API', () => {
 
   it('should include CORS headers', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}`);
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}`);
 
     // Assert
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
@@ -133,7 +133,7 @@ describe('Integration: Get Results API', () => {
 
     // Act
     const response = await fetch(
-      `${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}&limit=1`
+      `${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}&limit=1`
     );
 
     // Assert
@@ -168,7 +168,7 @@ describe('Integration: Get Results API', () => {
 
     // Act - Query with allVersions=true
     const response = await fetch(
-      `${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}&allVersions=true`
+      `${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}&allVersions=true`
     );
 
     // Assert
@@ -199,7 +199,7 @@ describe('Integration: Get Results API', () => {
     });
 
     // Act - Query without allVersions (default)
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?vendor=${testVendor}`);
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}`);
 
     // Assert
     expect(response.status).toBe(200);

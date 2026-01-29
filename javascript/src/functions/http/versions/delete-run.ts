@@ -12,10 +12,10 @@ async function deleteRunHandlerCore(
 ): Promise<HttpResponseInit> {
   context.log(`Delete run request received`);
 
-  const documentId = req.query.get('documentId');
+  const documentId = req.params.runId; // Note: This function deletes a specific run, so we use runId
 
   if (!documentId) {
-    return errorResponse('Missing documentId query parameter', 400);
+    return errorResponse('Missing run ID in route', 400);
   }
 
   try {
@@ -43,6 +43,7 @@ async function deleteRunHandlerCore(
 export const deleteRunHandler = withErrorHandler(withCors(deleteRunHandlerCore));
 
 app.http('deleteRun', {
+  route: 'documents/{id}/versions/{runId}',
   methods: ['DELETE', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: deleteRunHandler,

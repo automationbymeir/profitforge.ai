@@ -12,11 +12,10 @@ async function reprocessMappingHandlerCore(
 ): Promise<HttpResponseInit> {
   context.log(`Reprocess mapping request received`);
 
-  const body = (await req.json()) as { documentId?: string };
-  const documentId = body.documentId;
+  const documentId = req.params.id;
 
   if (!documentId) {
-    return errorResponse('Missing documentId in request body', 400);
+    return errorResponse('Missing document ID in route', 400);
   }
 
   try {
@@ -49,6 +48,7 @@ async function reprocessMappingHandlerCore(
 export const reprocessMappingHandler = withErrorHandler(withCors(reprocessMappingHandlerCore));
 
 app.http('reprocessMapping', {
+  route: 'documents/{id}/reprocess',
   methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: reprocessMappingHandler,

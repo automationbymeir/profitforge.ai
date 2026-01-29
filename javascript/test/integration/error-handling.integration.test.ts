@@ -23,7 +23,7 @@ describe('Integration: Error Handling', () => {
       formData.append('file', new Blob([emptyFile], { type: 'application/pdf' }), 'empty.pdf');
       formData.append('vendorName', 'TEST_EMPTY_01_26');
 
-      const response = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+      const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
         method: 'POST',
         body: formData,
       });
@@ -38,7 +38,7 @@ describe('Integration: Error Handling', () => {
       formData.append('file', new Blob([textFile], { type: 'text/plain' }), 'test.txt');
       formData.append('vendorName', generateTestVendorName('INTEGRATION', 'UNSUPPORTED_FILE'));
 
-      const response = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+      const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
         method: 'POST',
         body: formData,
       });
@@ -51,7 +51,7 @@ describe('Integration: Error Handling', () => {
       const formData = new FormData();
       formData.append('file', new Blob([testFile], { type: 'application/pdf' }), 'test.pdf');
 
-      const response = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+      const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
         method: 'POST',
         body: formData,
       });
@@ -63,7 +63,7 @@ describe('Integration: Error Handling', () => {
       const formData = new FormData();
       formData.append('vendorName', generateTestVendorName('INTEGRATION', 'MISSING_FILE'));
 
-      const response = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+      const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
         method: 'POST',
         body: formData,
       });
@@ -130,7 +130,7 @@ describe('Integration: Error Handling', () => {
 
   describe('Delete Vendor Endpoint Errors', () => {
     it('should reject missing vendorId', async () => {
-      const response = await fetch(`${FUNCTION_BASE_URL}/api/deleteVendor`, {
+      const response = await fetch(`${FUNCTION_BASE_URL}/api/vendors`, {
         method: 'DELETE',
       });
 
@@ -139,7 +139,7 @@ describe('Integration: Error Handling', () => {
 
     it('should return 404 for non-existent vendor', async () => {
       const response = await fetch(
-        `${FUNCTION_BASE_URL}/api/deleteVendor?vendorName=NONEXISTENT_ERROR_01_26`,
+        `${FUNCTION_BASE_URL}/api/vendors/NONEXISTENT_ERROR_01_26`,
         { method: 'DELETE' }
       );
 
@@ -149,7 +149,7 @@ describe('Integration: Error Handling', () => {
 
   describe('Get Results Endpoint Errors', () => {
     it('should handle invalid UUID gracefully', async () => {
-      const response = await fetch(`${FUNCTION_BASE_URL}/api/getResults?resultId=invalid-uuid`);
+      const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?resultId=invalid-uuid`);
 
       expect(response.status).toBe(200);
       const data = await response.json();
@@ -158,7 +158,7 @@ describe('Integration: Error Handling', () => {
 
     it('should return empty for non-existent vendor', async () => {
       const response = await fetch(
-        `${FUNCTION_BASE_URL}/api/getResults?vendor=${generateTestVendorName('INTEGRATION', 'NONEXISTENT')}`
+        `${FUNCTION_BASE_URL}/api/documents?vendor=${generateTestVendorName('INTEGRATION', 'NONEXISTENT')}`
       );
 
       expect(response.status).toBe(200);
@@ -169,7 +169,7 @@ describe('Integration: Error Handling', () => {
 
   describe('CORS Headers', () => {
     it('should include CORS headers in error responses', async () => {
-      const response = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+      const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
         method: 'POST',
         body: new FormData(),
       });

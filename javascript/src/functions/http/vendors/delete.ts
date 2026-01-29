@@ -12,10 +12,10 @@ async function deleteVendorHandlerCore(
 ): Promise<HttpResponseInit> {
   context.log(`Processing delete request for ${req.url}`);
 
-  const vendorName = req.query.get('vendorName');
+  const vendorName = req.params.name;
 
   if (!vendorName) {
-    return errorResponse('Missing vendorName query parameter', 400);
+    return errorResponse('Missing vendor name in route', 400);
   }
 
   try {
@@ -49,6 +49,7 @@ async function deleteVendorHandlerCore(
 export const deleteVendorHandler = withErrorHandler(withCors(deleteVendorHandlerCore));
 
 app.http('deleteVendor', {
+  route: 'vendors/{name}',
   methods: ['DELETE', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: deleteVendorHandler,

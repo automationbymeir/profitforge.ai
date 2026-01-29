@@ -1,7 +1,7 @@
 /**
  * Integration Test - Upload API
  *
- * Tests the /api/upload endpoint using:
+ * Tests the /api/documents (POST) endpoint using:
  * - Supertest (HTTP without network)
  * - Test database (Docker Postgres)
  * - Azurite (local blob/queue emulator)
@@ -44,7 +44,7 @@ describe('Integration: Upload API', () => {
     formData.append('vendorName', testVendor);
 
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
       method: 'POST',
       body: formData,
     });
@@ -67,7 +67,7 @@ describe('Integration: Upload API', () => {
     const formData = new FormData();
     formData.append('file', new Blob(['test'], { type: 'application/pdf' }), 'test.pdf');
 
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
       method: 'POST',
       body: formData,
     });
@@ -84,7 +84,7 @@ describe('Integration: Upload API', () => {
     formData.append('file', new Blob(['test'], { type: 'text/plain' }), 'test.txt');
     formData.append('vendorName', testVendor);
 
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
       method: 'POST',
       body: formData,
     });
@@ -103,7 +103,7 @@ describe('Integration: Upload API', () => {
     formData.append('vendorName', testVendor);
 
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
       method: 'POST',
       body: formData,
     });
@@ -120,7 +120,7 @@ describe('Integration: Upload API', () => {
     formData.append('vendorName', testVendor);
 
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/upload`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
       method: 'POST',
       body: formData,
     });

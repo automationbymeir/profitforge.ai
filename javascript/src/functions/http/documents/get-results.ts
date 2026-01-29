@@ -133,6 +133,7 @@ async function getResultsCore(
 export const getResults = withErrorHandler(withCors(getResultsCore));
 
 app.http('getResults', {
+  route: 'documents',
   methods: ['GET', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: getResults,

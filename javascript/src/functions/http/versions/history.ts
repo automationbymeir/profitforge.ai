@@ -12,10 +12,10 @@ async function getVersionHistoryHandlerCore(
 ): Promise<HttpResponseInit> {
   context.log(`Get version history request received`);
 
-  const documentId = req.query.get('documentId');
+  const documentId = req.params.id;
 
   if (!documentId) {
-    return errorResponse('Missing documentId query parameter', 400);
+    return errorResponse('Missing document ID in route', 400);
   }
 
   try {
@@ -37,6 +37,7 @@ async function getVersionHistoryHandlerCore(
 export const getVersionHistoryHandler = withErrorHandler(withCors(getVersionHistoryHandlerCore));
 
 app.http('getVersionHistory', {
+  route: 'documents/{id}/versions',
   methods: ['GET', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: getVersionHistoryHandler,

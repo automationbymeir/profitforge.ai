@@ -416,9 +416,7 @@ describe('Delete Vendor Handler - Unit Tests', () => {
 
   it('should successfully delete vendor documents and blobs', async () => {
     const request = {
-      query: {
-        get: vi.fn((key: string) => (key === 'vendorName' ? 'TEST_VENDOR_11_25' : null)),
-      },
+      params: { name: 'TEST_VENDOR_11_25' },
     };
     const context = mockInvocationContext();
 
@@ -431,16 +429,14 @@ describe('Delete Vendor Handler - Unit Tests', () => {
 
   it('should return 400 when vendorName is missing', async () => {
     const request = {
-      query: {
-        get: vi.fn(() => null),
-      },
+      params: {},
     };
     const context = mockInvocationContext();
 
     const response = await deleteVendorHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toContain('Missing vendorName');
+    expect(response.jsonBody.error).toContain('Missing vendor name');
   });
 
   it('should return 404 when no documents found for vendor', async () => {
@@ -455,9 +451,7 @@ describe('Delete Vendor Handler - Unit Tests', () => {
     vi.mocked(getVendorService).mockReturnValue(mockVendorService as any);
 
     const request = {
-      query: {
-        get: vi.fn((key: string) => (key === 'vendorName' ? 'NONEXISTENT_01_26' : null)),
-      },
+      params: { name: 'NONEXISTENT_01_26' },
     };
     const context = mockInvocationContext();
 
@@ -478,9 +472,7 @@ describe('Delete Vendor Handler - Unit Tests', () => {
     vi.mocked(getVendorService).mockReturnValue(mockVendorService as any);
 
     const request = {
-      query: {
-        get: vi.fn((key: string) => (key === 'vendorName' ? 'TEST_VENDOR_11_25' : null)),
-      },
+      params: { name: 'TEST_VENDOR_11_25' },
     };
     const context = mockInvocationContext();
 
@@ -508,7 +500,7 @@ describe('Reprocess Mapping Handler - Unit Tests', () => {
 
   it('should successfully reprocess a document by creating immutable version', async () => {
     const request = {
-      json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
+      params: { id: 'test-uuid-1234' },
     };
     const context = mockInvocationContext();
 
@@ -521,14 +513,14 @@ describe('Reprocess Mapping Handler - Unit Tests', () => {
 
   it('should return 400 when documentId is missing', async () => {
     const request = {
-      json: vi.fn().mockResolvedValue({}),
+      params: {},
     };
     const context = mockInvocationContext();
 
     const response = await reprocessMappingHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toContain('Missing documentId');
+    expect(response.jsonBody.error).toContain('Missing document ID');
   });
 
   it('should handle database errors', async () => {
@@ -539,7 +531,7 @@ describe('Reprocess Mapping Handler - Unit Tests', () => {
     vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = {
-      json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
+      params: { id: 'test-uuid-1234' },
     };
     const context = mockInvocationContext();
 
@@ -565,7 +557,7 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
 
   it('should export products to vendor_products table', async () => {
     const request = {
-      json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
+      params: { id: 'test-uuid-1234' },
     };
     const context = mockInvocationContext();
 
@@ -578,14 +570,14 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
 
   it('should return 400 when documentId is missing', async () => {
     const request = {
-      json: vi.fn().mockResolvedValue({}),
+      params: {},
     };
     const context = mockInvocationContext();
 
     const response = await confirmMappingHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toContain('Missing documentId');
+    expect(response.jsonBody.error).toContain('Missing document ID');
   });
 
   it('should return 404 when document not found', async () => {
@@ -598,7 +590,7 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
     vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = {
-      json: vi.fn().mockResolvedValue({ documentId: 'nonexistent-uuid' }),
+      params: { id: 'nonexistent-uuid' },
     };
     const context = mockInvocationContext();
 
@@ -620,7 +612,7 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
     vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = {
-      json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
+      params: { id: 'test-uuid-1234' },
     };
     const context = mockInvocationContext();
 
@@ -642,7 +634,7 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
     vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     const request = {
-      json: vi.fn().mockResolvedValue({ documentId: 'test-uuid-1234' }),
+      params: { id: 'test-uuid-1234' },
     };
     const context = mockInvocationContext();
 
