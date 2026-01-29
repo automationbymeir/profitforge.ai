@@ -64,12 +64,14 @@ Clean up code, apply security best practices, and enhance design whilst keeping 
 - **Logging and monitoring** - Add structured logging with Serilog for issue troubleshooting
 - **Performance optimisation** - Use async/await, efficient collections, caching
 
-### C# Best Practices
+### TypeScript Best Practices
 
-- **Nullable reference types** - Enable and properly configure nullability
-- **Modern C# features** - Use pattern matching, switch expressions, records
-- **Memory efficiency** - Consider Span<T>, Memory<T> for performance-critical code
-- **Exception handling** - Use specific exception types, avoid catching Exception
+- **Strict type checking** - Enable strict mode in tsconfig.json, use proper type annotations
+- **Modern TypeScript features** - Use optional chaining, nullish coalescing, template literals, destructuring
+- **Type safety** - Avoid `any`, use proper union types, type guards, and discriminated unions
+- **Exception handling** - Use specific error types, create custom error classes, avoid catching unknown errors
+- **Immutability** - Prefer `const` over `let`, use readonly properties, avoid mutating function parameters
+- **Async patterns** - Use Promise-based patterns correctly, handle rejections, avoid callback hell
 
 ## Security Checklist
 
