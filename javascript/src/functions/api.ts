@@ -1,8 +1,8 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { BlobServiceClient } from '@azure/storage-blob';
+import { withAuth, withCors, withErrorHandler, withRateLimit } from '../middleware/index.js';
+import { errorResponse, successResponse } from '../utils/httpHelpers.js';
 import {
-  checkDailyUploadLimit,
-  checkIpRateLimit,
   cleanupOldUsageRecords,
   getUsageStats,
   incrementDailyUploadCount,
@@ -30,40 +30,16 @@ const SQL_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING;
 const ALLOWED_FILE_TYPES = ['application/pdf'];
 
 /**
- * Validate API key for demo mode protection
- * Returns true if valid or if demo mode is disabled (client mode)
- */
-function validateApiKey(providedKey: string | null): { valid: boolean; error?: string } {
-  if (!providedKey) {
-    return {
-      valid: false,
-      error: 'Missing API key. Include x-api-key header.',
-    };
-  }
-
-  if (providedKey !== process.env.DEMO_API_KEY) {
-    return {
-      valid: false,
-      error: 'Invalid API key',
-    };
-  }
-
-  return { valid: true };
-}
-
-/**
  * Validate file size against configured limit
  */
 function validateFileSize(fileSize: number): boolean {
   const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '0');
-
   const maxBytes = MAX_FILE_SIZE_MB * 1024 * 1024;
-
   return fileSize > maxBytes ? false : true;
 }
 
 /**
- * Upload Handler - HTTP POST endpoint for document uploads
+ * Upload Handler Core - Business logic for document uploads
  *
  * STEP-BY-STEP PROCESS:
  * 1. Extract file and vendorId from multipart form data
@@ -84,123 +60,56 @@ function validateFileSize(fileSize: number): boolean {
  * TRIGGERS NEXT STEP:
  * - Blob upload triggers processDocument function via blob trigger
  */
-export async function uploadHandler(
+async function uploadHandlerCore(
   req: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log(`Processing upload request for ${req.url}`);
+
+  // Extract client IP for usage tracking
   const clientIp =
     req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
     req.headers.get('x-real-ip') ||
     'unknown';
-  if (process.env.IS_DEMO_MODE === 'true') {
-    // 🛡️ SECURITY CHECK 1: Validate API Key (demo mode only)
-    const apiKeyCheck = validateApiKey(req.headers.get('x-api-key'));
-    if (!apiKeyCheck.valid) {
-      context.warn(`API key validation failed: ${apiKeyCheck.error}`);
-      return {
-        status: 401,
-        jsonBody: {
-          error: apiKeyCheck.error,
-          message: 'This demo requires an API key. Contact the owner for access.',
-        },
-      };
-    }
 
-    // 🛡️ SECURITY CHECK 2: IP-based rate limit (per hour, demo mode only)
-    const ipRateCheck = await checkIpRateLimit(clientIp);
-    if (!ipRateCheck.allowed) {
-      context.warn(
-        `IP rate limit exceeded for ${clientIp}: ${ipRateCheck.current}/${ipRateCheck.limit}`
-      );
-      return {
-        status: 429,
-        jsonBody: {
-          error: 'Rate limit exceeded',
-          current: ipRateCheck.current,
-          limit: ipRateCheck.limit,
-          resetTime: ipRateCheck.resetTime,
-          message: `Too many uploads from your IP. Limit: ${ipRateCheck.limit} per hour. Resets at ${ipRateCheck.resetTime}.`,
-        },
-      };
-    }
+  const formData = await req.formData();
+  const file = formData.get('file') as File;
+  const vendorName = formData.get('vendorName') as string;
 
-    // 🛡️ SECURITY CHECK 3: Daily upload limit (before parsing large files)
-    const limitCheck = await checkDailyUploadLimit();
-    if (!limitCheck.allowed) {
-      context.log(`Daily limit reached: ${limitCheck.current}/${limitCheck.limit}`);
-      return {
-        status: 429,
-        jsonBody: {
-          error: 'Daily upload limit reached',
-          current: limitCheck.current,
-          limit: limitCheck.limit,
-          resetTime: 'midnight UTC',
-          message:
-            'This is a demo environment with daily limits. Try again tomorrow or contact for production access.',
-        },
-      };
-    }
+  if (!file || !vendorName) {
+    return errorResponse('Missing file or vendor name in request', 400);
   }
 
+  // VALIDATION: Vendor name format
+  const vendorValidation = validateVendorName(vendorName);
+  if (!vendorValidation.valid) {
+    return errorResponse('Invalid vendor name format', 400, vendorValidation.error);
+  }
+
+  // Validate file type
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return errorResponse(`Unsupported file type: ${file.type}. Only PDF files are allowed.`, 400);
+  }
+
+  // 🛡️ SECURITY CHECK: File size limit (demo mode only)
+  if (process.env.IS_DEMO_MODE === 'true' && validateFileSize(file.size) === false) {
+    return errorResponse(
+      'File size exceeds limit',
+      413,
+      `This is a demo environment with file size limits of up to ${process.env.MAX_FILE_SIZE_MB}MB.`
+    );
+  }
+
+  // Get standardized file name (e.g., BETTER_LIVING-11-25.pdf)
+  const standardFileName = getVendorFileName(vendorName);
+  const fileBuffer = Buffer.from(await file.arrayBuffer());
+  const filePath = `${getVendorPath(vendorName)}/${standardFileName}`;
+
+  // CHECK FOR DUPLICATE: One-to-one mapping enforcement
+  let pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+  await pool.connect();
+
   try {
-    const formData = await req.formData();
-    const file = formData.get('file') as File;
-    const vendorName = formData.get('vendorName') as string;
-
-    if (!file || !vendorName) {
-      return {
-        status: 400,
-        jsonBody: {
-          error: 'Missing file or vendor name in request',
-        },
-      };
-    }
-    // VALIDATION: Vendor name format
-    const vendorValidation = validateVendorName(vendorName);
-    if (!vendorValidation.valid) {
-      return {
-        status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({
-          error: 'Invalid vendor name format',
-          message: vendorValidation.error,
-        }),
-      };
-    }
-    // Validate file type
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      return {
-        status: 400,
-        jsonBody: {
-          error: `Unsupported file type: ${file.type}. Only PDF files are allowed.`,
-        },
-      };
-    }
-
-    // 🛡️ SECURITY CHECK 3: File size limit (demo mode only)
-    if (process.env.IS_DEMO_MODE === 'true' && validateFileSize(file.size) === false) {
-      return {
-        status: 413,
-        jsonBody: {
-          error: 'File size exceeds limit',
-          message: `This is a demo environment with file size limits of up to ${process.env.MAX_FILE_SIZE_MB}MB.`,
-        },
-      };
-    }
-
-    // Get standardized file name (e.g., BETTER_LIVING-11-25.pdf)
-    const standardFileName = getVendorFileName(vendorName);
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const filePath = `${getVendorPath(vendorName)}/${standardFileName}`;
-
-    // CHECK FOR DUPLICATE: One-to-one mapping enforcement
-    let pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
-    await pool.connect();
-
     const existingCheck = await pool.request().input('vendorName', sql.NVarChar, vendorName).query(`
         SELECT result_id, document_name, processing_status
         FROM vvocr.document_processing_results
@@ -208,14 +117,10 @@ export async function uploadHandler(
       `);
 
     if (existingCheck.recordset.length > 0) {
-      await pool.close();
       const existing = existingCheck.recordset[0];
       return {
         status: 409, // Conflict
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        headers: { 'Content-Type': 'application/json' },
         jsonBody: {
           error: 'Vendor already exists',
           message: `A document already exists for vendor ${vendorName}. Please delete the existing document first using DELETE /api/deleteVendor?vendorName=${vendorName}`,
@@ -243,84 +148,57 @@ export async function uploadHandler(
     pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
     await pool.connect();
 
-    try {
-      const result = await pool
-        .request()
-        .input('vendorName', sql.NVarChar, vendorName)
-        .input('documentName', sql.NVarChar, standardFileName)
-        .input('documentPath', sql.NVarChar, filePath)
-        .input('fileSize', sql.BigInt, fileBuffer.length)
-        .input('fileType', sql.NVarChar, file.type).query(`
-                  INSERT INTO vvocr.document_processing_results 
-                  (document_name, document_path, document_size_bytes, document_type, processing_status, vendor_name)
-                  OUTPUT INSERTED.result_id
-                  VALUES (@documentName, @documentPath, @fileSize, @fileType, 'pending', @vendorName)
-              `);
+    const result = await pool
+      .request()
+      .input('vendorName', sql.NVarChar, vendorName)
+      .input('documentName', sql.NVarChar, standardFileName)
+      .input('documentPath', sql.NVarChar, filePath)
+      .input('fileSize', sql.BigInt, fileBuffer.length)
+      .input('fileType', sql.NVarChar, file.type).query(`
+        INSERT INTO vvocr.document_processing_results 
+        (document_name, document_path, document_size_bytes, document_type, processing_status, vendor_name)
+        OUTPUT INSERTED.result_id
+        VALUES (@documentName, @documentPath, @fileSize, @fileType, 'pending', @vendorName)
+      `);
 
-      const resultId = result.recordset[0].result_id;
-      await pool.close();
+    const resultId = result.recordset[0].result_id;
+    await pool.close();
 
-      // Increment usage counters (both daily and IP-based)
-      await incrementDailyUploadCount();
-      await incrementIpUploadCount(clientIp);
+    // Increment usage counters (both daily and IP-based)
+    await incrementDailyUploadCount();
+    await incrementIpUploadCount(clientIp);
 
-      return {
-        status: 201,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
-        },
-        jsonBody: {
-          message: 'Document uploaded successfully',
-          resultId,
-          documentName: standardFileName,
-          vendorName: vendorName,
-          filePath,
-          status: 'pending',
-        },
-      };
-    } catch (dbError: unknown) {
-      await pool.close();
-      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError);
-      throw new Error(`Database error: ${errorMessage}`);
-    }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    context.error(`Error processing upload: ${errorMessage}`);
-    return {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+    return successResponse(
+      {
+        message: 'Document uploaded successfully',
+        resultId,
+        documentName: standardFileName,
+        vendorName: vendorName,
+        filePath,
+        status: 'pending',
       },
-      jsonBody: { error: errorMessage },
-    };
+      201
+    );
+  } catch (error: unknown) {
+    await pool.close();
+    throw error;
   }
 }
+
+/**
+ * Upload Handler - HTTP POST endpoint with middleware
+ * Middleware: Error Handler → CORS → Auth → Rate Limit → Business Logic
+ */
+export const uploadHandler = withErrorHandler(withCors(withAuth(withRateLimit(uploadHandlerCore))));
 
 app.http('upload', {
   methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
-  handler: async (request: HttpRequest, context: InvocationContext) => {
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      };
-    }
-    return uploadHandler(request, context);
-  },
+  handler: uploadHandler,
 });
 
 /**
- * Delete Vendor Handler - HTTP DELETE endpoint for vendor cleanup
+ * Delete Vendor Handler Core - Business logic for vendor cleanup
  *
  * PROCESS:
  * 1. Extract vendorId from query parameters
@@ -334,123 +212,85 @@ app.http('upload', {
  * - 404 Not Found: No documents found for vendor
  * - 500 Internal Server Error: Blob or database errors
  */
-export async function deleteVendorHandler(
+async function deleteVendorHandlerCore(
   req: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log(`Processing delete request for ${req.url}`);
 
+  const vendorName = req.query.get('vendorName');
+
+  if (!vendorName) {
+    return errorResponse('Missing vendorName query parameter', 400);
+  }
+
+  // 1. Get all documents for vendor from database
+  const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+  await pool.connect();
+
   try {
-    const vendorName = req.query.get('vendorName');
+    const result = await pool.request().input('vendorName', sql.NVarChar, vendorName).query(`
+      SELECT result_id, document_path 
+      FROM vvocr.document_processing_results 
+      WHERE vendor_name = @vendorName
+    `);
 
-    if (!vendorName) {
+    const documents = result.recordset;
+
+    if (documents.length === 0) {
       return {
-        status: 400,
-        body: 'Missing vendorName query parameter',
-      };
-    }
-
-    // 1. Get all documents for vendor from database
-    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
-    await pool.connect();
-
-    try {
-      const result = await pool.request().input('vendorName', sql.NVarChar, vendorName).query(`
-          SELECT result_id, document_path 
-          FROM vvocr.document_processing_results 
-          WHERE vendor_name = @vendorName
-        `);
-
-      const documents = result.recordset;
-
-      if (documents.length === 0) {
-        await pool.close();
-        return {
-          status: 404,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          },
-          body: JSON.stringify({
-            message: `No documents found for vendor: ${vendorName}`,
-          }),
-        };
-      }
-
-      // 2. Delete blobs from storage
-      const blobServiceClient = BlobServiceClient.fromConnectionString(
-        process.env.STORAGE_CONNECTION_STRING!
-      );
-      const containerClient = blobServiceClient.getContainerClient(STORAGE_CONTAINER_DOCUMENTS);
-
-      let blobsDeleted = 0;
-      for (const doc of documents) {
-        try {
-          const blockBlobClient = containerClient.getBlockBlobClient(doc.document_path);
-          await blockBlobClient.delete();
-          blobsDeleted++;
-        } catch (blobError: unknown) {
-          const errorMessage = blobError instanceof Error ? blobError.message : String(blobError);
-          context.warn(`Failed to delete blob ${doc.document_path}: ${errorMessage}`);
-        }
-      }
-
-      // 3. Delete database records
-      const deleteResult = await pool.request().input('vendorName', sql.NVarChar, vendorName)
-        .query(`
-          DELETE FROM vvocr.document_processing_results 
-          WHERE vendor_name = @vendorName
-        `);
-
-      await pool.close();
-
-      return {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+        jsonBody: {
+          message: `No documents found for vendor: ${vendorName}`,
         },
-        body: JSON.stringify({
-          message: `Vendor ${vendorName} deleted successfully`,
-          documentsDeleted: deleteResult.rowsAffected[0],
-          blobsDeleted,
-        }),
       };
-    } catch (error: unknown) {
-      await pool.close();
-      throw error;
     }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    context.error(`Error deleting vendor: ${errorMessage}`);
-    return {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ error: errorMessage }),
-    };
+
+    // 2. Delete blobs from storage
+    const blobServiceClient = BlobServiceClient.fromConnectionString(
+      process.env.STORAGE_CONNECTION_STRING!
+    );
+    const containerClient = blobServiceClient.getContainerClient(STORAGE_CONTAINER_DOCUMENTS);
+
+    let blobsDeleted = 0;
+    for (const doc of documents) {
+      try {
+        const blockBlobClient = containerClient.getBlockBlobClient(doc.document_path);
+        await blockBlobClient.delete();
+        blobsDeleted++;
+      } catch (blobError: unknown) {
+        const errorMessage = blobError instanceof Error ? blobError.message : String(blobError);
+        context.warn(`Failed to delete blob ${doc.document_path}: ${errorMessage}`);
+      }
+    }
+
+    // 3. Delete database records
+    const deleteResult = await pool.request().input('vendorName', sql.NVarChar, vendorName).query(`
+      DELETE FROM vvocr.document_processing_results 
+      WHERE vendor_name = @vendorName
+    `);
+
+    return successResponse({
+      message: `Vendor ${vendorName} deleted successfully`,
+      documentsDeleted: deleteResult.rowsAffected[0],
+      blobsDeleted,
+    });
+  } finally {
+    await pool.close();
   }
 }
+
+/**
+ * Delete Vendor Handler - HTTP DELETE endpoint with middleware
+ * Middleware: Error Handler → CORS → Business Logic
+ */
+export const deleteVendorHandler = withErrorHandler(withCors(deleteVendorHandlerCore));
 
 app.http('deleteVendor', {
   methods: ['DELETE', 'OPTIONS'],
   authLevel: 'anonymous',
-  handler: async (request: HttpRequest, context: InvocationContext) => {
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      };
-    }
-    return deleteVendorHandler(request, context);
-  },
+  handler: deleteVendorHandler,
 });
 
 /**
@@ -475,30 +315,25 @@ app.http('deleteVendor', {
  * - Easy A/B testing and rollback
  * - Clear versioning via reprocessing_count
  */
-export async function reprocessMappingHandler(
+async function reprocessMappingHandlerCore(
   req: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log(`Reprocess mapping request received`);
 
-  try {
-    const body = (await req.json()) as { documentId?: string };
-    const documentId = body.documentId;
+  const body = (await req.json()) as { documentId?: string };
+  const documentId = body.documentId;
 
-    if (!documentId) {
-      return {
-        status: 400,
-        body: JSON.stringify({ error: 'Missing documentId in request body' }),
-      };
-    }
+  if (!documentId) {
+    return errorResponse('Missing documentId in request body', 400);
+  }
 
-    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
-    await pool.connect();
+  const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+  await pool.connect();
 
-    // Get existing record to copy OCR data and determine version
-    const existingResult = await pool
-      .request()
-      .input('documentId', sql.UniqueIdentifier, documentId).query(`
+  // Get existing record to copy OCR data and determine version
+  const existingResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
+    .query(`
         SELECT 
           document_name,
           document_path,
@@ -518,38 +353,38 @@ export async function reprocessMappingHandler(
         WHERE result_id = @documentId
       `);
 
-    if (existingResult.recordset.length === 0) {
-      await pool.close();
-      return {
-        status: 404,
-        body: JSON.stringify({ error: 'Document not found' }),
-      };
-    }
+  if (existingResult.recordset.length === 0) {
+    await pool.close();
+    return {
+      status: 404,
+      body: JSON.stringify({ error: 'Document not found' }),
+    };
+  }
 
-    const existing = existingResult.recordset[0];
+  const existing = existingResult.recordset[0];
 
-    // Find the root parent (creates a tree structure where all versions point to the original)
-    // If this document has a parent, that's the root. Otherwise, this document is the root.
-    const rootParentId = existing.parent_document_id || documentId;
-    const newVersion = (existing.reprocessing_count || 0) + 1;
+  // Find the root parent (creates a tree structure where all versions point to the original)
+  // If this document has a parent, that's the root. Otherwise, this document is the root.
+  const rootParentId = existing.parent_document_id || documentId;
+  const newVersion = (existing.reprocessing_count || 0) + 1;
 
-    // Create new immutable record
-    const newRecordResult = await pool
-      .request()
-      .input('documentName', sql.NVarChar, existing.document_name)
-      .input('documentPath', sql.NVarChar, existing.document_path)
-      .input('documentSize', sql.BigInt, existing.document_size_bytes)
-      .input('documentType', sql.NVarChar, existing.document_type)
-      .input('vendorName', sql.NVarChar, existing.vendor_name)
-      .input('extractedText', sql.NVarChar, existing.doc_intel_extracted_text)
-      .input('structuredData', sql.NVarChar, existing.doc_intel_structured_data)
-      .input('confidenceScore', sql.Decimal(5, 4), existing.doc_intel_confidence_score)
-      .input('pageCount', sql.Int, existing.doc_intel_page_count)
-      .input('tableCount', sql.Int, existing.doc_intel_table_count)
-      .input('docIntelCost', sql.Decimal(10, 6), existing.doc_intel_cost_usd)
-      .input('docIntelPrompt', sql.NVarChar, existing.doc_intel_prompt_used)
-      .input('parentDocumentId', sql.UniqueIdentifier, rootParentId)
-      .input('reprocessingCount', sql.Int, newVersion).query(`
+  // Create new immutable record
+  const newRecordResult = await pool
+    .request()
+    .input('documentName', sql.NVarChar, existing.document_name)
+    .input('documentPath', sql.NVarChar, existing.document_path)
+    .input('documentSize', sql.BigInt, existing.document_size_bytes)
+    .input('documentType', sql.NVarChar, existing.document_type)
+    .input('vendorName', sql.NVarChar, existing.vendor_name)
+    .input('extractedText', sql.NVarChar, existing.doc_intel_extracted_text)
+    .input('structuredData', sql.NVarChar, existing.doc_intel_structured_data)
+    .input('confidenceScore', sql.Decimal(5, 4), existing.doc_intel_confidence_score)
+    .input('pageCount', sql.Int, existing.doc_intel_page_count)
+    .input('tableCount', sql.Int, existing.doc_intel_table_count)
+    .input('docIntelCost', sql.Decimal(10, 6), existing.doc_intel_cost_usd)
+    .input('docIntelPrompt', sql.NVarChar, existing.doc_intel_prompt_used)
+    .input('parentDocumentId', sql.UniqueIdentifier, rootParentId)
+    .input('reprocessingCount', sql.Int, newVersion).query(`
         INSERT INTO vvocr.document_processing_results (
           document_name,
           document_path,
@@ -589,59 +424,30 @@ export async function reprocessMappingHandler(
         )
       `);
 
-    const newDocumentId = newRecordResult.recordset[0].result_id;
+  const newDocumentId = newRecordResult.recordset[0].result_id;
 
-    await pool.close();
+  await pool.close();
 
-    context.log(
-      `✅ Created new version record: ${newDocumentId} (v${newVersion} of ${rootParentId})`
-    );
+  context.log(
+    `✅ Created new version record: ${newDocumentId} (v${newVersion} of ${rootParentId})`
+  );
 
-    return {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({
-        message: `New version created for remapping (v${newVersion})`,
-        originalDocumentId: documentId,
-        newResultId: newDocumentId,
-        version: newVersion,
-        parentDocumentId: rootParentId,
-        nextStep: 'AI mapping will be queued automatically',
-      }),
-    };
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    context.error(`Error reprocessing mapping: ${errorMessage}`);
-    return {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ error: errorMessage }),
-    };
-  }
+  return successResponse({
+    message: `New version created for remapping (v${newVersion})`,
+    originalDocumentId: documentId,
+    newResultId: newDocumentId,
+    version: newVersion,
+    parentDocumentId: rootParentId,
+    nextStep: 'AI mapping will be queued automatically',
+  });
 }
+
+export const reprocessMappingHandler = withErrorHandler(withCors(reprocessMappingHandlerCore));
 
 app.http('reprocessMapping', {
   methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
-  handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      };
-    }
-    return reprocessMappingHandler(request, context);
-  },
+  handler: reprocessMappingHandler,
 });
 
 /**
@@ -659,30 +465,26 @@ app.http('reprocessMapping', {
  * - Exports validated data to production catalog
  * - Enables bronze-to-silver data promotion workflow
  */
-export async function confirmMappingHandler(
+async function confirmMappingHandlerCore(
   req: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log(`Confirm mapping request received`);
 
+  const body = (await req.json()) as { documentId?: string };
+  const documentId = body.documentId;
+
+  if (!documentId) {
+    return errorResponse('Missing documentId in request body', 400);
+  }
+
+  const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+  await pool.connect();
+
   try {
-    const body = (await req.json()) as { documentId?: string };
-    const documentId = body.documentId;
-
-    if (!documentId) {
-      return {
-        status: 400,
-        body: JSON.stringify({ error: 'Missing documentId in request body' }),
-      };
-    }
-
-    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
-    await pool.connect();
-
-    try {
-      // 1. Retrieve document and mapping result
-      const docResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
-        .query(`
+    // 1. Retrieve document and mapping result
+    const docResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
+      .query(`
           SELECT 
             result_id,
             document_name,
@@ -694,105 +496,33 @@ export async function confirmMappingHandler(
           WHERE result_id = @documentId
         `);
 
-      if (docResult.recordset.length === 0) {
-        await pool.close();
-        return {
-          status: 404,
-          body: JSON.stringify({ error: 'Document not found' }),
-        };
-      }
-
-      const document = docResult.recordset[0];
-
-      if (document.processing_status !== 'completed') {
-        await pool.close();
-        return {
-          status: 400,
-          body: JSON.stringify({
-            error: `Document status is '${document.processing_status}'. Must be 'completed' to confirm.`,
-          }),
-        };
-      }
-
-      // Check if already exported (idempotency)
-      if (document.export_status === 'confirmed') {
-        await pool.close();
-        context.log(`ℹ️ Document ${documentId} already confirmed, skipping re-export`);
-
-        const mappingData = JSON.parse(document.ai_mapping_result || '{}');
-        const productsCount = (mappingData.products || []).length;
-
-        return {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          },
-          body: JSON.stringify({
-            message: 'Products already exported (idempotent operation)',
-            documentId,
-            vendor: document.vendor_name,
-            productsExported: productsCount,
-          }),
-        };
-      }
-
-      if (!document.ai_mapping_result) {
-        await pool.close();
-        return {
-          status: 400,
-          body: JSON.stringify({ error: 'No mapping result available to export' }),
-        };
-      }
-
-      const mappingData = JSON.parse(document.ai_mapping_result);
-      const products = mappingData.products || [];
-
-      if (products.length === 0) {
-        await pool.close();
-        return {
-          status: 400,
-          body: JSON.stringify({ error: 'No products found in mapping result' }),
-        };
-      }
-
-      // 2. Insert products into production table
-      let insertedCount = 0;
-      for (const product of products) {
-        await pool
-          .request()
-          .input('vendorId', sql.NVarChar, document.vendor_name)
-          .input('vendorName', sql.NVarChar, document.vendor_name)
-          .input('productName', sql.NVarChar, product.name)
-          .input('sku', sql.NVarChar, product.sku)
-          .input('price', sql.Decimal(18, 4), product.price)
-          .input('unit', sql.NVarChar, product.unit || null)
-          .input('description', sql.NVarChar, product.description || null)
-          .input('sourceDocId', sql.UniqueIdentifier, documentId)
-          .input('sourceDocName', sql.NVarChar, document.document_name).query(`
-            INSERT INTO vvocr.vendor_products 
-            (vendor_id, vendor_name, product_name, sku, price, unit, description, source_document_id, source_document_name)
-            VALUES 
-            (@vendorId, @vendorName, @productName, @sku, @price, @unit, @description, @sourceDocId, @sourceDocName)
-          `);
-        insertedCount++;
-      }
-
-      // 3. Update export status
-      await pool.request().input('documentId', sql.UniqueIdentifier, documentId).query(`
-          UPDATE vvocr.document_processing_results 
-          SET 
-              export_status = 'confirmed',
-              exported_at = GETUTCDATE(),
-              updated_at = GETUTCDATE()
-          WHERE result_id = @documentId
-        `);
-
+    if (docResult.recordset.length === 0) {
       await pool.close();
+      return {
+        status: 404,
+        body: JSON.stringify({ error: 'Document not found' }),
+      };
+    }
 
-      context.log(
-        `✅ Exported ${insertedCount} products to production for ${document.document_name}`
-      );
+    const document = docResult.recordset[0];
+
+    if (document.processing_status !== 'completed') {
+      await pool.close();
+      return {
+        status: 400,
+        body: JSON.stringify({
+          error: `Document status is '${document.processing_status}'. Must be 'completed' to confirm.`,
+        }),
+      };
+    }
+
+    // Check if already exported (idempotency)
+    if (document.export_status === 'confirmed') {
+      await pool.close();
+      context.log(`ℹ️ Document ${documentId} already confirmed, skipping re-export`);
+
+      const mappingData = JSON.parse(document.ai_mapping_result || '{}');
+      const productsCount = (mappingData.products || []).length;
 
       return {
         status: 200,
@@ -801,46 +531,88 @@ export async function confirmMappingHandler(
           'Access-Control-Allow-Origin': '*',
         },
         body: JSON.stringify({
-          message: 'Products exported to production successfully',
+          message: 'Products already exported (idempotent operation)',
           documentId,
           vendor: document.vendor_name,
-          productsExported: insertedCount,
+          productsExported: productsCount,
         }),
       };
-    } catch (error: unknown) {
-      await pool.close();
-      throw error;
     }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    context.error(`Error confirming mapping: ${errorMessage}`);
-    return {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ error: errorMessage }),
-    };
+
+    if (!document.ai_mapping_result) {
+      await pool.close();
+      return {
+        status: 400,
+        body: JSON.stringify({ error: 'No mapping result available to export' }),
+      };
+    }
+
+    const mappingData = JSON.parse(document.ai_mapping_result);
+    const products = mappingData.products || [];
+
+    if (products.length === 0) {
+      await pool.close();
+      return {
+        status: 400,
+        body: JSON.stringify({ error: 'No products found in mapping result' }),
+      };
+    }
+
+    // 2. Insert products into production table
+    let insertedCount = 0;
+    for (const product of products) {
+      await pool
+        .request()
+        .input('vendorId', sql.NVarChar, document.vendor_name)
+        .input('vendorName', sql.NVarChar, document.vendor_name)
+        .input('productName', sql.NVarChar, product.name)
+        .input('sku', sql.NVarChar, product.sku)
+        .input('price', sql.Decimal(18, 4), product.price)
+        .input('unit', sql.NVarChar, product.unit || null)
+        .input('description', sql.NVarChar, product.description || null)
+        .input('sourceDocId', sql.UniqueIdentifier, documentId)
+        .input('sourceDocName', sql.NVarChar, document.document_name).query(`
+            INSERT INTO vvocr.vendor_products 
+            (vendor_id, vendor_name, product_name, sku, price, unit, description, source_document_id, source_document_name)
+            VALUES 
+            (@vendorId, @vendorName, @productName, @sku, @price, @unit, @description, @sourceDocId, @sourceDocName)
+          `);
+      insertedCount++;
+    }
+
+    // 3. Update export status
+    await pool.request().input('documentId', sql.UniqueIdentifier, documentId).query(`
+          UPDATE vvocr.document_processing_results 
+          SET 
+              export_status = 'confirmed',
+              exported_at = GETUTCDATE(),
+              updated_at = GETUTCDATE()
+          WHERE result_id = @documentId
+        `);
+
+    await pool.close();
+
+    context.log(
+      `✅ Exported ${insertedCount} products to production for ${document.document_name}`
+    );
+
+    return successResponse({
+      message: 'Products exported to production successfully',
+      documentId,
+      vendor: document.vendor_name,
+      productsExported: insertedCount,
+    });
+  } finally {
+    await pool.close();
   }
 }
+
+export const confirmMappingHandler = withErrorHandler(withCors(confirmMappingHandlerCore));
 
 app.http('confirmMapping', {
   methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
-  handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      };
-    }
-    return confirmMappingHandler(request, context);
-  },
+  handler: confirmMappingHandler,
 });
 
 /**
@@ -857,29 +629,25 @@ app.http('confirmMapping', {
  * - Compare confidence scores across versions
  * - Select previous version for export
  */
-export async function getVersionHistoryHandler(
+async function getVersionHistoryHandlerCore(
   req: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log(`Get version history request received`);
 
+  const documentId = req.query.get('documentId');
+
+  if (!documentId) {
+    return errorResponse('Missing documentId query parameter', 400);
+  }
+
+  const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+  await pool.connect();
+
   try {
-    const documentId = req.query.get('documentId');
-
-    if (!documentId) {
-      return {
-        status: 400,
-        body: JSON.stringify({ error: 'Missing documentId query parameter' }),
-      };
-    }
-
-    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
-    await pool.connect();
-
-    try {
-      // First, get the document to find its root parent
-      const rootResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
-        .query(`
+    // First, get the document to find its root parent
+    const rootResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
+      .query(`
           SELECT 
             result_id,
             parent_document_id,
@@ -888,21 +656,21 @@ export async function getVersionHistoryHandler(
           WHERE result_id = @documentId
         `);
 
-      if (rootResult.recordset.length === 0) {
-        await pool.close();
-        return {
-          status: 404,
-          body: JSON.stringify({ error: 'Document not found' }),
-        };
-      }
+    if (rootResult.recordset.length === 0) {
+      await pool.close();
+      return {
+        status: 404,
+        body: JSON.stringify({ error: 'Document not found' }),
+      };
+    }
 
-      const doc = rootResult.recordset[0];
-      const rootParentId = doc.parent_document_id || doc.result_id;
+    const doc = rootResult.recordset[0];
+    const rootParentId = doc.parent_document_id || doc.result_id;
 
-      // Get all versions in the chain
-      const versionsResult = await pool
-        .request()
-        .input('rootParentId', sql.UniqueIdentifier, rootParentId).query(`
+    // Get all versions in the chain
+    const versionsResult = await pool
+      .request()
+      .input('rootParentId', sql.UniqueIdentifier, rootParentId).query(`
           SELECT 
             result_id,
             document_name,
@@ -924,55 +692,25 @@ export async function getVersionHistoryHandler(
           ORDER BY reprocessing_count ASC
         `);
 
-      await pool.close();
+    await pool.close();
 
-      return {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({
-          rootDocumentId: rootParentId,
-          currentDocumentId: documentId,
-          totalVersions: versionsResult.recordset.length,
-          versions: versionsResult.recordset,
-        }),
-      };
-    } catch (error: unknown) {
-      await pool.close();
-      throw error;
-    }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    context.error(`Error getting version history: ${errorMessage}`);
-    return {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ error: errorMessage }),
-    };
+    return successResponse({
+      rootDocumentId: rootParentId,
+      currentDocumentId: documentId,
+      totalVersions: versionsResult.recordset.length,
+      versions: versionsResult.recordset,
+    });
+  } finally {
+    await pool.close();
   }
 }
+
+export const getVersionHistoryHandler = withErrorHandler(withCors(getVersionHistoryHandlerCore));
 
 app.http('getVersionHistory', {
   methods: ['GET', 'OPTIONS'],
   authLevel: 'anonymous',
-  handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      };
-    }
-    return getVersionHistoryHandler(request, context);
-  },
+  handler: getVersionHistoryHandler,
 });
 
 /**
@@ -988,29 +726,25 @@ app.http('getVersionHistory', {
  * - Cannot delete root/original document (use deleteDocument instead)
  * - Only deletes the specific reprocessing run
  */
-export async function deleteRunHandler(
+async function deleteRunHandlerCore(
   req: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log(`Delete run request received`);
 
+  const documentId = req.query.get('documentId');
+
+  if (!documentId) {
+    return errorResponse('Missing documentId query parameter', 400);
+  }
+
+  const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+  await pool.connect();
+
   try {
-    const documentId = req.query.get('documentId');
-
-    if (!documentId) {
-      return {
-        status: 400,
-        body: JSON.stringify({ error: 'Missing documentId query parameter' }),
-      };
-    }
-
-    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
-    await pool.connect();
-
-    try {
-      // Check if this is a reprocessed version (has parent_document_id)
-      const checkResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
-        .query(`
+    // Check if this is a reprocessed version (has parent_document_id)
+    const checkResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
+      .query(`
           SELECT 
             result_id,
             parent_document_id,
@@ -1020,83 +754,53 @@ export async function deleteRunHandler(
           WHERE result_id = @documentId
         `);
 
-      if (checkResult.recordset.length === 0) {
-        await pool.close();
-        return {
-          status: 404,
-          body: JSON.stringify({ error: 'Document not found' }),
-        };
-      }
+    if (checkResult.recordset.length === 0) {
+      await pool.close();
+      return {
+        status: 404,
+        body: JSON.stringify({ error: 'Document not found' }),
+      };
+    }
 
-      const doc = checkResult.recordset[0];
+    const doc = checkResult.recordset[0];
 
-      if (!doc.parent_document_id) {
-        await pool.close();
-        return {
-          status: 400,
-          body: JSON.stringify({
-            error:
-              'Cannot delete root document. Use DELETE /api/deleteDocument to delete the entire document with all versions.',
-          }),
-        };
-      }
+    if (!doc.parent_document_id) {
+      await pool.close();
+      return {
+        status: 400,
+        body: JSON.stringify({
+          error:
+            'Cannot delete root document. Use DELETE /api/deleteDocument to delete the entire document with all versions.',
+        }),
+      };
+    }
 
-      // Delete the specific run
-      await pool.request().input('documentId', sql.UniqueIdentifier, documentId).query(`
+    // Delete the specific run
+    await pool.request().input('documentId', sql.UniqueIdentifier, documentId).query(`
           DELETE FROM vvocr.document_processing_results
           WHERE result_id = @documentId
         `);
 
-      await pool.close();
+    await pool.close();
 
-      context.log(`✅ Deleted run version ${doc.reprocessing_count} for ${doc.document_name}`);
+    context.log(`✅ Deleted run version ${doc.reprocessing_count} for ${doc.document_name}`);
 
-      return {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({
-          message: `Run version ${doc.reprocessing_count} deleted successfully`,
-          documentId,
-          version: doc.reprocessing_count,
-        }),
-      };
-    } catch (error: unknown) {
-      await pool.close();
-      throw error;
-    }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    context.error(`Error deleting run: ${errorMessage}`);
-    return {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ error: errorMessage }),
-    };
+    return successResponse({
+      message: `Run version ${doc.reprocessing_count} deleted successfully`,
+      documentId,
+      version: doc.reprocessing_count,
+    });
+  } finally {
+    await pool.close();
   }
 }
+
+export const deleteRunHandler = withErrorHandler(withCors(deleteRunHandlerCore));
 
 app.http('deleteRun', {
   methods: ['DELETE', 'OPTIONS'],
   authLevel: 'anonymous',
-  handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      };
-    }
-    return deleteRunHandler(request, context);
-  },
+  handler: deleteRunHandler,
 });
 
 /**
@@ -1113,29 +817,25 @@ app.http('deleteRun', {
  * - Complete removal of document and processing history
  * - Deletes all versions in the reprocessing chain
  */
-export async function deleteDocumentHandler(
+async function deleteDocumentHandlerCore(
   req: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log(`Delete document request received`);
 
+  const documentId = req.query.get('documentId');
+
+  if (!documentId) {
+    return errorResponse('Missing documentId query parameter', 400);
+  }
+
+  const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+  await pool.connect();
+
   try {
-    const documentId = req.query.get('documentId');
-
-    if (!documentId) {
-      return {
-        status: 400,
-        body: JSON.stringify({ error: 'Missing documentId query parameter' }),
-      };
-    }
-
-    const pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
-    await pool.connect();
-
-    try {
-      // Get document info and determine root parent
-      const docResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
-        .query(`
+    // Get document info and determine root parent
+    const docResult = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
+      .query(`
           SELECT 
             result_id,
             parent_document_id,
@@ -1145,92 +845,62 @@ export async function deleteDocumentHandler(
           WHERE result_id = @documentId
         `);
 
-      if (docResult.recordset.length === 0) {
-        await pool.close();
-        return {
-          status: 404,
-          body: JSON.stringify({ error: 'Document not found' }),
-        };
-      }
+    if (docResult.recordset.length === 0) {
+      await pool.close();
+      return {
+        status: 404,
+        body: JSON.stringify({ error: 'Document not found' }),
+      };
+    }
 
-      const doc = docResult.recordset[0];
-      const rootParentId = doc.parent_document_id || doc.result_id;
+    const doc = docResult.recordset[0];
+    const rootParentId = doc.parent_document_id || doc.result_id;
 
-      // Delete blob from storage (original PDF)
-      const blobServiceClient = BlobServiceClient.fromConnectionString(
-        process.env.STORAGE_CONNECTION_STRING!
-      );
-      const containerClient = blobServiceClient.getContainerClient(STORAGE_CONTAINER_DOCUMENTS);
+    // Delete blob from storage (original PDF)
+    const blobServiceClient = BlobServiceClient.fromConnectionString(
+      process.env.STORAGE_CONNECTION_STRING!
+    );
+    const containerClient = blobServiceClient.getContainerClient(STORAGE_CONTAINER_DOCUMENTS);
 
-      try {
-        const blockBlobClient = containerClient.getBlockBlobClient(doc.document_path);
-        await blockBlobClient.delete();
-        context.log(`✅ Deleted blob: ${doc.document_path}`);
-      } catch (blobError: unknown) {
-        const errorMessage = blobError instanceof Error ? blobError.message : String(blobError);
-        context.warn(`Failed to delete blob ${doc.document_path}: ${errorMessage}`);
-      }
+    try {
+      const blockBlobClient = containerClient.getBlockBlobClient(doc.document_path);
+      await blockBlobClient.delete();
+      context.log(`✅ Deleted blob: ${doc.document_path}`);
+    } catch (blobError: unknown) {
+      const errorMessage = blobError instanceof Error ? blobError.message : String(blobError);
+      context.warn(`Failed to delete blob ${doc.document_path}: ${errorMessage}`);
+    }
 
-      // Delete ALL database records (root + all versions)
-      const deleteResult = await pool
-        .request()
-        .input('rootParentId', sql.UniqueIdentifier, rootParentId).query(`
+    // Delete ALL database records (root + all versions)
+    const deleteResult = await pool
+      .request()
+      .input('rootParentId', sql.UniqueIdentifier, rootParentId).query(`
           DELETE FROM vvocr.document_processing_results
           WHERE result_id = @rootParentId OR parent_document_id = @rootParentId
         `);
 
-      await pool.close();
+    await pool.close();
 
-      context.log(
-        `✅ Deleted document ${doc.document_name} with ${deleteResult.rowsAffected[0]} total versions`
-      );
+    context.log(
+      `✅ Deleted document ${doc.document_name} with ${deleteResult.rowsAffected[0]} total versions`
+    );
 
-      return {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-        body: JSON.stringify({
-          message: 'Document and all versions deleted successfully',
-          documentName: doc.document_name,
-          versionsDeleted: deleteResult.rowsAffected[0],
-        }),
-      };
-    } catch (error: unknown) {
-      await pool.close();
-      throw error;
-    }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    context.error(`Error deleting document: ${errorMessage}`);
-    return {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ error: errorMessage }),
-    };
+    return successResponse({
+      message: 'Document and all versions deleted successfully',
+      documentName: doc.document_name,
+      versionsDeleted: deleteResult.rowsAffected[0],
+    });
+  } finally {
+    await pool.close();
   }
 }
+
+export const deleteDocumentHandler = withErrorHandler(withCors(deleteDocumentHandlerCore));
 
 app.http('deleteDocument', {
   methods: ['DELETE', 'OPTIONS'],
   authLevel: 'anonymous',
-  handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      };
-    }
-    return deleteDocumentHandler(request, context);
-  },
+  handler: deleteDocumentHandler,
 });
 
 /**
@@ -1240,75 +910,44 @@ app.http('deleteDocument', {
  * POST /api/demo/cleanup?daysToKeep=30 - Trigger cleanup
  *
  */
-async function demoUsageHandler(
+async function demoUsageHandlerCore(
   req: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
-  try {
-    if (req.method === 'GET') {
-      // Get usage stats
-      const stats = await getUsageStats();
-      return {
-        status: 200,
-        jsonBody: {
-          stats,
-          message: 'Usage statistics retrieved',
-        },
-      };
-    } else if (req.method === 'POST') {
-      // Trigger cleanup
-      const daysToKeep = parseInt(req.query.get('daysToKeep') || '30');
+  if (req.method === 'GET') {
+    // Get usage stats
+    const stats = await getUsageStats();
+    return successResponse({
+      stats,
+      message: 'Usage statistics retrieved',
+    });
+  } else if (req.method === 'POST') {
+    // Trigger cleanup
+    const daysToKeep = parseInt(req.query.get('daysToKeep') || '30');
 
-      context.log(`🧹 Cleanup triggered: keeping ${daysToKeep} days`);
+    context.log(`🧹 Cleanup triggered: keeping ${daysToKeep} days`);
 
-      const statsBefore = await getUsageStats();
-      const cleanupResult = await cleanupOldUsageRecords(daysToKeep);
-      const statsAfter = await getUsageStats();
+    const statsBefore = await getUsageStats();
+    const cleanupResult = await cleanupOldUsageRecords(daysToKeep);
+    const statsAfter = await getUsageStats();
 
-      return {
-        status: 200,
-        jsonBody: {
-          message: 'Cleanup completed successfully',
-          daysRetained: daysToKeep,
-          deleted: cleanupResult,
-          before: statsBefore,
-          after: statsAfter,
-        },
-      };
-    }
-
-    return {
-      status: 405,
-      jsonBody: { error: 'Method not allowed' },
-    };
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    context.error('Demo operation failed:', error);
-    return {
-      status: 500,
-      jsonBody: {
-        error: 'Demo operation failed',
-        details: errorMessage,
-      },
-    };
+    return successResponse({
+      message: 'Cleanup completed successfully',
+      daysRetained: daysToKeep,
+      deleted: cleanupResult,
+      before: statsBefore,
+      after: statsAfter,
+    });
   }
+
+  return errorResponse('Method not allowed', 405);
 }
+
+const demoUsageHandler = withErrorHandler(withCors(demoUsageHandlerCore));
 
 app.http('demoUsage', {
   methods: ['GET', 'POST', 'OPTIONS'],
   authLevel: 'anonymous',
   route: 'demo/usage',
-  handler: async (request: HttpRequest, context: InvocationContext) => {
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      };
-    }
-    return demoUsageHandler(request, context);
-  },
+  handler: demoUsageHandler,
 });

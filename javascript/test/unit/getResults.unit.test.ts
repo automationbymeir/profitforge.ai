@@ -58,9 +58,8 @@ describe('Get Results API - Unit Tests', () => {
     const response = await getResults(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body).toHaveLength(2);
-    expect(body[0].result_id).toBe('uuid-1');
+    expect(response.jsonBody).toHaveLength(2);
+    expect(response.jsonBody[0].result_id).toBe('uuid-1');
   });
 
   it('should filter by resultId', async () => {
@@ -98,9 +97,8 @@ describe('Get Results API - Unit Tests', () => {
     const response = await getResults(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body).toHaveLength(1);
-    expect(body[0].result_id).toBe(validUuid);
+    expect(response.jsonBody).toHaveLength(1);
+    expect(response.jsonBody[0].result_id).toBe(validUuid);
   });
 
   it('should filter by vendor name', async () => {
@@ -135,9 +133,8 @@ describe('Get Results API - Unit Tests', () => {
     const response = await getResults(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body).toHaveLength(1);
-    expect(body[0].vendor_name).toBe('ACME');
+    expect(response.jsonBody).toHaveLength(1);
+    expect(response.jsonBody[0].vendor_name).toBe('ACME');
   });
 
   it('should respect limit parameter', async () => {
@@ -170,8 +167,7 @@ describe('Get Results API - Unit Tests', () => {
     const response = await getResults(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body).toHaveLength(5);
+    expect(response.jsonBody).toHaveLength(5);
   });
 
   it('should use default limit of 10 when not specified', async () => {
@@ -240,8 +236,7 @@ describe('Get Results API - Unit Tests', () => {
     const response = await getResults(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body).toHaveLength(2);
+    expect(response.jsonBody).toHaveLength(2);
     // Should include both versions
   });
 
@@ -280,9 +275,8 @@ describe('Get Results API - Unit Tests', () => {
     const response = await getResults(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
     // Should only return latest version
-    expect(body.every((r: any) => r.reprocessing_count >= 1)).toBe(true);
+    expect(response.jsonBody.every((r: any) => r.reprocessing_count >= 1)).toBe(true);
   });
 
   it('should parse JSON fields in results', async () => {
@@ -315,8 +309,9 @@ describe('Get Results API - Unit Tests', () => {
     const response = await getResults(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body[0].ai_mapping_result).toEqual({ products: [{ sku: 'TEST-001', name: 'Test' }] });
+    expect(response.jsonBody[0].ai_mapping_result).toEqual({
+      products: [{ sku: 'TEST-001', name: 'Test' }],
+    });
   });
 
   it('should handle database errors gracefully', async () => {
@@ -332,7 +327,7 @@ describe('Get Results API - Unit Tests', () => {
     const response = await getResults(request as any, context as any);
 
     expect(response.status).toBe(500);
-    expect(response.body).toContain('Database connection failed');
+    expect(response.jsonBody.error).toBe('Internal Server Error');
   });
 
   it('should include CORS headers in response', async () => {
@@ -396,8 +391,7 @@ describe('Get Results API - Unit Tests', () => {
     const response = await getResults(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body).toHaveLength(1);
+    expect(response.jsonBody).toHaveLength(1);
   });
 
   it('should return empty array when no results match filters', async () => {
@@ -422,7 +416,6 @@ describe('Get Results API - Unit Tests', () => {
     const response = await getResults(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body).toEqual([]);
+    expect(response.jsonBody).toEqual([]);
   });
 });

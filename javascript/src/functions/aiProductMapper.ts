@@ -2,6 +2,8 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { BlobServiceClient } from '@azure/storage-blob';
 import sql from 'mssql';
 import { OpenAI } from 'openai';
+import { withCors, withErrorHandler } from '../middleware/index.js';
+import { errorResponse, successResponse } from '../utils/httpHelpers.js';
 
 // Type definitions
 interface RequestBody {
@@ -91,7 +93,7 @@ const BRONZE_LAYER_CONTAINER = 'bronze-layer';
  * - Each run increments reprocessing_count
  * - Allows prompt/model iteration for accuracy improvement
  */
-export async function aiProductMapperHandler(
+async function aiProductMapperHandlerCore(
   req: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -99,27 +101,22 @@ export async function aiProductMapperHandler(
 
   let pool: sql.ConnectionPool | null = null;
 
-  try {
-    const body = (await req.json()) as RequestBody;
-    const documentId = body.documentId;
+  const body = (await req.json()) as RequestBody;
+  const documentId = body.documentId;
 
-    if (!documentId) {
-      return {
-        status: 400,
-        body: JSON.stringify({ error: 'Missing documentId in request body' }),
-      };
-    }
+  if (!documentId) {
+    return errorResponse('Missing documentId in request body', 400);
+  }
 
-    if (!AI_PROJECT_ENDPOINT || !AI_PROJECT_KEY) {
-      throw new Error('Missing AI project configuration');
-    }
+  if (!AI_PROJECT_ENDPOINT || !AI_PROJECT_KEY) {
+    throw new Error('Missing AI project configuration');
+  }
 
-    // 1. Retrieve OCR results from database
-    pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
-    await pool.connect();
+  // 1. Retrieve OCR results from database
+  pool = new sql.ConnectionPool(SQL_CONNECTION_STRING!);
+  await pool.connect();
 
-    const result = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
-      .query(`
+  const result = await pool.request().input('documentId', sql.UniqueIdentifier, documentId).query(`
         SELECT 
           result_id,
           document_name,
@@ -132,60 +129,57 @@ export async function aiProductMapperHandler(
         WHERE result_id = @documentId
       `);
 
-    if (result.recordset.length === 0) {
-      await pool.close();
-      return {
-        status: 404,
-        body: JSON.stringify({ error: 'Document not found' }),
-      };
-    }
+  if (result.recordset.length === 0) {
+    await pool.close();
+    return {
+      status: 404,
+      body: JSON.stringify({ error: 'Document not found' }),
+    };
+  }
 
-    const document = result.recordset[0];
+  const document = result.recordset[0];
 
-    if (
-      document.processing_status !== 'ocr_complete' &&
-      document.processing_status !== 'completed'
-    ) {
-      await pool.close();
-      return {
-        status: 400,
-        body: JSON.stringify({
-          error: `Document status is '${document.processing_status}'. Must be 'ocr_complete' to run AI mapping.`,
-        }),
-      };
-    }
+  if (document.processing_status !== 'ocr_complete' && document.processing_status !== 'completed') {
+    await pool.close();
+    return {
+      status: 400,
+      body: JSON.stringify({
+        error: `Document status is '${document.processing_status}'. Must be 'ocr_complete' to run AI mapping.`,
+      }),
+    };
+  }
 
-    const ocrData = JSON.parse(document.doc_intel_structured_data);
-    const tables = ocrData.tables || [];
-    const fullText = document.doc_intel_extracted_text || '';
+  const ocrData = JSON.parse(document.doc_intel_structured_data);
+  const tables = ocrData.tables || [];
+  const fullText = document.doc_intel_extracted_text || '';
 
-    context.log(`Processing document: ${document.document_name}, Tables: ${tables.length}`);
+  context.log(`Processing document: ${document.document_name}, Tables: ${tables.length}`);
 
-    // 2. Initialize OpenAI client
-    const openai = new OpenAI({
-      apiKey: AI_PROJECT_KEY,
-      baseURL: `${AI_PROJECT_ENDPOINT}/openai/deployments/gpt-4o`,
-      defaultQuery: { 'api-version': '2024-08-01-preview' },
-      defaultHeaders: { 'api-key': AI_PROJECT_KEY },
-    });
+  // 2. Initialize OpenAI client
+  const openai = new OpenAI({
+    apiKey: AI_PROJECT_KEY,
+    baseURL: `${AI_PROJECT_ENDPOINT}/openai/deployments/gpt-4o`,
+    defaultQuery: { 'api-version': '2024-08-01-preview' },
+    defaultHeaders: { 'api-key': AI_PROJECT_KEY },
+  });
 
-    // 3. Analyze ALL table headers to find common column patterns
-    const allHeaders: Array<{ tableIdx: number; colIdx: number; header: string }> = [];
-    tables.forEach((table: Table, tableIdx: number) => {
-      const headerCells = table.cells.filter((c: TableCell) => c.kind === 'columnHeader');
-      headerCells.forEach((cell: TableCell) => {
-        allHeaders.push({
-          tableIdx,
-          colIdx: cell.columnIndex,
-          header: cell.content || '',
-        });
+  // 3. Analyze ALL table headers to find common column patterns
+  const allHeaders: Array<{ tableIdx: number; colIdx: number; header: string }> = [];
+  tables.forEach((table: Table, tableIdx: number) => {
+    const headerCells = table.cells.filter((c: TableCell) => c.kind === 'columnHeader');
+    headerCells.forEach((cell: TableCell) => {
+      allHeaders.push({
+        tableIdx,
+        colIdx: cell.columnIndex,
+        header: cell.content || '',
       });
     });
+  });
 
-    context.log(`Found ${allHeaders.length} header cells across ${tables.length} tables`);
+  context.log(`Found ${allHeaders.length} header cells across ${tables.length} tables`);
 
-    // Build column mapping prompt (minimal required schema)
-    const headerMappingPrompt = `You are analyzing product catalog tables. Extract products with the following MINIMAL REQUIRED SCHEMA:
+  // Build column mapping prompt (minimal required schema)
+  const headerMappingPrompt = `You are analyzing product catalog tables. Extract products with the following MINIMAL REQUIRED SCHEMA:
 - name (product name/description) - REQUIRED
 - SKU (item code/product code) - REQUIRED  
 - price (MSRP/cost) - REQUIRED
@@ -221,199 +215,195 @@ Return JSON:
 
 Context: ${fullText.substring(0, 2000)}`;
 
-    const startTime = Date.now();
+  const startTime = Date.now();
 
-    const mappingResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: headerMappingPrompt }],
-      response_format: { type: 'json_object' },
-      max_tokens: 500,
-      temperature: 0,
-    });
+  const mappingResponse = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{ role: 'user', content: headerMappingPrompt }],
+    response_format: { type: 'json_object' },
+    max_tokens: 500,
+    temperature: 0,
+  });
 
-    const mappingResult = JSON.parse(mappingResponse.choices[0].message.content || '{}');
-    context.log(`Column mapping: ${JSON.stringify(mappingResult.columnMapping)}`);
+  const mappingResult = JSON.parse(mappingResponse.choices[0].message.content || '{}');
+  context.log(`Column mapping: ${JSON.stringify(mappingResult.columnMapping)}`);
 
-    // 4. Extract products using column index mapping
-    const products: Array<{
-      name: string;
-      sku: string;
-      price: number;
-      unit?: string;
-      description?: string;
-    }> = [];
+  // 4. Extract products using column index mapping
+  const products: Array<{
+    name: string;
+    sku: string;
+    price: number;
+    unit?: string;
+    description?: string;
+  }> = [];
 
-    const colMap = mappingResult.columnMapping || {};
+  const colMap = mappingResult.columnMapping || {};
 
-    for (const table of tables) {
-      const contentCells = table.cells.filter((c: TableCell) => c.kind === 'content');
-      if (contentCells.length === 0) continue;
+  for (const table of tables) {
+    const contentCells = table.cells.filter((c: TableCell) => c.kind === 'content');
+    if (contentCells.length === 0) continue;
 
-      const rowCount = Math.max(...contentCells.map((c: TableCell) => c.rowIndex)) + 1;
+    const rowCount = Math.max(...contentCells.map((c: TableCell) => c.rowIndex)) + 1;
 
-      for (let rowIdx = 1; rowIdx < rowCount; rowIdx++) {
-        const rowCells = contentCells.filter((c: TableCell) => c.rowIndex === rowIdx);
+    for (let rowIdx = 1; rowIdx < rowCount; rowIdx++) {
+      const rowCells = contentCells.filter((c: TableCell) => c.rowIndex === rowIdx);
 
-        const sku = rowCells.find((c: TableCell) => c.columnIndex === colMap.sku)?.content?.trim();
-        const name = rowCells
-          .find((c: TableCell) => c.columnIndex === colMap.name)
-          ?.content?.trim();
-        const priceStr = rowCells
-          .find((c: TableCell) => c.columnIndex === colMap.price)
-          ?.content?.trim();
-        const unit = rowCells
-          .find((c: TableCell) => c.columnIndex === colMap.unit)
-          ?.content?.trim();
-        const description = rowCells
-          .find((c: TableCell) => c.columnIndex === colMap.description)
-          ?.content?.trim();
+      const sku = rowCells.find((c: TableCell) => c.columnIndex === colMap.sku)?.content?.trim();
+      const name = rowCells.find((c: TableCell) => c.columnIndex === colMap.name)?.content?.trim();
+      const priceStr = rowCells
+        .find((c: TableCell) => c.columnIndex === colMap.price)
+        ?.content?.trim();
+      const unit = rowCells.find((c: TableCell) => c.columnIndex === colMap.unit)?.content?.trim();
+      const description = rowCells
+        .find((c: TableCell) => c.columnIndex === colMap.description)
+        ?.content?.trim();
 
-        // Validate required fields
-        if (sku && name) {
-          // Parse price - remove currency symbols, commas
-          const priceMatch = priceStr?.match(/[\d,]+\.?\d*/);
-          const price = priceMatch ? parseFloat(priceMatch[0].replace(/,/g, '')) : 0;
+      // Validate required fields
+      if (sku && name) {
+        // Parse price - remove currency symbols, commas
+        const priceMatch = priceStr?.match(/[\d,]+\.?\d*/);
+        const price = priceMatch ? parseFloat(priceMatch[0].replace(/,/g, '')) : 0;
 
-          const product: Product = {
-            name,
-            sku,
-            price,
-          };
+        const product: Product = {
+          name,
+          sku,
+          price,
+        };
 
-          if (unit) product.unit = unit;
-          if (description) product.description = description;
+        if (unit) product.unit = unit;
+        if (description) product.description = description;
 
-          products.push(product);
-        }
+        products.push(product);
       }
     }
+  }
 
-    context.log(`✅ Extracted ${products.length} products from ${tables.length} tables`);
+  context.log(`✅ Extracted ${products.length} products from ${tables.length} tables`);
 
-    // 5. Calculate data quality and confidence metrics
-    let completenessScore = 0;
-    let confidenceScore = 0;
-    const qualityMetrics = {
-      productsWithSKU: 0,
-      productsWithPrice: 0,
-      productsWithValidPrice: 0,
-      productsWithName: 0,
-      productsWithUnit: 0,
-      productsWithDescription: 0,
-      emptyFields: 0,
-    };
+  // 5. Calculate data quality and confidence metrics
+  let completenessScore = 0;
+  let confidenceScore = 0;
+  const qualityMetrics = {
+    productsWithSKU: 0,
+    productsWithPrice: 0,
+    productsWithValidPrice: 0,
+    productsWithName: 0,
+    productsWithUnit: 0,
+    productsWithDescription: 0,
+    emptyFields: 0,
+  };
 
-    products.forEach((p: Product) => {
-      if (p.sku && p.sku.trim()) qualityMetrics.productsWithSKU++;
-      if (p.name && p.name.trim()) qualityMetrics.productsWithName++;
-      if (p.price !== undefined && p.price !== null) {
-        qualityMetrics.productsWithPrice++;
-        if (p.price > 0 && p.price < 100000) qualityMetrics.productsWithValidPrice++;
-      }
-      if (p.unit && p.unit.trim()) qualityMetrics.productsWithUnit++;
-      if (p.description && p.description.trim()) qualityMetrics.productsWithDescription++;
+  products.forEach((p: Product) => {
+    if (p.sku && p.sku.trim()) qualityMetrics.productsWithSKU++;
+    if (p.name && p.name.trim()) qualityMetrics.productsWithName++;
+    if (p.price !== undefined && p.price !== null) {
+      qualityMetrics.productsWithPrice++;
+      if (p.price > 0 && p.price < 100000) qualityMetrics.productsWithValidPrice++;
+    }
+    if (p.unit && p.unit.trim()) qualityMetrics.productsWithUnit++;
+    if (p.description && p.description.trim()) qualityMetrics.productsWithDescription++;
 
-      // Count empty/missing fields
-      if (!p.sku || !p.sku.trim()) qualityMetrics.emptyFields++;
-      if (!p.name || !p.name.trim()) qualityMetrics.emptyFields++;
-      if (p.price === undefined || p.price === null || p.price <= 0) qualityMetrics.emptyFields++;
-    });
+    // Count empty/missing fields
+    if (!p.sku || !p.sku.trim()) qualityMetrics.emptyFields++;
+    if (!p.name || !p.name.trim()) qualityMetrics.emptyFields++;
+    if (p.price === undefined || p.price === null || p.price <= 0) qualityMetrics.emptyFields++;
+  });
 
-    // Completeness score: % of required fields populated (SKU, name, price)
-    const requiredFieldCount = products.length * 3; // 3 required fields per product
-    const populatedRequiredFields =
-      qualityMetrics.productsWithSKU +
-      qualityMetrics.productsWithName +
-      qualityMetrics.productsWithPrice;
-    completenessScore =
-      requiredFieldCount > 0 ? (populatedRequiredFields / requiredFieldCount) * 100 : 0;
+  // Completeness score: % of required fields populated (SKU, name, price)
+  const requiredFieldCount = products.length * 3; // 3 required fields per product
+  const populatedRequiredFields =
+    qualityMetrics.productsWithSKU +
+    qualityMetrics.productsWithName +
+    qualityMetrics.productsWithPrice;
+  completenessScore =
+    requiredFieldCount > 0 ? (populatedRequiredFields / requiredFieldCount) * 100 : 0;
 
-    // Confidence score: weighted by data quality indicators
-    const skuScore =
-      products.length > 0 ? (qualityMetrics.productsWithSKU / products.length) * 30 : 0;
-    const priceScore =
-      products.length > 0 ? (qualityMetrics.productsWithValidPrice / products.length) * 40 : 0;
-    const nameScore =
-      products.length > 0 ? (qualityMetrics.productsWithName / products.length) * 30 : 0;
-    confidenceScore = Math.min(100, skuScore + priceScore + nameScore);
+  // Confidence score: weighted by data quality indicators
+  const skuScore =
+    products.length > 0 ? (qualityMetrics.productsWithSKU / products.length) * 30 : 0;
+  const priceScore =
+    products.length > 0 ? (qualityMetrics.productsWithValidPrice / products.length) * 40 : 0;
+  const nameScore =
+    products.length > 0 ? (qualityMetrics.productsWithName / products.length) * 30 : 0;
+  confidenceScore = Math.min(100, skuScore + priceScore + nameScore);
 
-    // 6. Calculate costs
-    const promptTokens = mappingResponse.usage?.prompt_tokens || 0;
-    const completionTokens = mappingResponse.usage?.completion_tokens || 0;
-    const totalTokens = promptTokens + completionTokens;
+  // 6. Calculate costs
+  const promptTokens = mappingResponse.usage?.prompt_tokens || 0;
+  const completionTokens = mappingResponse.usage?.completion_tokens || 0;
+  const totalTokens = promptTokens + completionTokens;
 
-    // GPT-4o pricing: $2.50/1M input, $10.00/1M output
-    const aiCost = (promptTokens * 0.0025 + completionTokens * 0.01) / 1000;
+  // GPT-4o pricing: $2.50/1M input, $10.00/1M output
+  const aiCost = (promptTokens * 0.0025 + completionTokens * 0.01) / 1000;
 
-    const processingDuration = Date.now() - startTime;
+  const processingDuration = Date.now() - startTime;
 
-    // 6. Store in bronze-layer
-    const blobServiceClient = BlobServiceClient.fromConnectionString(
-      process.env.STORAGE_CONNECTION_STRING!
-    );
-    const bronzeContainer = blobServiceClient.getContainerClient(BRONZE_LAYER_CONTAINER);
+  // 6. Store in bronze-layer
+  const blobServiceClient = BlobServiceClient.fromConnectionString(
+    process.env.STORAGE_CONNECTION_STRING!
+  );
+  const bronzeContainer = blobServiceClient.getContainerClient(BRONZE_LAYER_CONTAINER);
 
-    // Use the reprocessing_count from the record (already set correctly by reprocessMapping)
-    const version = document.reprocessing_count || 0;
+  // Use the reprocessing_count from the record (already set correctly by reprocessMapping)
+  const version = document.reprocessing_count || 0;
 
-    // Store AI mapping result with quality metrics
-    const mappingResultJson = {
-      documentId,
-      timestamp: new Date().toISOString(),
-      vendor: mappingResult.vendor || document.vendor_name || 'Unknown',
-      products,
-      productCount: products.length,
-      columnMapping: mappingResult.columnMapping,
-      qualityMetrics: {
-        completenessScore: Math.round(completenessScore * 100) / 100, // Already 0-100%, just round to 2 decimals
-        confidenceScore: Math.round(confidenceScore * 100) / 100, // Already 0-100%, just round to 2 decimals
-        productsWithSKU: qualityMetrics.productsWithSKU,
-        productsWithPrice: qualityMetrics.productsWithPrice,
-        productsWithValidPrice: qualityMetrics.productsWithValidPrice,
-        productsWithName: qualityMetrics.productsWithName,
-        productsWithUnit: qualityMetrics.productsWithUnit,
-        productsWithDescription: qualityMetrics.productsWithDescription,
-        emptyFields: qualityMetrics.emptyFields,
-      },
-      usage: {
-        promptTokens,
-        completionTokens,
-        totalTokens,
-        cost: aiCost,
-      },
-    };
+  // Store AI mapping result with quality metrics
+  const mappingResultJson = {
+    documentId,
+    timestamp: new Date().toISOString(),
+    vendor: mappingResult.vendor || document.vendor_name || 'Unknown',
+    products,
+    productCount: products.length,
+    columnMapping: mappingResult.columnMapping,
+    qualityMetrics: {
+      completenessScore: Math.round(completenessScore * 100) / 100, // Already 0-100%, just round to 2 decimals
+      confidenceScore: Math.round(confidenceScore * 100) / 100, // Already 0-100%, just round to 2 decimals
+      productsWithSKU: qualityMetrics.productsWithSKU,
+      productsWithPrice: qualityMetrics.productsWithPrice,
+      productsWithValidPrice: qualityMetrics.productsWithValidPrice,
+      productsWithName: qualityMetrics.productsWithName,
+      productsWithUnit: qualityMetrics.productsWithUnit,
+      productsWithDescription: qualityMetrics.productsWithDescription,
+      emptyFields: qualityMetrics.emptyFields,
+    },
+    usage: {
+      promptTokens,
+      completionTokens,
+      totalTokens,
+      cost: aiCost,
+    },
+  };
 
-    const mappingBlobPath = `ai-mapping/${documentId}-v${version}.json`;
-    const mappingBlobClient = bronzeContainer.getBlockBlobClient(mappingBlobPath);
-    await mappingBlobClient.upload(
-      Buffer.from(JSON.stringify(mappingResultJson, null, 2)),
-      Buffer.from(JSON.stringify(mappingResultJson, null, 2)).length
-    );
+  const mappingBlobPath = `ai-mapping/${documentId}-v${version}.json`;
+  const mappingBlobClient = bronzeContainer.getBlockBlobClient(mappingBlobPath);
+  await mappingBlobClient.upload(
+    Buffer.from(JSON.stringify(mappingResultJson, null, 2)),
+    Buffer.from(JSON.stringify(mappingResultJson, null, 2)).length
+  );
 
-    // Store prompt
-    const promptBlobPath = `prompts/${documentId}-mapping-v${version}.txt`;
-    const promptBlobClient = bronzeContainer.getBlockBlobClient(promptBlobPath);
-    await promptBlobClient.upload(
-      Buffer.from(headerMappingPrompt),
-      Buffer.from(headerMappingPrompt).length
-    );
+  // Store prompt
+  const promptBlobPath = `prompts/${documentId}-mapping-v${version}.txt`;
+  const promptBlobClient = bronzeContainer.getBlockBlobClient(promptBlobPath);
+  await promptBlobClient.upload(
+    Buffer.from(headerMappingPrompt),
+    Buffer.from(headerMappingPrompt).length
+  );
 
-    context.log(`Bronze-layer storage complete: ${mappingBlobPath}, ${promptBlobPath}`);
+  context.log(`Bronze-layer storage complete: ${mappingBlobPath}, ${promptBlobPath}`);
 
-    // 7. Update database with AI mapping results and confidence scores
-    await pool
-      .request()
-      .input('documentId', sql.UniqueIdentifier, documentId)
-      .input('mappingResult', sql.NVarChar, JSON.stringify(mappingResultJson))
-      .input('promptUsed', sql.NVarChar, headerMappingPrompt)
-      .input('promptTokens', sql.Int, promptTokens)
-      .input('completionTokens', sql.Int, completionTokens)
-      .input('totalTokens', sql.Int, totalTokens)
-      .input('aiCost', sql.Decimal(10, 6), aiCost)
-      .input('productCount', sql.Int, products.length)
-      .input('vendorName', sql.NVarChar, document.vendor_name) // Preserve original vendor name
-      .input('completenessScore', sql.Decimal(5, 2), completenessScore)
-      .input('confidenceScore', sql.Decimal(5, 2), confidenceScore).query(`
+  // 7. Update database with AI mapping results and confidence scores
+  await pool
+    .request()
+    .input('documentId', sql.UniqueIdentifier, documentId)
+    .input('mappingResult', sql.NVarChar, JSON.stringify(mappingResultJson))
+    .input('promptUsed', sql.NVarChar, headerMappingPrompt)
+    .input('promptTokens', sql.Int, promptTokens)
+    .input('completionTokens', sql.Int, completionTokens)
+    .input('totalTokens', sql.Int, totalTokens)
+    .input('aiCost', sql.Decimal(10, 6), aiCost)
+    .input('productCount', sql.Int, products.length)
+    .input('vendorName', sql.NVarChar, document.vendor_name) // Preserve original vendor name
+    .input('completenessScore', sql.Decimal(5, 2), completenessScore)
+    .input('confidenceScore', sql.Decimal(5, 2), confidenceScore).query(`
         UPDATE vvocr.document_processing_results 
         SET 
             ai_mapping_result = @mappingResult,
@@ -433,83 +423,31 @@ Context: ${fullText.substring(0, 2000)}`;
         WHERE result_id = @documentId
       `);
 
-    await pool.close();
+  await pool.close();
 
-    context.log(`✅ AI Product Mapping complete for ${document.document_name}`);
+  context.log(`✅ AI Product Mapping complete for ${document.document_name}`);
 
-    return {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({
-        message: 'AI product mapping completed successfully',
-        documentId,
-        vendor: mappingResult.vendor || document.vendor_name,
-        productCount: products.length,
-        processingDuration,
-        usage: {
-          promptTokens,
-          completionTokens,
-          totalTokens,
-        },
-        cost: aiCost,
-      }),
-    };
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : '';
-    context.error(`Error in AI product mapping: ${errorMessage}`);
-    context.error(`Error stack: ${errorStack}`);
+  await pool.close();
 
-    // Update database with failure status
-    if (pool) {
-      try {
-        const body = (await req.json()) as RequestBody;
-        await pool
-          .request()
-          .input('documentId', sql.UniqueIdentifier, body.documentId)
-          .input('error', sql.NVarChar, errorMessage).query(`
-            UPDATE vvocr.document_processing_results 
-            SET 
-                processing_status = 'failed',
-                error_message = @error,
-                updated_at = GETUTCDATE()
-            WHERE result_id = @documentId
-          `);
-        await pool.close();
-      } catch (dbError) {
-        context.error(`Failed to update error status: ${dbError}`);
-      }
-    }
-
-    return {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ error: errorMessage }),
-    };
-  }
+  return successResponse({
+    message: 'AI product mapping completed successfully',
+    documentId,
+    vendor: mappingResult.vendor || document.vendor_name,
+    productCount: products.length,
+    processingDuration,
+    usage: {
+      promptTokens,
+      completionTokens,
+      totalTokens,
+    },
+    cost: aiCost,
+  });
 }
+
+export const aiProductMapperHandler = withErrorHandler(withCors(aiProductMapperHandlerCore));
 
 app.http('aiProductMapper', {
   methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
-  handler: async (request: HttpRequest, context: InvocationContext) => {
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      };
-    }
-    return aiProductMapperHandler(request, context);
-  },
+  handler: aiProductMapperHandler,
 });

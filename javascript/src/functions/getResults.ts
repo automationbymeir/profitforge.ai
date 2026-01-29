@@ -1,6 +1,8 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import sql from 'mssql';
+import { withCors, withErrorHandler } from '../middleware/index.js';
 import { withDatabase } from '../utils/database.js';
+import { successResponse } from '../utils/httpHelpers.js';
 
 /**
  * HTTP GET endpoint to retrieve processed document results
@@ -9,41 +11,33 @@ import { withDatabase } from '../utils/database.js';
  *  - vendorId: filter by vendor
  *  - limit: number of results (default 10)
  */
-export async function getResults(
+async function getResultsCore(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log('Processing getResults request');
 
-  try {
-    const resultId = request.query.get('resultId');
-    const vendorName = request.query.get('vendor');
-    const showAllVersions = request.query.get('allVersions') === 'true';
-    const limitParam = request.query.get('limit') || '10';
-    const limit = parseInt(limitParam, 10) || 10; // Default to 10 if invalid
+  const resultId = request.query.get('resultId');
+  const vendorName = request.query.get('vendor');
+  const showAllVersions = request.query.get('allVersions') === 'true';
+  const limitParam = request.query.get('limit') || '10';
+  const limit = parseInt(limitParam, 10) || 10; // Default to 10 if invalid
 
-    // Validate UUID format if resultId is provided
-    if (resultId) {
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(resultId)) {
-        // Return empty array for invalid UUID instead of throwing error
-        return {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          },
-          body: JSON.stringify([]),
-        };
-      }
+  // Validate UUID format if resultId is provided
+  if (resultId) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(resultId)) {
+      // Return empty array for invalid UUID instead of throwing error
+      return successResponse([]);
     }
+  }
 
-    const results = await withDatabase(async (pool) => {
-      let query: string;
+  const results = await withDatabase(async (pool) => {
+    let query: string;
 
-      if (showAllVersions || resultId) {
-        // Show all versions (for detailed audit/comparison) OR if filtering by specific resultId
-        query = `
+    if (showAllVersions || resultId) {
+      // Show all versions (for detailed audit/comparison) OR if filtering by specific resultId
+      query = `
         SELECT TOP (@limit)
           result_id,
           document_name,
@@ -69,10 +63,10 @@ export async function getResults(
         FROM vvocr.document_processing_results
         WHERE 1=1
       `;
-      } else {
-        // Show only LATEST version of each document (default)
-        // Use CTE to find max version per parent chain
-        query = `
+    } else {
+      // Show only LATEST version of each document (default)
+      // Use CTE to find max version per parent chain
+      query = `
         WITH LatestVersions AS (
           SELECT 
             COALESCE(parent_document_id, result_id) as root_id,
@@ -108,68 +102,38 @@ export async function getResults(
           AND d.reprocessing_count = lv.max_version
         WHERE 1=1
       `;
-      }
+    }
 
-      const queryRequest = pool.request().input('limit', sql.Int, limit);
+    const queryRequest = pool.request().input('limit', sql.Int, limit);
 
-      if (resultId) {
-        query += ' AND result_id = @resultId';
-        queryRequest.input('resultId', sql.UniqueIdentifier, resultId);
-      }
+    if (resultId) {
+      query += ' AND result_id = @resultId';
+      queryRequest.input('resultId', sql.UniqueIdentifier, resultId);
+    }
 
-      if (vendorName) {
-        query += ' AND vendor_name LIKE @vendorName';
-        queryRequest.input('vendorName', sql.NVarChar, `%${vendorName}%`);
-      }
+    if (vendorName) {
+      query += ' AND vendor_name LIKE @vendorName';
+      queryRequest.input('vendorName', sql.NVarChar, `%${vendorName}%`);
+    }
 
-      query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY created_at DESC';
 
-      const result = await queryRequest.query(query);
+    const result = await queryRequest.query(query);
 
-      // Parse JSON fields
-      return result.recordset.map((record) => ({
-        ...record,
-        ai_mapping_result: record.ai_mapping_result ? JSON.parse(record.ai_mapping_result) : null,
-      }));
-    });
+    // Parse JSON fields
+    return result.recordset.map((record) => ({
+      ...record,
+      ai_mapping_result: record.ai_mapping_result ? JSON.parse(record.ai_mapping_result) : null,
+    }));
+  });
 
-    return {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify(results),
-    };
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    context.error('Error retrieving results:', error);
-    return {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({ error: errorMessage }),
-    };
-  }
+  return successResponse(results);
 }
+
+export const getResults = withErrorHandler(withCors(getResultsCore));
 
 app.http('getResults', {
   methods: ['GET', 'OPTIONS'],
   authLevel: 'anonymous',
-  handler: async (request: HttpRequest, context: InvocationContext) => {
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      };
-    }
-    return getResults(request, context);
-  },
+  handler: getResults,
 });

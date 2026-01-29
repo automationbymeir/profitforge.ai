@@ -8,6 +8,76 @@
 2. **AI Mapping** - GPT-4o maps table columns and extracts structured products
 3. **Manual Review** - Human approval before production export
 
+## HTTP Handler Architecture
+
+All HTTP endpoints use a **middleware composition pattern** for cross-cutting concerns:
+
+### Middleware Layers
+
+```
+Request → Error Handler → CORS → Auth → Rate Limit → Core Handler → Response
+```
+
+**Middleware Stack:**
+
+1. **Error Handler** (`withErrorHandler`)
+   - Catches unhandled exceptions
+   - Logs errors with context to Application Insights
+   - Returns standardized 500 responses
+   - Ensures consistent error format across all endpoints
+
+2. **CORS** (`withCors`)
+   - Adds CORS headers to all responses
+   - Handles OPTIONS preflight requests
+   - Configurable origins (currently `*` in development)
+
+3. **Authentication** (`withAuth`)
+   - Validates `x-api-key` header in demo mode
+   - Returns 401 for invalid/missing keys
+   - Bypassed in production (uses Azure AD)
+
+4. **Rate Limiting** (`withRateLimit`)
+   - IP-based rate limiting: 10 uploads/hour per IP
+   - Daily upload limit: 50 uploads/day total
+   - Active only in demo mode
+   - Returns 429 when limits exceeded
+
+### Handler Composition
+
+Handlers are composed using higher-order functions:
+
+```typescript
+export const uploadHandler = withErrorHandler(withCors(withAuth(withRateLimit(uploadHandlerCore))));
+```
+
+**Benefits:**
+
+- Separation of concerns
+- Consistent error handling
+- Testable middleware in isolation
+- Easy to add/remove middleware layers
+- Type-safe function composition
+
+### Response Format
+
+All handlers return structured responses:
+
+```typescript
+// Success
+{
+  status: 200,
+  jsonBody: { /* response data */ }
+}
+
+// Error
+{
+  status: 400,
+  jsonBody: { error: "Error message" }
+}
+```
+
+No longer use stringified `body` - all responses use `jsonBody` for direct object serialization.
+
 ## Data Flow
 
 ```

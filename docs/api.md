@@ -2,13 +2,32 @@
 
 Base URL: `https://your-app.azurewebsites.net/api` or `http://localhost:7071/api`
 
+## Architecture
+
+All HTTP endpoints use a middleware pattern for cross-cutting concerns:
+
+- **CORS**: Automatic CORS headers on all responses
+- **Authentication**: API key validation in demo mode
+- **Rate Limiting**: IP and daily upload limits in demo mode
+- **Error Handling**: Standardized error responses and logging
+
+Response format: All successful responses return JSON with `jsonBody` property.
+
 ## Endpoints
 
 ### Upload Document
 
+**Authentication**: Requires `x-api-key` header in demo mode
+
+**Rate Limiting**:
+
+- Max 10 uploads per IP per hour (demo mode)
+- Max 50 uploads per day (demo mode)
+
 ```http
 POST /upload
 Content-Type: multipart/form-data
+x-api-key: your-api-key  # Required in demo mode
 
 file: <PDF file>
 vendorId: string
@@ -145,7 +164,7 @@ pending → ocr_complete → completed → confirmed
 
 ## Error Responses
 
-All endpoints return standard error format:
+All endpoints use standardized error handling middleware. Errors are logged automatically with context and return consistent JSON responses:
 
 ```json
 {
@@ -157,9 +176,19 @@ All endpoints return standard error format:
 }
 ```
 
+**HTTP Status Codes:**
+
+- `400` - Bad Request (validation errors, missing parameters)
+- `401` - Unauthorized (invalid API key in demo mode)
+- `404` - Not Found (invalid documentId or vendorId)
+- `429` - Too Many Requests (rate limit exceeded in demo mode)
+- `500` - Internal Server Error (unhandled exceptions, logged automatically)
+
 **Common error codes:**
 
 - `DOCUMENT_NOT_FOUND` - Invalid documentId
 - `INVALID_STATUS` - Operation not allowed in current state
 - `PROCESSING_ERROR` - Azure service failure
 - `VALIDATION_ERROR` - Invalid request parameters
+- `RATE_LIMIT_EXCEEDED` - Too many requests (demo mode)
+- `UNAUTHORIZED` - Invalid or missing API key (demo mode)

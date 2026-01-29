@@ -129,9 +129,8 @@ describe('Upload Handler - Unit Tests', () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    const body = JSON.parse(response.body as string);
-    expect(body.error).toBe('Invalid vendor name format');
-    expect(body.message).toContain('VENDOR_NAME_MM_YY');
+    expect(response.jsonBody.error).toBe('Invalid vendor name format');
+    expect(response.jsonBody.message).toContain('VENDOR_NAME_MM_YY');
   });
 
   it('should reject vendor with invalid month', async () => {
@@ -155,9 +154,8 @@ describe('Upload Handler - Unit Tests', () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    const body = JSON.parse(response.body as string);
-    expect(body.error).toBe('Invalid vendor name format');
-    expect(body.message).toContain('Invalid month: 13');
+    expect(response.jsonBody.error).toBe('Invalid vendor name format');
+    expect(response.jsonBody.message).toContain('Invalid month: 13');
   });
 
   it('should reject duplicate vendor upload', async () => {
@@ -204,7 +202,7 @@ describe('Upload Handler - Unit Tests', () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(500);
-    expect(response.jsonBody.error).toContain('Blob storage error');
+    expect(response.jsonBody.error).toBe('Internal Server Error');
     expect(context.error).toHaveBeenCalled();
   });
 
@@ -226,7 +224,7 @@ describe('Upload Handler - Unit Tests', () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(500);
-    expect(response.jsonBody.error).toContain('Database error');
+    expect(response.jsonBody.error).toBe('Internal Server Error');
   });
 
   it('should reject Excel files (PDF-only validation)', async () => {
@@ -369,9 +367,8 @@ describe('Delete Vendor Handler - Unit Tests', () => {
     const response = await deleteVendorHandler(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body.documentsDeleted).toBe(2);
-    expect(body.blobsDeleted).toBeGreaterThanOrEqual(0);
+    expect(response.jsonBody.documentsDeleted).toBe(2);
+    expect(response.jsonBody.blobsDeleted).toBeGreaterThanOrEqual(0);
   });
 
   it('should return 400 when vendorName is missing', async () => {
@@ -385,7 +382,7 @@ describe('Delete Vendor Handler - Unit Tests', () => {
     const response = await deleteVendorHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain('Missing vendorName');
+    expect(response.jsonBody.error).toContain('Missing vendorName');
   });
 
   it('should return 404 when no documents found for vendor', async () => {
@@ -411,7 +408,7 @@ describe('Delete Vendor Handler - Unit Tests', () => {
     const response = await deleteVendorHandler(request as any, context as any);
 
     expect(response.status).toBe(404);
-    expect(response.body).toContain('No documents found');
+    expect(response.jsonBody.message).toContain('No documents found');
   });
 
   it('should handle blob deletion errors gracefully', async () => {
@@ -510,9 +507,8 @@ describe('Reprocess Mapping Handler - Unit Tests', () => {
     const response = await reprocessMappingHandler(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body.newResultId).toBe('test-uuid-5678');
-    expect(body.nextStep).toContain('AI mapping');
+    expect(response.jsonBody.newResultId).toBe('test-uuid-5678');
+    expect(response.jsonBody.nextStep).toContain('AI mapping');
   });
 
   it('should return 400 when documentId is missing', async () => {
@@ -524,7 +520,7 @@ describe('Reprocess Mapping Handler - Unit Tests', () => {
     const response = await reprocessMappingHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain('Missing documentId');
+    expect(response.jsonBody.error).toContain('Missing documentId');
   });
 
   it('should handle database errors', async () => {
@@ -597,9 +593,8 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
     const response = await confirmMappingHandler(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body.productsExported).toBe(2);
-    expect(body.vendor).toBe('ACME');
+    expect(response.jsonBody.productsExported).toBe(2);
+    expect(response.jsonBody.vendor).toBe('ACME');
   });
 
   it('should return 400 when documentId is missing', async () => {
@@ -611,7 +606,7 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
     const response = await confirmMappingHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain('Missing documentId');
+    expect(response.jsonBody.error).toContain('Missing documentId');
   });
 
   it('should return 404 when document not found', async () => {

@@ -37,7 +37,7 @@ describe('AI Product Mapper - Unit Tests', () => {
     const response = await aiProductMapperHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.body).toContain('Missing documentId');
+    expect(response.jsonBody.error).toContain('Missing documentId');
   });
 
   it('should return 404 when document not found', async () => {
@@ -180,9 +180,8 @@ describe('AI Product Mapper - Unit Tests', () => {
     const response = await aiProductMapperHandler(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
-    expect(body.productCount).toBeGreaterThan(0);
-    expect(body.message).toBe('AI product mapping completed successfully');
+    expect(response.jsonBody.productCount).toBeGreaterThan(0);
+    expect(response.jsonBody.message).toBe('AI product mapping completed successfully');
   });
 
   it('should handle price parsing with currency symbols and commas', async () => {
@@ -293,7 +292,6 @@ describe('AI Product Mapper - Unit Tests', () => {
     const response = await aiProductMapperHandler(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const _body = JSON.parse(response.body as string);
     // Should only include products with both SKU and name
     expect(context.log).toHaveBeenCalledWith(expect.stringContaining('Extracted'));
   });
@@ -407,13 +405,12 @@ describe('AI Product Mapper - Unit Tests', () => {
     const response = await aiProductMapperHandler(request as any, context as any);
 
     expect(response.status).toBe(200);
-    const body = JSON.parse(response.body as string);
     // Verify cost calculation fields are present
-    expect(body).toHaveProperty('cost');
-    expect(body).toHaveProperty('usage');
-    expect(body.usage).toHaveProperty('promptTokens');
-    expect(body.usage).toHaveProperty('completionTokens');
-    expect(body.usage).toHaveProperty('totalTokens');
+    expect(response.jsonBody).toHaveProperty('cost');
+    expect(response.jsonBody).toHaveProperty('usage');
+    expect(response.jsonBody.usage).toHaveProperty('promptTokens');
+    expect(response.jsonBody.usage).toHaveProperty('completionTokens');
+    expect(response.jsonBody.usage).toHaveProperty('totalTokens');
   });
 
   it('should handle OpenAI API errors gracefully', async () => {
@@ -470,7 +467,7 @@ describe('AI Product Mapper - Unit Tests', () => {
     const response = await aiProductMapperHandler(request as any, context as any);
 
     expect(response.status).toBe(500);
-    expect(response.body).toContain('OpenAI rate limit exceeded');
+    expect(response.jsonBody.error).toBe('Internal Server Error');
   });
 
   it('should handle database errors gracefully', async () => {
@@ -492,7 +489,7 @@ describe('AI Product Mapper - Unit Tests', () => {
     const response = await aiProductMapperHandler(request as any, context as any);
 
     expect(response.status).toBe(500);
-    expect(response.body).toContain('Database connection failed');
+    expect(response.jsonBody.error).toBe('Internal Server Error');
   });
 
   it('should support reprocessing with incremented count', async () => {
