@@ -8,6 +8,13 @@
 2. **AI Mapping** - GPT-4o maps table columns and extracts structured products
 3. **Manual Review** - Human approval before production export
 
+**Tech Stack:**
+- Runtime: Node.js 20, TypeScript
+- Azure: Functions, Document Intelligence, AI Foundry, SQL Database, Blob Storage
+- AI: GPT-4o via Azure OpenAI
+- Testing: Vitest, Docker (Azurite, SQL Server)
+- Infrastructure: Pulumi (Azure Native)
+
 ## HTTP Handler Architecture
 
 All HTTP endpoints use a **middleware composition pattern** for cross-cutting concerns:
@@ -51,7 +58,6 @@ export const uploadHandler = withErrorHandler(withCors(withAuth(withRateLimit(up
 ```
 
 **Benefits:**
-
 - Separation of concerns
 - Consistent error handling
 - Testable middleware in isolation
@@ -77,6 +83,120 @@ All handlers return structured responses:
 ```
 
 No longer use stringified `body` - all responses use `jsonBody` for direct object serialization.
+
+## Service Layer
+
+Business logic extracted into reusable service classes shared across HTTP, Queue, Blob, and Timer triggers.
+
+### Architecture Principles
+
+- **Handlers**: Thin routing layer (HTTP/Queue/Blob triggers)
+- **Services**: Business logic and data orchestration
+- **Utils**: Database connections, validation, helpers
+- **Middleware**: Cross-cutting concerns (CORS, auth, error handling)
+
+### Service Classes
+
+| Service | Responsibility | Key Methods |
+|---------|---------------|-------------|
+| **DocumentService** | Document lifecycle management | `upload()`, `deleteDocument()`, `getResults()`, `reprocess()`, `confirmMapping()` |
+| **VendorService** | Vendor management | `deleteVendor()` |
+| **AIService** | OpenAI GPT-4o product mapping | `mapProducts()` |
+| **OCRService** | Azure Document Intelligence OCR | `processDocument()`, `queueAIMapping()` |
+| **StorageService** | Azure Blob Storage operations | `uploadBlob()`, `deleteBlob()`, `downloadBlob()`, `uploadBronzeLayer()` |
+| **VersionService** | Document version history | `getHistory()`, `deleteRun()` |
+
+### Singleton Pattern
+
+All services use singleton pattern for connection pooling and consistent state:
+
+```typescript
+let serviceInstance: ServiceClass | null = null;
+
+export function getServiceName(): ServiceClass {
+  if (!serviceInstance) {
+    serviceInstance = new ServiceClass();
+  }
+  return serviceInstance;
+}
+```
+
+**Benefits:**
+- Connection pooling (OpenAI, Document Intelligence clients)
+- Consistent state across invocations
+- Reduced initialization overhead
+
+### Error Handling
+
+Services throw errors with `statusCode` property for HTTP mapping:
+
+```typescript
+const error = new Error('Document not found') as Error & { statusCode: number };
+error.statusCode = 404;
+throw error;
+```
+
+Error handler middleware catches and maps to appropriate HTTP responses.
+
+## Folder Structure
+
+Functions organized by domain and trigger type:
+
+```
+src/functions/
+├── http/                    # HTTP-triggered functions
+│   ├── admin/               # Admin operations
+│   │   └── cleanup.ts
+│   ├── documents/           # Document operations
+│   │   ├── upload.ts        # POST /api/documents
+│   │   ├── get-results.ts   # GET /api/documents
+│   │   ├── delete.ts        # DELETE /api/documents/{id}
+│   │   ├── reprocess.ts     # POST /api/documents/{id}/reprocess
+│   │   ├── confirm.ts       # POST /api/documents/{id}/confirm
+│   │   └── ai-mapper.ts     # POST /api/documents/{id}/mapping
+│   ├── health/              # Health checks
+│   │   └── sanity.ts
+│   ├── vendors/             # Vendor operations
+│   │   └── delete.ts        # DELETE /api/vendors/{name}
+│   └── versions/            # Version control
+│       ├── history.ts       # GET /api/documents/{id}/versions
+│       └── delete-run.ts    # DELETE /api/documents/{id}/versions/{runId}
+├── queues/                  # Queue-triggered functions
+│   └── ai-mapper.ts
+├── blobs/                   # Blob-triggered functions
+│   └── document-processor.ts
+└── timers/                  # Timer-triggered functions
+    └── cleanup.ts
+```
+
+**Rationale:**
+- Clear organization by domain and trigger type
+- Improved discoverability
+- Easy to add new functions following established patterns
+- Supports future microservices extraction
+
+## RESTful API Routes
+
+Phase 4 refactoring (commit: `6fa31cb58`) migrated to RESTful conventions:
+
+| Old Route | New Route | Parameter Change |
+|-----------|-----------|------------------|
+| `POST /api/upload` | `POST /api/documents` | No change (form data) |
+| `GET /api/getResults` | `GET /api/documents` | Query params remain |
+| `DELETE /api/deleteDocument?documentId=X` | `DELETE /api/documents/{id}` | Query → path param |
+| `POST /api/reprocessMapping` (body.id) | `POST /api/documents/{id}/reprocess` | Body → path param |
+| `POST /api/confirmMapping` (body.id) | `POST /api/documents/{id}/confirm` | Body → path param |
+| `POST /api/aiProductMapper` (body.id) | `POST /api/documents/{id}/mapping` | Body → path param |
+| `DELETE /api/deleteVendor?vendorName=X` | `DELETE /api/vendors/{name}` | Query → path param |
+| `GET /api/getVersionHistory?documentId=X` | `GET /api/documents/{id}/versions` | Query → path param |
+| `DELETE /api/deleteRun` | `DELETE /api/documents/{id}/versions/{runId}` | Body → path params |
+
+**Benefits:**
+- RESTful resource-based URLs
+- Clear resource hierarchy (`documents/{id}/versions/{runId}`)
+- Standard HTTP methods for CRUD operations
+- Easier to document with OpenAPI
+- Future-ready for API versioning (`/v1/documents`)
 
 ## Data Flow
 
@@ -142,7 +262,6 @@ No longer use stringified `body` - all responses use `jsonBody` for direct objec
 Main processing table - one record per uploaded document.
 
 **Key columns:**
-
 - `document_id` - UUID primary key
 - `vendor_name` - Vendor identifier
 - `file_name` - Original filename
@@ -159,7 +278,6 @@ Main processing table - one record per uploaded document.
 Production catalog - only confirmed products.
 
 **Key columns:**
-
 - `product_id` - Auto-increment primary key
 - `document_id` - Foreign key to processing results
 - `vendor_name` - Denormalized vendor identifier
@@ -184,7 +302,6 @@ bronze-layer/
 ```
 
 **Purpose:**
-
 - Audit trail for compliance
 - Reprocess without re-OCR
 - Compare prompt versions
@@ -207,7 +324,7 @@ bronze-layer/
 ### Total
 
 | Pages | Doc Intel | GPT-4o | Total |
-| ----- | --------- | ------ | ----- |
+|-------|-----------|--------|-------|
 | 10    | $0.02     | $0.03  | $0.05 |
 | 50    | $0.08     | $0.07  | $0.15 |
 | 100   | $0.15     | $0.15  | $0.30 |
@@ -222,12 +339,11 @@ Costs tracked per document in `doc_intel_cost_usd` and `ai_model_cost_usd` colum
 
 1. Initial run: `ai-mapping/doc-uuid-v1.json`
 2. Tune prompt in code
-3. POST `/reprocessMapping` → resets status to `ocr_complete`
-4. POST `/aiProductMapper` → creates `ai-mapping/doc-uuid-v2.json`
+3. POST `/api/documents/{id}/reprocess` → resets status to `ocr_complete`
+4. POST `/api/documents/{id}/mapping` → creates `ai-mapping/doc-uuid-v2.json`
 5. Compare versions in bronze-layer
 
 **Benefits:**
-
 - Fast iteration on prompt quality
 - No additional OCR costs
 - Historical comparison of prompt effectiveness
@@ -254,3 +370,83 @@ All errors logged to Application Insights with correlation IDs.
 - **Secrets**: Stored in Azure Key Vault, injected via Function App settings
 - **Network**: Functions communicate via Azure backbone (no public internet)
 - **Audit**: All operations logged with user identity and timestamp
+
+## Refactoring History
+
+The codebase underwent a comprehensive 5-phase refactoring (Jan 2026) transforming a monolithic 1,315-line `api.ts` file into a clean, maintainable, domain-driven architecture.
+
+### Phase 1: Middleware Extraction
+
+Extracted cross-cutting concerns into reusable middleware:
+- CORS handling → `cors.ts`
+- Authentication → `auth.ts`
+- Rate limiting → `rate-limit.ts`
+- Error handling → `error-handler.ts`
+
+### Phase 2: Service Layer Creation
+
+Extracted business logic into dedicated service classes:
+- DocumentService, VendorService, AIService, OCRService, StorageService, VersionService
+- Singleton pattern for connection pooling
+- Testable services independent of HTTP concerns
+
+### Phase 3: Folder Reorganization
+
+**Commit**: `28f259dec`
+
+Reorganized from flat structure to domain-based hierarchy:
+- HTTP functions → `http/{domain}/`
+- Queue triggers → `queues/`
+- Blob triggers → `blobs/`
+- Timer triggers → `timers/`
+
+### Phase 4: RESTful API Routes
+
+**Commit**: `6fa31cb58`
+
+Migrated to RESTful conventions:
+- Resource-based URLs (`/api/documents/{id}`)
+- Route parameters instead of query strings or body
+- Standard HTTP methods for CRUD operations
+
+### Phase 5: Type Model Extraction
+
+**Commit**: `c260780c6`
+
+Centralized all domain types into `src/models/`:
+- 744 lines of documented types
+- Eliminated type duplication across services
+- Single source of truth for domain contracts
+- Ready for OpenAPI schema generation
+
+### Metrics
+
+**Before:** 1 monolithic file (1,315 lines), mixed concerns, type duplication, flat structure
+
+**After:** 
+- 14 HTTP functions across 4 domain folders
+- Separated concerns: Middleware (5 files), Services (6 files), Models (8 files)
+- Type system: 744 lines of centralized types
+- RESTful routes with resource-based URLs
+
+**Benefits:**
+- Faster feature development (clear patterns)
+- Easier debugging (logic separated by layer)
+- More testable (services unit tested independently)
+- Simpler refactoring (changes isolated to specific layers)
+- Easy to extend (add functions following patterns)
+
+## Testing Strategy
+
+See [testing.md](testing.md) for comprehensive test strategy, coverage, and examples.
+
+## Deployment
+
+See [deployment.md](deployment.md) for Pulumi infrastructure deployment guide.
+
+## References
+
+- [API Reference](api.md) - Endpoint documentation
+- [Testing Guide](testing.md) - Test strategy and execution
+- [Deployment Guide](deployment.md) - Infrastructure provisioning
+- Refactoring commits: `28f259dec`, `6fa31cb58`, `c260780c6`
