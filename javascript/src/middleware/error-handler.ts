@@ -40,7 +40,7 @@ export function withErrorHandler(handler: Handler): Handler {
       });
 
       // Check if error has a custom statusCode property
-      const statusCode = (error as any)?.statusCode || 500;
+      const statusCode = (error as { statusCode?: number })?.statusCode || 500;
       const errorMessage = error instanceof Error ? error.message : String(error);
 
       // Return appropriate error response based on status code

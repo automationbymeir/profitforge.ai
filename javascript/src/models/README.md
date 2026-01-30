@@ -34,7 +34,9 @@ import { Product, QualityMetrics } from '../models/product.js';
 ## Model Categories
 
 ### Document Models (`document.ts`)
+
 Core types for document processing pipeline:
+
 - `Document` - Full document record with OCR and AI results
 - `ProcessingStatus` - Document processing state
 - `UploadRequest` / `UploadResult` - Upload operations
@@ -43,7 +45,9 @@ Core types for document processing pipeline:
 - `ConfirmMappingResult` - Export operations
 
 ### Product Models (`product.ts`)
+
 Types for product extraction and AI mapping:
+
 - `Product` - Extracted product data
 - `MappingResult` - Complete AI mapping result
 - `QualityMetrics` - Quality assessment scores
@@ -51,32 +55,42 @@ Types for product extraction and AI mapping:
 - `ColumnMapping` - Detected column structure
 
 ### Vendor Models (`vendor.ts`)
+
 Vendor management types:
+
 - `VendorNameParts` - Parsed vendor name components
 - `DeleteVendorResult` - Vendor deletion result
 
 ### Version Models (`version.ts`)
+
 Document versioning and history:
+
 - `Version` - Single version record
 - `VersionHistory` - Complete version chain
 - `DeleteRunResult` - Version deletion result
 
 ### OCR Models (`ocr.ts`)
+
 Azure Document Intelligence types:
+
 - `TableCell` - Individual table cell
 - `Table` - Complete table structure
 - `OCRResult` - OCR processing result
 - `OCRData` - Bronze-layer OCR storage format
 
 ### API Response Models (`api-responses.ts`)
+
 Standard HTTP response formats:
+
 - `ApiResponse<T>` - Generic success response
 - `ErrorResponse` - Error response format
 - `PaginatedResponse<T>` - Paginated data
 - `OperationResult` - Operation status
 
 ### Usage Models (`usage.ts`)
+
 Rate limiting and tracking:
+
 - `UsageStats` - Current usage statistics
 - `RateLimitCheck` - Rate limit validation
 - `CleanupResult` - Usage cleanup result
@@ -97,7 +111,7 @@ Rate limiting and tracking:
 ✅ **Easier Refactoring**: Change once, update everywhere  
 ✅ **Clear Contracts**: Explicit interfaces between layers  
 ✅ **Documentation**: Self-documenting code with JSDoc  
-✅ **Type Generation**: Ready for OpenAPI schema generation  
+✅ **Type Generation**: Ready for OpenAPI schema generation
 
 ## Future Enhancements
 

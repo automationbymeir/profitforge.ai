@@ -61,10 +61,9 @@ describe('Integration: Delete Vendor API', () => {
 
   it('should return 404 when vendor has no documents', async () => {
     // Act
-    const response = await fetch(
-      `${FUNCTION_BASE_URL}/api/vendors/NONEXISTENT_01_26`,
-      { method: 'DELETE' }
-    );
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/vendors/NONEXISTENT_01_26`, {
+      method: 'DELETE',
+    });
 
     // Assert
     expect(response.status).toBe(404);

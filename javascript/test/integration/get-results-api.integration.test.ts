@@ -79,9 +79,7 @@ describe('Integration: Get Results API', () => {
 
   it('should limit results', async () => {
     // Act
-    const response = await fetch(
-      `${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}&limit=2`
-    );
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}&limit=2`);
 
     // Assert
     expect(response.status).toBe(200);
@@ -132,9 +130,7 @@ describe('Integration: Get Results API', () => {
     });
 
     // Act
-    const response = await fetch(
-      `${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}&limit=1`
-    );
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}&limit=1`);
 
     // Assert
     expect(response.status).toBe(200);

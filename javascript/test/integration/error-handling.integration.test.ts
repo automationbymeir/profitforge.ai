@@ -138,10 +138,9 @@ describe('Integration: Error Handling', () => {
     });
 
     it('should return 404 for non-existent vendor', async () => {
-      const response = await fetch(
-        `${FUNCTION_BASE_URL}/api/vendors/NONEXISTENT_ERROR_01_26`,
-        { method: 'DELETE' }
-      );
+      const response = await fetch(`${FUNCTION_BASE_URL}/api/vendors/NONEXISTENT_ERROR_01_26`, {
+        method: 'DELETE',
+      });
 
       expect(response.status).toBe(404);
     });

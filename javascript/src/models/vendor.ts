@@ -1,6 +1,6 @@
 /**
  * Vendor Models
- * 
+ *
  * Types for vendor management and validation.
  */
 
@@ -10,10 +10,10 @@
 export interface VendorNameParts {
   /** Main vendor name */
   name: string;
-  
+
   /** Optional branch/location identifier */
   branch?: string;
-  
+
   /** Optional date identifier */
   date?: string;
 }
@@ -24,10 +24,10 @@ export interface VendorNameParts {
 export interface DeleteVendorResult {
   /** Vendor name that was deleted */
   vendorName: string;
-  
+
   /** Number of documents deleted */
   documentsDeleted: number;
-  
+
   /** Number of blobs deleted */
   blobsDeleted: number;
 }

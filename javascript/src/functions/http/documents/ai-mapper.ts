@@ -3,11 +3,6 @@ import { withCors, withErrorHandler } from '../../../middleware/index.js';
 import { getAIService } from '../../../services/index.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
 
-// Type definitions
-interface RequestBody {
-  documentId: string;
-}
-
 /**
  * AI Product Mapper - HTTP POST endpoint for AI-based product extraction
  */

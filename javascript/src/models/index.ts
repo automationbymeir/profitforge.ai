@@ -1,9 +1,9 @@
 /**
  * Models - Centralized Type Definitions
- * 
+ *
  * This module exports all domain model types used throughout the application.
  * Import from this barrel file instead of individual model files for convenience.
- * 
+ *
  * @example
  * ```typescript
  * import { Document, Product, MappingResult } from '../models/index.js';
