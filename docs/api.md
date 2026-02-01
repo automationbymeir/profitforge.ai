@@ -24,6 +24,7 @@ Response format: All successful responses return JSON with `jsonBody` property.
 **Authentication**: Requires `x-api-key` header in demo mode
 
 **Rate Limiting**:
+
 - Max 10 uploads per IP per hour (demo mode)
 - Max 50 uploads per day (demo mode)
 
@@ -48,6 +49,7 @@ vendorName: string
 ```
 
 **Side effects:**
+
 - Creates record in `document_processing_results` table
 - Triggers OCR processing (blob trigger)
 
@@ -60,6 +62,7 @@ GET /api/documents?vendor={vendor}&limit={n}&allVersions={bool}&resultId={uuid}
 ```
 
 **Query Parameters:**
+
 - `vendor` (optional) - Filter by vendor name
 - `limit` (optional) - Limit results (default: 100)
 - `allVersions` (optional) - Include all processing versions (default: false)
@@ -95,6 +98,7 @@ GET /api/documents/{id}
 ```
 
 **Path Parameters:**
+
 - `id` - Document UUID
 
 **Response:**
@@ -110,8 +114,12 @@ GET /api/documents/{id}
   "aiModelCostUsd": 0.045,
   "createdAt": "2026-01-28T10:30:00Z",
   "completedAt": "2026-01-28T10:31:15Z",
-  "ocrResult": { /* Document Intelligence JSON */ },
-  "llmMappingResult": { /* Extracted products */ }
+  "ocrResult": {
+    /* Document Intelligence JSON */
+  },
+  "llmMappingResult": {
+    /* Extracted products */
+  }
 }
 ```
 
@@ -124,6 +132,7 @@ DELETE /api/documents/{id}
 ```
 
 **Path Parameters:**
+
 - `id` - Document UUID
 
 **Response:**
@@ -137,6 +146,7 @@ DELETE /api/documents/{id}
 ```
 
 **Side effects:**
+
 - Deletes database record
 - Deletes all associated blobs (uploads, bronze-layer)
 
@@ -149,6 +159,7 @@ POST /api/documents/{id}/reprocess
 ```
 
 **Path Parameters:**
+
 - `id` - Document UUID
 
 **Effect:** Resets status to `ocr_complete`, increments version counter
@@ -174,9 +185,11 @@ POST /api/documents/{id}/mapping
 ```
 
 **Path Parameters:**
+
 - `id` - Document UUID
 
 **Requirements:**
+
 - Document status must be `ocr_complete`
 - OCR results must exist
 
@@ -203,6 +216,7 @@ POST /api/documents/{id}/confirm
 ```
 
 **Path Parameters:**
+
 - `id` - Document UUID
 
 **Effect:** Inserts products into `vendor_products` table, marks as `confirmed`
@@ -226,6 +240,7 @@ GET /api/documents/{id}/versions
 ```
 
 **Path Parameters:**
+
 - `id` - Document UUID
 
 **Response:**
@@ -259,6 +274,7 @@ DELETE /api/documents/{id}/versions/{runId}
 ```
 
 **Path Parameters:**
+
 - `id` - Document UUID
 - `runId` - Run number to delete
 
@@ -281,6 +297,7 @@ DELETE /api/vendors/{name}
 ```
 
 **Path Parameters:**
+
 - `name` - Vendor identifier (e.g., "ACME_01_26")
 
 **Effect:** Deletes all blobs and database records for vendor (cascading)
@@ -357,15 +374,15 @@ All endpoints use standardized error handling middleware. Errors are logged auto
 
 ## Migration from Old Routes
 
-| Old Endpoint | New Endpoint | Change |
-|--------------|--------------|--------|
-| `POST /api/upload` | `POST /api/documents` | Renamed for REST conventions |
-| `GET /api/getResults` | `GET /api/documents` | Renamed for REST conventions |
-| `DELETE /api/deleteDocument?documentId=X` | `DELETE /api/documents/{id}` | Query → path param |
-| `POST /api/reprocessMapping` | `POST /api/documents/{id}/reprocess` | Body → path param + nested resource |
-| `POST /api/confirmMapping` | `POST /api/documents/{id}/confirm` | Body → path param + nested resource |
-| `POST /api/aiProductMapper` | `POST /api/documents/{id}/mapping` | Body → path param + nested resource |
-| `DELETE /api/deleteVendor?vendorName=X` | `DELETE /api/vendors/{name}` | Query → path param |
-| `GET /api/getVersionHistory?documentId=X` | `GET /api/documents/{id}/versions` | Query → path param + nested resource |
-| `DELETE /api/deleteRun` | `DELETE /api/documents/{id}/versions/{runId}` | Body → path params + nested resource |
-| `GET /api/helloWorld` | `GET /api/health` | Renamed for clarity |
+| Old Endpoint                              | New Endpoint                                  | Change                               |
+| ----------------------------------------- | --------------------------------------------- | ------------------------------------ |
+| `POST /api/upload`                        | `POST /api/documents`                         | Renamed for REST conventions         |
+| `GET /api/getResults`                     | `GET /api/documents`                          | Renamed for REST conventions         |
+| `DELETE /api/deleteDocument?documentId=X` | `DELETE /api/documents/{id}`                  | Query → path param                   |
+| `POST /api/reprocessMapping`              | `POST /api/documents/{id}/reprocess`          | Body → path param + nested resource  |
+| `POST /api/confirmMapping`                | `POST /api/documents/{id}/confirm`            | Body → path param + nested resource  |
+| `POST /api/aiProductMapper`               | `POST /api/documents/{id}/mapping`            | Body → path param + nested resource  |
+| `DELETE /api/deleteVendor?vendorName=X`   | `DELETE /api/vendors/{name}`                  | Query → path param                   |
+| `GET /api/getVersionHistory?documentId=X` | `GET /api/documents/{id}/versions`            | Query → path param + nested resource |
+| `DELETE /api/deleteRun`                   | `DELETE /api/documents/{id}/versions/{runId}` | Body → path params + nested resource |
+| `GET /api/helloWorld`                     | `GET /api/health`                             | Renamed for clarity                  |

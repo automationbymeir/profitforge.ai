@@ -14,12 +14,12 @@ AI-assisted development infrastructure for the ProfitForge project. This directo
 
 ## Quick Reference
 
-| Primitive    | Invocation        | When to Use                                      | Examples                        |
-| ------------ | ----------------- | ------------------------------------------------ | ------------------------------- |
-| **Agent**    | `@agent-name`     | Extended conversations, domain expertise         | `@plan`, `@tdd-red`             |
-| **Prompt**   | `/prompt-name`    | One-time structured tasks                        | `/conventional-commit`          |
-| **Instruction** | Automatic      | File-pattern-based coding standards              | TypeScript files → Azure rules  |
-| **Skill**    | Automatic/mention | CLI integration, specialized workflows           | "commit changes" → git skill    |
+| Primitive       | Invocation        | When to Use                              | Examples                       |
+| --------------- | ----------------- | ---------------------------------------- | ------------------------------ |
+| **Agent**       | `@agent-name`     | Extended conversations, domain expertise | `@plan`, `@tdd-red`            |
+| **Prompt**      | `/prompt-name`    | One-time structured tasks                | `/conventional-commit`         |
+| **Instruction** | Automatic         | File-pattern-based coding standards      | TypeScript files → Azure rules |
+| **Skill**       | Automatic/mention | CLI integration, specialized workflows   | "commit changes" → git skill   |
 
 ---
 
@@ -57,6 +57,7 @@ How should I architect the new authentication system?
 ### When to Use Agents
 
 ✅ **Use agents for:**
+
 - Strategic architecture decisions
 - Iterative problem-solving through conversation
 - Domain-specific expertise (Azure, testing, planning)
@@ -64,6 +65,7 @@ How should I architect the new authentication system?
 - Creating comprehensive documentation (PRDs, specs)
 
 ❌ **Don't use agents for:**
+
 - One-time commands or tasks → Use prompts
 - Automatic file-based rules → Use instructions
 - CLI tool execution → Use skills
@@ -79,19 +81,23 @@ How should I architect the new authentication system?
 ### Installed Instructions
 
 #### azure-functions-typescript.instructions.md
+
 **Applies To:** `**/*.ts`, `**/*.js`, `**/*.json`  
 **Purpose:** Azure Functions v4 patterns, async/await, HTTP/queue triggers, TypeScript best practices
 
 **Auto-activates when:**
+
 - Editing TypeScript/JavaScript files in the project
 - Creating new Azure Function handlers
 - Working with HTTP requests, queue messages, blob triggers
 
 #### spec-driven-workflow-v1.instructions.md
+
 **Applies To:** `**` (all files)  
 **Purpose:** 6-phase development workflow: Analyze → Design → Implement → Validate → Reflect → Handoff
 
 **Guides you through:**
+
 1. **Analyze** - Requirements in EARS notation, confidence scoring
 2. **Design** - Technical architecture, implementation planning
 3. **Implement** - Production-quality code in increments
@@ -100,10 +106,12 @@ How should I architect the new authentication system?
 6. **Handoff** - Executive summary, changelog, artifacts
 
 #### task-implementation.instructions.md
+
 **Applies To:** `**/.copilot-tracking/changes/*.md`  
 **Purpose:** Progressive task plan implementation with change tracking (microsoft/edge-ai)
 
 **Features:**
+
 - Phase-by-phase implementation tracking
 - Quality gates and verification
 - Roll-forward recovery (no rollbacks)
@@ -112,6 +120,7 @@ How should I architect the new authentication system?
 ### When to Use Instructions
 
 ✅ **Automatic application** - No invocation needed:
+
 - Instructions activate based on file patterns
 - Coding standards applied consistently across team
 - Context-aware guidance appears when relevant
@@ -131,12 +140,14 @@ How should I architect the new authentication system?
 ```
 
 Or via Command Palette:
+
 - `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (Mac)
 - Search: "Chat: Run Prompt"
 
 ### Installed Prompts
 
 #### Planning & Project Management
+
 - `/create-implementation-plan` - Implementation plans for features or refactoring
 - `/create-specification` - Specification documents optimized for AI consumption
 - `/create-architectural-decision-record` - ADR documentation for key decisions
@@ -149,16 +160,19 @@ Or via Command Palette:
 - `/create-github-issues-feature-from-implementation-plan` - Generate GitHub issues from plans
 
 #### Documentation
+
 - `/create-readme` - Project README generation
 - `/create-documentation` - Consolidate and improve documentation
 - `/conventional-commit` - Generate conventional commit messages
 
 #### Workflow Enhancement
+
 - `/create-github-action-workflow-specification` - CI/CD workflow specifications
 - `/gen-specs-as-issues` - Convert specifications to GitHub issues
 - `/project-workflow-analysis-blueprint-generator` - Analyze and document workflows
 
 #### Meta/Discovery
+
 - `/suggest-awesome-github-copilot-prompts` - Discover new prompts from awesome-copilot
 - `/suggest-awesome-github-copilot-instructions` - Find relevant instructions
 - `/suggest-awesome-github-copilot-skills` - Suggest specialized skills
@@ -166,12 +180,14 @@ Or via Command Palette:
 ### When to Use Prompts
 
 ✅ **Use prompts for:**
+
 - One-time structured tasks
 - Document generation (specs, PRDs, ADRs)
 - Standard workflows (commit messages, issue creation)
 - Repeatable processes with consistent format
 
 ❌ **Don't use prompts for:**
+
 - Extended conversations → Use agents
 - Automatic file rules → Use instructions
 - CLI tool execution → Use skills
@@ -187,10 +203,12 @@ Or via Command Palette:
 ### Installed Skills
 
 #### gh-cli
+
 **Auto-activates:** Mentioning GitHub operations (issues, PRs, repositories, Actions)  
 **Purpose:** GitHub CLI reference for repository management, issue tracking, PR workflows
 
 **Use for:**
+
 - Creating/managing GitHub issues
 - PR operations (create, merge, review)
 - Repository administration
@@ -199,10 +217,12 @@ Or via Command Palette:
 **Example:** "Create a GitHub issue for the database migration task"
 
 #### git-commit
+
 **Auto-activates:** Mentioning "commit changes", "create a commit", or `/commit`  
 **Purpose:** Intelligent commit message generation with conventional commits
 
 **Features:**
+
 - Auto-detects commit type and scope
 - Analyzes git diff for context
 - Generates conventional commit messages
@@ -211,10 +231,12 @@ Or via Command Palette:
 **Example:** "Commit these changes"
 
 #### microsoft-docs
+
 **Auto-activates:** Asking about Azure, .NET, Microsoft services  
 **Purpose:** Query official Microsoft documentation for current best practices
 
 **Use for:**
+
 - Azure Functions patterns
 - Document Intelligence API reference
 - SQL Database best practices
@@ -223,10 +245,12 @@ Or via Command Palette:
 **Example:** "How do I configure Application Insights in Azure Functions?"
 
 #### microsoft-code-reference
+
 **Auto-activates:** Working with Azure SDKs, .NET libraries, Microsoft APIs  
 **Purpose:** Validate API signatures and find working code samples
 
 **Prevents:**
+
 - Hallucinated methods
 - Wrong function signatures
 - Deprecated API patterns
@@ -234,10 +258,12 @@ Or via Command Palette:
 **Example:** "Use Azure Blob Storage SDK to upload a file"
 
 #### appinsights-instrumentation
+
 **Auto-activates:** Mentioning "telemetry", "instrumentation", "App Insights"  
 **Purpose:** Add structured telemetry to applications
 
 **Bundled resources:**
+
 - `examples/appinsights.bicep` - Infrastructure template
 - `references/NODEJS.md` - Node.js patterns
 - `references/ASPNETCORE.md` - .NET Core patterns
@@ -247,6 +273,7 @@ Or via Command Palette:
 **Example:** "Add custom metrics for document processing duration"
 
 #### refactor
+
 **Auto-activates:** Mentioning "refactor", code quality improvements  
 **Purpose:** Systematic refactoring workflows and patterns
 
@@ -255,6 +282,7 @@ Or via Command Palette:
 ### When to Use Skills
 
 ✅ **Use skills for:**
+
 - CLI tool integration (GitHub CLI, git)
 - Specialized workflows with supporting files
 - Documentation lookup (Microsoft docs, API reference)
@@ -264,7 +292,43 @@ Or via Command Palette:
 
 ---
 
-## End-to-End Workflow Patterns
+## Planning Artifacts & Workflows
+
+### Development Hierarchy
+
+```
+Vision/Strategy → PRD → Epics → Features → Implementation Plan → Specs → Code/Tests
+```
+
+### Artifact Quick Reference
+
+| Artifact            | Purpose              | Size   | Use When                          |
+| ------------------- | -------------------- | ------ | --------------------------------- |
+| PRD                 | What + Why           | Large  | Multi-stakeholder, strategic work |
+| Epic                | Big outcome          | Large  | Major capability, multi-sprint    |
+| Feature             | Shippable capability | Medium | Single sprint deliverable         |
+| Implementation Plan | How to build         | Medium | Technical roadmap                 |
+| Spec                | Exact behavior       | Small  | Complex logic needs clarity       |
+| ADR                 | Decision record      | Small  | Key architectural choices         |
+| Design Doc          | Technical design     | Medium | Complex infrastructure changes    |
+| RFC                 | Proposal             | Medium | Controversial/cross-team changes  |
+
+### Project Size Guide
+
+**Small Internal Tool**
+
+- Skip: Full PRD, heavy planning
+- Use: Short design doc + task list
+
+**Medium Project** (typical)
+
+- Use: Lightweight PRD, epics, implementation plans, specs where needed
+- Balance: Documentation vs. velocity
+
+**Large/Multi-stakeholder**
+
+- Use: Full PRD, roadmap, epics/features, design docs, formal planning
+- Emphasize: Alignment and communication
 
 ### Pattern 1: Feature Development (Complete Lifecycle)
 
@@ -274,17 +338,17 @@ Or via Command Palette:
 1. IDEATION & PLANNING
    @prd
    → Create a PRD for [feature name] with user stories and acceptance criteria
-   
+
    @plan
    → Review this PRD and suggest technical architecture
-   
+
    /create-implementation-plan
    → Generate implementation plan based on the architecture
 
 2. TASK BREAKDOWN
    @task-researcher
    → Analyze the codebase for related patterns and dependencies
-   
+
    @task-planner
    → Create a phase-based task plan for implementing [feature]
 
@@ -293,26 +357,26 @@ Or via Command Palette:
    # - spec-driven-workflow-v1 guides the process
    # - azure-functions-typescript enforces patterns
    # - task-implementation tracks progress (if using task-planner)
-   
+
    @tdd-red
    → Write failing tests for [component]
-   
+
    # Implement code to pass tests
-   
+
    @tdd-refactor
    → Refactor for maintainability while keeping tests green
 
 4. DOCUMENTATION
    /create-documentation
    → Update docs to reflect new feature
-   
+
    /create-readme
    → Update README with new capabilities
 
 5. COMMIT & TRACK
    /conventional-commit
    → Generate conventional commit message
-   
+
    /create-github-issues-feature-from-implementation-plan
    → Create GitHub issues for tracking (optional)
 ```
@@ -329,27 +393,27 @@ Or via Command Palette:
 1. ANALYSIS
    @task-researcher
    → Analyze [module/component] for refactoring opportunities
-   
+
    @plan
    → What's the best approach to refactor this code?
 
 2. PLANNING
    /create-implementation-plan
    → Create refactoring plan with phases and rollback strategy
-   
+
    /create-architectural-decision-record
    → Document key architectural decisions
 
 3. TEST COVERAGE
    @tdd-red
    → Write tests for existing behavior before refactoring
-   
+
    # Ensure all tests pass
 
 4. REFACTOR
    @tdd-refactor
    → Refactor [component] while maintaining test coverage
-   
+
    # Instructions auto-apply:
    # - spec-driven-workflow-v1 guides validation
    # - azure-functions-typescript ensures patterns
@@ -358,7 +422,7 @@ Or via Command Palette:
    # Run full test suite
    npm test
    npm run test:integration
-   
+
    /create-documentation
    → Update architecture docs with refactoring changes
 
@@ -379,7 +443,7 @@ Or via Command Palette:
 1. DEFINE SPIKE
    /create-technical-spike
    → Create spike document for [technology/approach]
-   
+
    # Define:
    # - Research question
    # - Success criteria
@@ -388,7 +452,7 @@ Or via Command Palette:
 2. RESEARCH
    @research-technical-spike
    → Research [technology] options and trade-offs
-   
+
    # Skills auto-activate:
    # - microsoft-docs for Azure/Microsoft tech
    # - microsoft-code-reference for API validation
@@ -401,7 +465,7 @@ Or via Command Palette:
 4. DECISION
    @azure-principal-architect
    → Based on spike findings, what's the recommended approach?
-   
+
    /create-architectural-decision-record
    → Document the decision with rationale and trade-offs
 
@@ -422,20 +486,20 @@ Or via Command Palette:
 1. INVESTIGATION
    @plan
    → Analyze this error/bug: [error message or description]
-   
+
    @task-researcher
    → Find related code patterns and potential root causes
 
 2. REPRODUCTION
    @tdd-red
    → Write a failing test that reproduces the bug
-   
+
    # Verify test fails as expected
 
 3. FIX
    # Implement fix
    # Instructions auto-apply: azure-functions-typescript patterns
-   
+
    @tdd-refactor
    → Improve error handling to prevent similar bugs
 
@@ -447,7 +511,7 @@ Or via Command Palette:
 5. DOCUMENTATION
    /create-documentation
    → Update docs if behavior changed or clarification needed
-   
+
    /conventional-commit
    → Generate commit message (fix: ...)
 ```
@@ -464,14 +528,14 @@ Or via Command Palette:
 1. PLANNING
    @github-actions-expert
    → What's the best CI/CD strategy for [deployment scenario]?
-   
+
    /create-github-action-workflow-specification
    → Create workflow specification document
 
 2. IMPLEMENTATION
    # Instructions auto-apply:
    # - github-actions-ci-cd-best-practices
-   
+
    @plan
    → Review this workflow configuration for issues
 
@@ -482,7 +546,7 @@ Or via Command Palette:
 4. DOCUMENTATION
    /create-documentation
    → Update deployment.md with CI/CD instructions
-   
+
    /conventional-commit
    → Generate commit (ci: ...)
 ```
@@ -509,7 +573,7 @@ Or via Command Palette:
 3. REVIEW
    @plan
    → Review documentation structure for completeness
-   
+
    # Check for:
    # - Missing project-specific knowledge
    # - Outdated examples
@@ -534,7 +598,7 @@ Ensure GitHub Copilot discovers your configuration:
 {
   "github.copilot.advanced": {
     "agentsDirectory": ".github/agents",
-    "instructionsDirectory": ".github/instructions", 
+    "instructionsDirectory": ".github/instructions",
     "promptsDirectory": ".github/prompts",
     "skillsDirectories": [".github/skills"]
   }
@@ -544,6 +608,7 @@ Ensure GitHub Copilot discovers your configuration:
 ### Environment Setup
 
 No additional environment setup required. GitHub Copilot automatically discovers:
+
 - Agents from `.agent.md` files
 - Instructions from `.instructions.md` files
 - Prompts from `.prompt.md` files
@@ -556,12 +621,14 @@ No additional environment setup required. GitHub Copilot automatically discovers
 ### Combining Primitives
 
 ✅ **Effective combinations:**
+
 - Agent conversation → Prompt for structured output
 - Research spike (agent) → ADR (prompt) → Implementation (instructions)
 - Task planner (agent) → Task implementation (instructions)
 - Strategic planning (agent) → Conventional commit (prompt)
 
 ❌ **Avoid:**
+
 - Using multiple agents simultaneously (choose one per conversation)
 - Invoking prompts mid-agent-conversation (finish conversation first)
 - Manually replicating what instructions do automatically
@@ -569,6 +636,7 @@ No additional environment setup required. GitHub Copilot automatically discovers
 ### Workflow Selection
 
 **Choose based on goal:**
+
 - **New feature?** → Pattern 1 (Feature Development)
 - **Code quality improvement?** → Pattern 2 (Refactoring)
 - **Uncertain technical approach?** → Pattern 3 (Technical Spike)
@@ -579,6 +647,7 @@ No additional environment setup required. GitHub Copilot automatically discovers
 ### Iterative Development
 
 GitHub Copilot works best with iterative approaches:
+
 1. Start with planning (agent or prompt)
 2. Implement in small increments (instructions guide automatically)
 3. Validate frequently (TDD agents)
@@ -592,6 +661,7 @@ GitHub Copilot works best with iterative approaches:
 ### Agent not responding with expertise
 
 **Check:**
+
 - Agent file has correct `.agent.md` extension
 - YAML front matter includes `description` field
 - VS Code settings point to `.github/agents` directory
@@ -601,11 +671,13 @@ GitHub Copilot works best with iterative approaches:
 ### Instructions not applying automatically
 
 **Check:**
+
 - File extension is `.instructions.md`
 - `applyTo` pattern in YAML front matter matches your file
 - VS Code settings include `instructionsDirectory`
 
 **Example applyTo patterns:**
+
 - `**/*.ts` - All TypeScript files
 - `**` - All files
 - `src/**/*.ts` - TypeScript in src/ only
@@ -613,6 +685,7 @@ GitHub Copilot works best with iterative approaches:
 ### Prompt not showing in `/` menu
 
 **Check:**
+
 - File extension is `.prompt.md`
 - YAML front matter includes required fields
 - VS Code has indexed the prompts directory
@@ -622,6 +695,7 @@ GitHub Copilot works best with iterative approaches:
 ### Skill not activating
 
 **Check:**
+
 - Skill folder contains `SKILL.md` file
 - VS Code settings include skill directory in `skillsDirectories` array
 - Mentioned relevant trigger keywords in chat
@@ -635,21 +709,25 @@ GitHub Copilot works best with iterative approaches:
 ### Adding New Primitives
 
 #### New Agent
+
 1. Create `.github/agents/new-agent.agent.md`
 2. Add YAML front matter with description and instructions
 3. Test with `@new-agent` in chat
 
 #### New Instruction
+
 1. Create `.github/instructions/new-instruction.instructions.md`
 2. Add `applyTo` file pattern in YAML
 3. Test by editing matching files
 
 #### New Prompt
+
 1. Create `.github/prompts/new-prompt.prompt.md`
 2. Add YAML front matter with description
 3. Test with `/new-prompt`
 
 #### New Skill
+
 1. Create `.github/skills/new-skill/` directory
 2. Add `SKILL.md` with instructions
 3. Optionally add `examples/`, `references/`, `scripts/`
@@ -658,6 +736,7 @@ GitHub Copilot works best with iterative approaches:
 ### Documentation
 
 Update this README when:
+
 - Adding new agents, instructions, prompts, or skills
 - Discovering effective workflow patterns
 - Identifying common troubleshooting issues
