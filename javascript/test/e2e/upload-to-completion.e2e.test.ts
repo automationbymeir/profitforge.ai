@@ -16,10 +16,10 @@ import { readFileSync } from 'fs';
 import sql from 'mssql';
 import { join } from 'path';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { generateTestVendorName } from '../helpers/testVendorNames';
+import { generateTestVendorName } from '../tools/testVendorNames';
 
 const FUNCTION_BASE_URL = process.env.FUNCTION_APP_URL || 'http://localhost:7071';
-const UPLOAD_ENDPOINT = `${FUNCTION_BASE_URL}/api/documents`;
+const UPLOAD_ENDPOINT = `${FUNCTION_BASE_URL}/api/documents/upload`;
 
 // Read connection string from environment (E2E tests use production resources)
 const DB_CONNECTION_STRING = process.env.SQL_CONNECTION_STRING || '';
@@ -90,7 +90,7 @@ describe('E2E Processing: Upload to Completion', () => {
     const startTime = Date.now();
 
     // Act - Upload
-    const uploadResponse = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
+    const uploadResponse = await fetch(`${FUNCTION_BASE_URL}/api/documents/upload`, {
       method: 'POST',
       body: formData,
     });

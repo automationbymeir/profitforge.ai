@@ -5,6 +5,7 @@ import { AIService, getAIService } from '../../../src/services/ai-service.js';
 import { DocumentService, getDocumentService } from '../../../src/services/document-service.js';
 import { getStorageService } from '../../../src/services/storage-service.js';
 import { VendorService, getVendorService } from '../../../src/services/vendor-service.js';
+import { mockOpenAI, mockStorageService } from '../setup/mocks.js';
 
 // Mock dependencies
 vi.mock('openai');
@@ -22,51 +23,19 @@ vi.mock('../../../src/utils/database.js', () => ({
 }));
 
 describe('Service Layer - Unit Tests', () => {
-  let mockStorageService: any;
-  let mockOpenAI: any;
+  let storageService: ReturnType<typeof mockStorageService>;
+  let openAI: ReturnType<typeof mockOpenAI>;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Setup mock storage service
-    mockStorageService = {
-      uploadBlob: vi.fn().mockResolvedValue('https://storage/uploads/vendor/file.pdf'),
-      deleteBlob: vi.fn().mockResolvedValue(undefined),
-      uploadBronzeLayer: vi.fn().mockResolvedValue(undefined),
-      uploadToBronzeLayer: vi.fn().mockResolvedValue(undefined),
-      uploadTextToBronzeLayer: vi.fn().mockResolvedValue(undefined),
-      downloadBlob: vi.fn().mockResolvedValue('Mock OCR text content'),
-    };
-    vi.mocked(getStorageService).mockReturnValue(mockStorageService);
+    // Use consolidated mocks
+    storageService = mockStorageService();
+    vi.mocked(getStorageService).mockReturnValue(storageService as any);
 
-    // Setup mock OpenAI client
-    mockOpenAI = {
-      chat: {
-        completions: {
-          create: vi.fn().mockResolvedValue({
-            choices: [
-              {
-                message: {
-                  content: JSON.stringify({
-                    columnMapping: {
-                      '0-0': 'name',
-                      '0-1': 'sku',
-                      '0-2': 'price',
-                    },
-                  }),
-                },
-              },
-            ],
-            usage: {
-              prompt_tokens: 100,
-              completion_tokens: 50,
-              total_tokens: 150,
-            },
-          }),
-        },
-      },
-    };
-    vi.mocked(OpenAI).mockImplementation(() => mockOpenAI);
+    // Use default mockOpenAI which includes column mapping
+    openAI = mockOpenAI();
+    vi.mocked(OpenAI).mockImplementation(() => openAI as any);
   });
 
   describe('DocumentService', () => {
@@ -128,7 +97,7 @@ describe('Service Layer - Unit Tests', () => {
 
         expect(result.resultId).toBe('test-uuid');
         expect(result.vendorName).toBe('TESTVENDOR_01_26');
-        expect(mockStorageService.uploadBlob).toHaveBeenCalled();
+        expect(storageService.uploadBlob).toHaveBeenCalled();
       });
     });
 
@@ -351,7 +320,7 @@ describe('Service Layer - Unit Tests', () => {
         expect(result.products).toHaveLength(2);
         expect(result.productCount).toBe(2);
         expect(result.usage.totalTokens).toBe(150);
-        expect(mockOpenAI.chat.completions.create).toHaveBeenCalledWith(
+        expect(openAI.chat.completions.create).toHaveBeenCalledWith(
           expect.objectContaining({
             model: 'gpt-4o',
             response_format: { type: 'json_object' },
@@ -409,7 +378,7 @@ describe('Service Layer - Unit Tests', () => {
 
         expect(result.qualityMetrics.productsWithSKU).toBe(2);
         expect(result.qualityMetrics.productsWithPrice).toBe(2);
-        expect(result.qualityMetrics.productsWithName).toBe(3);
+        expect(result.qualityMetrics.productsWithName).toBe(2); // Only 2 products extracted (SKU required)
         expect(result.qualityMetrics.productsWithUnit).toBe(1);
         expect(result.qualityMetrics.completenessScore).toBeGreaterThan(0);
       });

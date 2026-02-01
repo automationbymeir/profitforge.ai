@@ -1,9 +1,9 @@
 /**
- * Integration Test - Upload API
+ * Integration Test - Upload Workflow
  *
- * Tests the /api/documents (POST) endpoint using:
+ * Tests the /api/documents/upload (POST) endpoint using:
  * - Supertest (HTTP without network)
- * - Test database (Docker Postgres)
+ * - Test database (Docker SQL Server)
  * - Azurite (local blob/queue emulator)
  * - Mocked AI services (pre-recorded fixtures)
  *
@@ -13,8 +13,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockDocumentIntelligence, mockOpenAI } from './helpers/azure-ai-mocks';
-import { getDocumentsByVendor } from './helpers/test-db';
+import { mockDocumentIntelligence, mockOpenAI } from '../helpers/azure-ai-mocks';
+import { getDocumentsByVendor } from '../helpers/test-db';
 
 // TODO: Import your Azure Functions app for Supertest
 // This requires exposing the app in a testable way
@@ -22,7 +22,7 @@ import { getDocumentsByVendor } from './helpers/test-db';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 
-describe('Integration: Upload API', () => {
+describe('Integration: Upload Workflow', () => {
   const testVendor = 'TEST_UPLOAD_API_01_26';
 
   beforeEach(() => {
@@ -38,13 +38,13 @@ describe('Integration: Upload API', () => {
 
   it('should upload a PDF and trigger blob processing', async () => {
     // Arrange
-    const testPDF = readFileSync(join(__dirname, '../e2e/docs/samplePDF.pdf'));
+    const testPDF = readFileSync(join(__dirname, '../../e2e/docs/samplePDF.pdf'));
     const formData = new FormData();
     formData.append('file', new Blob([testPDF], { type: 'application/pdf' }), 'test.pdf');
     formData.append('vendorName', testVendor);
 
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/upload`, {
       method: 'POST',
       body: formData,
     });
@@ -67,7 +67,7 @@ describe('Integration: Upload API', () => {
     const formData = new FormData();
     formData.append('file', new Blob(['test'], { type: 'application/pdf' }), 'test.pdf');
 
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/upload`, {
       method: 'POST',
       body: formData,
     });
@@ -84,7 +84,7 @@ describe('Integration: Upload API', () => {
     formData.append('file', new Blob(['test'], { type: 'text/plain' }), 'test.txt');
     formData.append('vendorName', testVendor);
 
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/upload`, {
       method: 'POST',
       body: formData,
     });
@@ -103,7 +103,7 @@ describe('Integration: Upload API', () => {
     formData.append('vendorName', testVendor);
 
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/upload`, {
       method: 'POST',
       body: formData,
     });
@@ -120,7 +120,7 @@ describe('Integration: Upload API', () => {
     formData.append('vendorName', testVendor);
 
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/upload`, {
       method: 'POST',
       body: formData,
     });

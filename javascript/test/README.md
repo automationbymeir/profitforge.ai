@@ -5,19 +5,15 @@
 ```bash
 npm test                      # Unit tests
 npm run test:integration      # Integration tests (requires Docker)
-npm run test:e2e             # E2E tests (requires Azure)
-npm run test:watch           # Unit tests in watch mode
-npm run db:test:up           # Start Docker containers
-npm run db:test:down         # Stop Docker containers
+npm run test:e2e              # E2E tests (requires Azure)
+npm run test:watch            # Unit tests in watch mode
 ```
 
 ## Local Setup
 
 ### Integration Tests
 
-1. Start Docker Desktop
-2. `npm run db:test:up`
-3. `npm run test:integration`
+1. `npm run test:integration`
 
 **Connection strings hardcoded in `test/config.ts` - no `.env` needed.**
 
@@ -46,20 +42,38 @@ npm run db:test:down         # Stop Docker containers
 
 ```
 test/
-├── unit/                         # Unit tests (co-located with source)
+├── unit/                         # Unit tests
+│   ├── functions/                # Azure Functions tests (mirrors src/functions/)
+│   │   ├── http/                 # HTTP trigger tests
+│   │   │   ├── documents/        # Document endpoint tests
+│   │   │   └── vendors/          # Vendor endpoint tests
+│   │   ├── blobs/                # Blob trigger tests
+│   │   ├── queues/               # Queue trigger tests
+│   │   └── timers/               # Timer trigger tests
+│   ├── services/                 # Service layer tests
+│   ├── middleware/               # Middleware tests
+│   └── setup/                    # Unit test setup
 ├── integration/                  # Integration tests
-│   ├── setup/                    # Global setup, Docker config
-│   │   ├── docker-compose.test.yml
-│   │   └── setup.global.integration.ts
-│   └── *.integration.test.ts     # Test files
+│   ├── documents/                # Document workflow tests
+│   ├── vendors/                  # Vendor workflow tests
+│   ├── workflows/                # Cross-domain workflow tests
+│   ├── helpers/                  # Test helpers
+│   │   ├── test-db.ts           # Database helpers
+│   │   └── azure-ai-mocks.ts    # Mock AI responses
+│   └── setup/                    # Global setup, Docker config
+│       ├── docker-compose.test.yml
+│       └── setup.global.integration.ts
 ├── e2e/                          # E2E tests
 │   ├── setup/                    # Global setup
 │   │   └── setup.global.e2e.ts
 │   └── *.e2e.test.ts             # Test files
-├── helpers/                      # Test utilities
-│   ├── test-db.ts               # Database helpers
-│   ├── azurite.ts               # Storage helpers
-│   └── azure-ai-mocks.ts        # Mock AI responses
+├── fixtures/                     # Shared test data
+│   ├── test-data.ts             # Shared constants
+│   ├── mock-responses/          # Mock API responses
+│   │   └── ai-responses.ts      # AI and OCR mocks
+│   ├── sample-documents/        # Sample PDFs, Excel files
+│   └── README.md                # Fixture documentation
+├── tools/                        # Test utilities
 └── config.ts                    # Test configuration
 ```
 

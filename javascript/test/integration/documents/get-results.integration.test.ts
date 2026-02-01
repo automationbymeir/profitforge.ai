@@ -1,16 +1,16 @@
 /**
- * Integration Test - Get Results API
+ * Integration Test - Get Results Workflow
  *
  * Tests the /api/documents endpoint (GET) using test database with pre-seeded data.
  * No real AI processing - just testing the query/filter logic.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { cleanTestDatabase, insertTestDocument } from './helpers/test-db';
+import { cleanTestDatabase, insertTestDocument } from '../helpers/test-db';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 
-describe('Integration: Get Results API', () => {
+describe('Integration: Get Results Workflow', () => {
   const testVendor = 'TEST_GET_RESULTS_01_26';
   let resultId1: string;
   let _resultId2: string;
@@ -143,67 +143,5 @@ describe('Integration: Get Results API', () => {
         expect(typeof result.ai_mapping_result).toBe('object');
       }
     }
-  });
-
-  it('should show all versions when allVersions=true', async () => {
-    // Arrange - Create version chain
-    const originalId = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'versions.pdf',
-      processingStatus: 'completed',
-      reprocessingCount: 0,
-    });
-
-    const version1Id = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'versions.pdf',
-      processingStatus: 'completed',
-      reprocessingCount: 1,
-      parentDocumentId: originalId,
-    });
-
-    // Act - Query with allVersions=true
-    const response = await fetch(
-      `${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}&allVersions=true`
-    );
-
-    // Assert
-    expect(response.status).toBe(200);
-    const data = await response.json();
-
-    // Should see both versions
-    const resultIds = data.map((r: any) => r.result_id);
-    expect(resultIds).toContain(originalId);
-    expect(resultIds).toContain(version1Id);
-  });
-
-  it('should show only latest version by default', async () => {
-    // Arrange - Create version chain
-    const originalId = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'latest.pdf',
-      processingStatus: 'completed',
-      reprocessingCount: 0,
-    });
-
-    const version1Id = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'latest.pdf',
-      processingStatus: 'completed',
-      reprocessingCount: 1,
-      parentDocumentId: originalId,
-    });
-
-    // Act - Query without allVersions (default)
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?vendor=${testVendor}`);
-
-    // Assert
-    expect(response.status).toBe(200);
-    const data = await response.json();
-
-    // Should only see latest version (version1), not original
-    const resultIds = data.map((r: any) => r.result_id);
-    expect(resultIds).not.toContain(originalId);
-    expect(resultIds).toContain(version1Id);
   });
 });

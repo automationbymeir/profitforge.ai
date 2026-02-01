@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 
-app.http('helloWorld', {
+app.http('health', {
   route: 'health',
   methods: ['GET', 'POST'],
   authLevel: 'anonymous',

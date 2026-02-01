@@ -7,24 +7,15 @@ vi.mock('../../src/services/index.js', () => ({
 
 import { processDocument } from '../../src/functions/blobs/document-processor';
 import { getOCRService } from '../../src/services/index.js';
-import { mockInvocationContext } from './setup/mocks';
+import { mockInvocationContext, mockOCRService } from './setup/mocks';
 
 describe('Document Processor - Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock OCRService
-    const mockOCRService = {
-      processDocument: vi.fn().mockResolvedValue({
-        resultId: 'test-uuid-1234',
-        status: 'ocr_complete',
-        pageCount: 2,
-        tableCount: 3,
-        confidence: 0.95,
-      }),
-      queueAIMapping: vi.fn().mockResolvedValue(undefined),
-    };
-    vi.mocked(getOCRService).mockReturnValue(mockOCRService as any);
+    // Use consolidated OCRService mock
+    const ocrService = mockOCRService();
+    vi.mocked(getOCRService).mockReturnValue(ocrService as any);
   });
   it('should successfully process a document with OCR', async () => {
     const blob = Buffer.from('mock PDF content');

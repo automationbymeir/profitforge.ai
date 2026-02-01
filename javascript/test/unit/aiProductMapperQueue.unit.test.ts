@@ -7,14 +7,14 @@ vi.mock('../../src/services/index.js', () => ({
 
 import { aiProductMapperQueueTrigger } from '../../src/functions/queues/ai-product-mapper';
 import { getAIService } from '../../src/services/index.js';
-import { mockInvocationContext } from './setup/mocks';
+import { mockAIService, mockInvocationContext } from './setup/mocks';
 
 describe('AI Product Mapper Queue - Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock AIService
-    const mockAIService = {
+    // Use consolidated mock with realistic response
+    const aiService = mockAIService({
       mapProducts: vi.fn().mockResolvedValue({
         documentId: 'test-uuid-1234',
         vendor: 'TEST_VENDOR',
@@ -42,8 +42,8 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
           emptyFields: 0,
         },
       }),
-    };
-    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
+    });
+    vi.mocked(getAIService).mockReturnValue(aiService as any);
   });
 
   it('should process valid queue message with documentId', async () => {
@@ -95,10 +95,10 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
 
   it('should throw error when AIService fails', async () => {
     // Mock service to throw error
-    const mockAIService = {
+    const aiService = mockAIService({
       mapProducts: vi.fn().mockRejectedValue(new Error('Database error')),
-    };
-    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
+    });
+    vi.mocked(getAIService).mockReturnValue(aiService as any);
 
     const queueMessage = {
       documentId: 'test-uuid-1234',
@@ -114,10 +114,10 @@ describe('AI Product Mapper Queue - Unit Tests', () => {
 
   it('should throw error when AIService throws', async () => {
     // Mock service to throw OpenAI error
-    const mockAIService = {
+    const aiService = mockAIService({
       mapProducts: vi.fn().mockRejectedValue(new Error('OpenAI timeout')),
-    };
-    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
+    });
+    vi.mocked(getAIService).mockReturnValue(aiService as any);
 
     const queueMessage = {
       documentId: 'test-uuid-1234',

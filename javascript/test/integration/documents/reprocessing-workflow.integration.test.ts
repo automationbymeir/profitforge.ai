@@ -1,16 +1,16 @@
 /**
- * Integration Test - Reprocessing API
+ * Integration Test - Reprocessing Workflow
  *
  * Tests the POST /api/reprocessMapping endpoint using test database.
  * Focuses on version management, not real AI processing.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { cleanTestDatabase, getDocumentByResultId, insertTestDocument } from './helpers/test-db';
+import { cleanTestDatabase, getDocumentByResultId, insertTestDocument } from '../helpers/test-db';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 
-describe('Integration: Reprocessing API', () => {
+describe('Integration: Reprocessing Workflow', () => {
   const testVendor = 'TEST_REPROCESS_01_26';
 
   beforeEach(async () => {
@@ -32,10 +32,9 @@ describe('Integration: Reprocessing API', () => {
     expect(original.parent_document_id).toBeNull();
 
     // Act - Trigger reprocessing
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/reprocessMapping`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/${originalId}/reprocess`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId: originalId }),
     });
 
     // Assert
@@ -68,18 +67,16 @@ describe('Integration: Reprocessing API', () => {
     });
 
     // Act - Reprocess twice
-    const reprocess1 = await fetch(`${FUNCTION_BASE_URL}/api/reprocessMapping`, {
+    const reprocess1 = await fetch(`${FUNCTION_BASE_URL}/api/documents/${originalId}/reprocess`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId: originalId }),
     });
     const result1 = await reprocess1.json();
     const version1Id = result1.newResultId;
 
-    const reprocess2 = await fetch(`${FUNCTION_BASE_URL}/api/reprocessMapping`, {
+    const reprocess2 = await fetch(`${FUNCTION_BASE_URL}/api/documents/${version1Id}/reprocess`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId: version1Id }),
     });
     const result2 = await reprocess2.json();
     const version2Id = result2.newResultId;
@@ -97,10 +94,9 @@ describe('Integration: Reprocessing API', () => {
 
   it('should reject reprocessing with invalid UUID', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/reprocessMapping`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/not-a-uuid/reprocess`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId: 'not-a-uuid' }),
     });
 
     // Assert - Currently returns 500 when SQL Server rejects invalid UUID
@@ -109,11 +105,13 @@ describe('Integration: Reprocessing API', () => {
 
   it('should reject reprocessing non-existent document', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/reprocessMapping`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId: '00000000-0000-0000-0000-000000000000' }),
-    });
+    const response = await fetch(
+      `${FUNCTION_BASE_URL}/api/documents/00000000-0000-0000-0000-000000000000/reprocess`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
 
     // Assert
     expect(response.status).toBe(404);
@@ -121,13 +119,12 @@ describe('Integration: Reprocessing API', () => {
 
   it('should reject reprocessing without documentId', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/reprocessMapping`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents//reprocess`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
     });
 
-    // Assert
-    expect(response.status).toBe(400);
+    // Assert - Azure Functions returns 404 for invalid route
+    expect(response.status).toBe(404);
   });
 });

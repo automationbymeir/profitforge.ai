@@ -62,7 +62,7 @@ async function uploadHandlerCore(
 export const uploadHandler = withErrorHandler(withCors(withAuth(withRateLimit(uploadHandlerCore))));
 
 app.http('upload', {
-  route: 'documents',
+  route: 'documents/upload',
   methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: uploadHandler,

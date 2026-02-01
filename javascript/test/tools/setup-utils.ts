@@ -22,7 +22,7 @@ export function isPortInUse(): boolean {
  * Wait for Functions app to be ready
  */
 export async function waitForFunctions(
-  url: string = 'http://localhost:7071/api/helloWorld',
+  url: string = 'http://localhost:7071/api/health',
   maxAttempts: number = 30
 ): Promise<void> {
   for (let i = 0; i < maxAttempts; i++) {

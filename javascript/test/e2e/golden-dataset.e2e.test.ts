@@ -18,7 +18,7 @@ import sql from 'mssql';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import * as xlsx from 'xlsx';
-import { generateTestVendorName } from '../helpers/testVendorNames';
+import { generateTestVendorName } from '../tools/testVendorNames';
 
 const FUNCTION_BASE_URL = process.env.FUNCTION_APP_URL || 'http://localhost:7071';
 // const API_BASE_URL = `${FUNCTION_BASE_URL}/api`;
@@ -220,7 +220,7 @@ describe('E2E Processing: Golden Dataset Validation', () => {
 
       console.log('📤 Uploading...');
       console.log(`   Vendor name: ${vendorName}`);
-      const uploadResponse = await fetch(`${FUNCTION_BASE_URL}/api/documents`, {
+      const uploadResponse = await fetch(`${FUNCTION_BASE_URL}/api/documents/upload`, {
         method: 'POST',
         body: formData,
       });

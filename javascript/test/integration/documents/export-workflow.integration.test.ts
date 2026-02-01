@@ -1,5 +1,5 @@
 /**
- * Integration Test - Export/Confirm Mapping API
+ * Integration Test - Export/Confirm Workflow
  *
  * Tests the POST /api/confirmMapping endpoint using test database.
  * Verifies products are exported to vendor_products table.
@@ -12,11 +12,11 @@ import {
   getDocumentByResultId,
   getTestDbPool,
   insertTestDocument,
-} from './helpers/test-db';
+} from '../helpers/test-db';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 
-describe('Integration: Export/Confirm Mapping API', () => {
+describe('Integration: Export/Confirm Workflow', () => {
   const _testVendor = 'TEST_EXPORT_FLOW_01_26';
 
   beforeEach(async () => {
@@ -43,10 +43,9 @@ describe('Integration: Export/Confirm Mapping API', () => {
     expect(beforeExport.export_status).toBe('not_exported');
 
     // Act - Confirm mapping
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/confirmMapping`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/${documentId}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId }),
     });
 
     // Assert
@@ -74,10 +73,9 @@ describe('Integration: Export/Confirm Mapping API', () => {
 
   it('should reject confirmation with invalid UUID', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/confirmMapping`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/not-a-uuid/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId: 'not-a-uuid' }),
     });
 
     // Assert - Currently returns 500 when SQL Server rejects invalid UUID
@@ -86,14 +84,13 @@ describe('Integration: Export/Confirm Mapping API', () => {
 
   it('should reject confirmation without documentId', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/confirmMapping`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents//confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
     });
 
-    // Assert
-    expect(response.status).toBe(400);
+    // Assert - Azure Functions returns 404 for invalid route
+    expect(response.status).toBe(404);
   });
 
   it('should reject confirmation if no products to export', async () => {
@@ -106,10 +103,9 @@ describe('Integration: Export/Confirm Mapping API', () => {
     });
 
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/confirmMapping`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/${documentId}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId }),
     });
 
     // Assert
@@ -128,16 +124,14 @@ describe('Integration: Export/Confirm Mapping API', () => {
     });
 
     // Act - Confirm twice
-    const response1 = await fetch(`${FUNCTION_BASE_URL}/api/confirmMapping`, {
+    const response1 = await fetch(`${FUNCTION_BASE_URL}/api/documents/${documentId}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId }),
     });
 
-    const response2 = await fetch(`${FUNCTION_BASE_URL}/api/confirmMapping`, {
+    const response2 = await fetch(`${FUNCTION_BASE_URL}/api/documents/${documentId}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentId }),
     });
 
     // Assert - Both should succeed (idempotent)

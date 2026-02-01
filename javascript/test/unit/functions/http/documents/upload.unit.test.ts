@@ -1,25 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock services BEFORE importing the handler
-vi.mock('../../src/services/index.js', () => ({
+vi.mock('../../../../../src/services/index.js', () => ({
   getDocumentService: vi.fn(),
   getVendorService: vi.fn(),
   getVersionService: vi.fn(),
 }));
 
-import { confirmMappingHandler } from '../../src/functions/http/documents/confirm';
-import { reprocessMappingHandler } from '../../src/functions/http/documents/reprocess';
-import { uploadHandler } from '../../src/functions/http/documents/upload';
-import { deleteVendorHandler } from '../../src/functions/http/vendors/delete';
-import { getDocumentService, getVendorService } from '../../src/services/index.js';
-import { mockHttpRequest, mockInvocationContext } from './setup/mocks';
+import { uploadHandler } from '../../../../../src/functions/http/documents/upload';
+import { getDocumentService } from '../../../../../src/services/index.js';
+import { mockDocumentService, mockHttpRequest, mockInvocationContext } from '../../../setup/mocks';
 
 describe('Upload Handler - Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock DocumentService
-    const mockDocumentService = {
+    // Use consolidated DocumentService mock
+    const documentService = mockDocumentService({
       upload: vi.fn().mockResolvedValue({
         resultId: 'test-uuid-1234',
         documentName: 'BETTER_LIVING_11_25.pdf',
@@ -27,8 +24,8 @@ describe('Upload Handler - Unit Tests', () => {
         filePath: 'BETTER_LIVING_11_25/BETTER_LIVING_11_25.pdf',
         status: 'pending',
       }),
-    };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    });
+    vi.mocked(getDocumentService).mockReturnValue(documentService as any);
   });
 
   it('should successfully upload a PDF file', async () => {
@@ -78,16 +75,6 @@ describe('Upload Handler - Unit Tests', () => {
     const context = mockInvocationContext();
 
     const response = await uploadHandler(request as any, context as any);
-
-    // Mock service to throw error for invalid file type
-    const mockDocumentService = {
-      upload: vi.fn().mockRejectedValue(
-        Object.assign(new Error('Unsupported file type: text/plain. Only PDF files are allowed.'), {
-          statusCode: 400,
-        })
-      ),
-    };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
 
     expect(response.status).toBe(400);
     expect(response.jsonBody.error).toBe('Missing file or vendor name in request');
@@ -397,250 +384,5 @@ describe('Upload Handler - Unit Tests', () => {
     // Verify DocumentService.upload was called
     const mockService = vi.mocked(getDocumentService)();
     expect(mockService.upload).toHaveBeenCalled();
-  });
-});
-
-describe('Delete Vendor Handler - Unit Tests', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    // Mock VendorService
-    const mockVendorService = {
-      deleteVendor: vi.fn().mockResolvedValue({
-        documentsDeleted: 2,
-        blobsDeleted: 2,
-      }),
-    };
-    vi.mocked(getVendorService).mockReturnValue(mockVendorService as any);
-  });
-
-  it('should successfully delete vendor documents and blobs', async () => {
-    const request = {
-      params: { name: 'TEST_VENDOR_11_25' },
-    };
-    const context = mockInvocationContext();
-
-    const response = await deleteVendorHandler(request as any, context as any);
-
-    expect(response.status).toBe(200);
-    expect(response.jsonBody.documentsDeleted).toBe(2);
-    expect(response.jsonBody.blobsDeleted).toBeGreaterThanOrEqual(0);
-  });
-
-  it('should return 400 when vendorName is missing', async () => {
-    const request = {
-      params: {},
-    };
-    const context = mockInvocationContext();
-
-    const response = await deleteVendorHandler(request as any, context as any);
-
-    expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toContain('Missing vendor name');
-  });
-
-  it('should return 404 when no documents found for vendor', async () => {
-    // Mock service to throw not found error
-    const mockVendorService = {
-      deleteVendor: vi.fn().mockRejectedValue(
-        Object.assign(new Error('No documents found for vendor NONEXISTENT_01_26'), {
-          statusCode: 404,
-        })
-      ),
-    };
-    vi.mocked(getVendorService).mockReturnValue(mockVendorService as any);
-
-    const request = {
-      params: { name: 'NONEXISTENT_01_26' },
-    };
-    const context = mockInvocationContext();
-
-    const response = await deleteVendorHandler(request as any, context as any);
-
-    expect(response.status).toBe(404);
-    expect(response.jsonBody.error).toBe('Not Found');
-  });
-
-  it('should handle blob deletion errors gracefully', async () => {
-    // Mock service to succeed with warning
-    const mockVendorService = {
-      deleteVendor: vi.fn().mockResolvedValue({
-        documentsDeleted: 1,
-        blobsDeleted: 0, // Blob deletion failed but process continued
-      }),
-    };
-    vi.mocked(getVendorService).mockReturnValue(mockVendorService as any);
-
-    const request = {
-      params: { name: 'TEST_VENDOR_11_25' },
-    };
-    const context = mockInvocationContext();
-
-    const response = await deleteVendorHandler(request as any, context as any);
-
-    // Should still succeed even if some blobs fail
-    expect(response.status).toBe(200);
-    expect(response.jsonBody.documentsDeleted).toBe(1);
-  });
-});
-
-describe('Reprocess Mapping Handler - Unit Tests', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    // Mock DocumentService
-    const mockDocumentService = {
-      reprocess: vi.fn().mockResolvedValue({
-        newResultId: 'test-uuid-5678',
-        nextStep: 'Will be queued for AI mapping',
-      }),
-    };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
-  });
-
-  it('should successfully reprocess a document by creating immutable version', async () => {
-    const request = {
-      params: { id: 'test-uuid-1234' },
-    };
-    const context = mockInvocationContext();
-
-    const response = await reprocessMappingHandler(request as any, context as any);
-
-    expect(response.status).toBe(200);
-    expect(response.jsonBody.newResultId).toBe('test-uuid-5678');
-    expect(response.jsonBody.nextStep).toContain('AI mapping');
-  });
-
-  it('should return 400 when documentId is missing', async () => {
-    const request = {
-      params: {},
-    };
-    const context = mockInvocationContext();
-
-    const response = await reprocessMappingHandler(request as any, context as any);
-
-    expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toContain('Missing document ID');
-  });
-
-  it('should handle database errors', async () => {
-    // Mock service to throw error
-    const mockDocumentService = {
-      reprocess: vi.fn().mockRejectedValue(new Error('Database error')),
-    };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
-
-    const request = {
-      params: { id: 'test-uuid-1234' },
-    };
-    const context = mockInvocationContext();
-
-    const response = await reprocessMappingHandler(request as any, context as any);
-
-    expect(response.status).toBe(500);
-  });
-});
-
-describe('Confirm Mapping Handler - Unit Tests', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    // Mock DocumentService
-    const mockDocumentService = {
-      confirmMapping: vi.fn().mockResolvedValue({
-        productsExported: 2,
-        vendor: 'ACME',
-      }),
-    };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
-  });
-
-  it('should export products to vendor_products table', async () => {
-    const request = {
-      params: { id: 'test-uuid-1234' },
-    };
-    const context = mockInvocationContext();
-
-    const response = await confirmMappingHandler(request as any, context as any);
-
-    expect(response.status).toBe(200);
-    expect(response.jsonBody.productsExported).toBe(2);
-    expect(response.jsonBody.vendor).toBe('ACME');
-  });
-
-  it('should return 400 when documentId is missing', async () => {
-    const request = {
-      params: {},
-    };
-    const context = mockInvocationContext();
-
-    const response = await confirmMappingHandler(request as any, context as any);
-
-    expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toContain('Missing document ID');
-  });
-
-  it('should return 404 when document not found', async () => {
-    // Mock service to throw not found error
-    const mockDocumentService = {
-      confirmMapping: vi
-        .fn()
-        .mockRejectedValue(Object.assign(new Error('Document not found'), { statusCode: 404 })),
-    };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
-
-    const request = {
-      params: { id: 'nonexistent-uuid' },
-    };
-    const context = mockInvocationContext();
-
-    const response = await confirmMappingHandler(request as any, context as any);
-
-    expect(response.status).toBe(404);
-    expect(response.jsonBody.error).toContain('Document not found');
-  });
-
-  it('should return 400 when document status is not completed', async () => {
-    // Mock service to throw status error
-    const mockDocumentService = {
-      confirmMapping: vi.fn().mockRejectedValue(
-        Object.assign(new Error("Document status must be 'completed' to confirm mapping"), {
-          statusCode: 400,
-        })
-      ),
-    };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
-
-    const request = {
-      params: { id: 'test-uuid-1234' },
-    };
-    const context = mockInvocationContext();
-
-    const response = await confirmMappingHandler(request as any, context as any);
-
-    expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toContain("must be 'completed'");
-  });
-
-  it('should return 400 when no mapping result available', async () => {
-    // Mock service to throw missing result error
-    const mockDocumentService = {
-      confirmMapping: vi
-        .fn()
-        .mockRejectedValue(
-          Object.assign(new Error('No products found in mapping result'), { statusCode: 400 })
-        ),
-    };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
-
-    const request = {
-      params: { id: 'test-uuid-1234' },
-    };
-    const context = mockInvocationContext();
-
-    const response = await confirmMappingHandler(request as any, context as any);
-
-    expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toContain('No products found');
   });
 });
