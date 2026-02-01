@@ -3,6 +3,7 @@ agent: 'agent'
 description: 'Create a new implementation plan file for new features, refactoring existing code or upgrading packages, design, architecture or infrastructure.'
 tools:
   [
+    'execute/runInTerminal',
     'search/changes',
     'search/codebase',
     'edit/editFiles',
