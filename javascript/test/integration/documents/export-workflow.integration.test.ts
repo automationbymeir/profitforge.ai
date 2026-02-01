@@ -48,6 +48,12 @@ describe('Integration: Export/Confirm Workflow', () => {
       headers: { 'Content-Type': 'application/json' },
     });
 
+    // Debug: Log response details if not 200
+    if (response.status !== 200) {
+      const errorBody = await response.text();
+      console.log(`❌ Confirm mapping failed: ${response.status} ${errorBody}`);
+    }
+
     // Assert
     expect(response.status).toBe(200);
     const result = await response.json();

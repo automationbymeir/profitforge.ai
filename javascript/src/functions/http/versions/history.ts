@@ -20,7 +20,7 @@ async function getVersionHistoryHandlerCore(
 
   try {
     // Use VersionService for history retrieval
-    const versionService = getVersionService();
+    const versionService = await getVersionService();
     const result = await versionService.getHistory(documentId);
 
     return successResponse(result);

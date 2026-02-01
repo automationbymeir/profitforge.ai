@@ -15,7 +15,7 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
 
   try {
     // Use OCRService for OCR processing
-    const ocrService = getOCRService();
+    const ocrService = await getOCRService();
     const result = await ocrService.processDocument(blob, blobPath, startTime);
 
     context.log(`✅ OCR processing complete for ${result.documentId}. Status: ocr_complete`);
@@ -43,7 +43,7 @@ export async function processDocument(blob: Buffer, context: InvocationContext):
 
     // Update database with failure status
     try {
-      const ocrService = getOCRService();
+      const ocrService = await getOCRService();
       await ocrService.markAsFailed(blobPath, errorMessage);
     } catch (dbError) {
       context.error(`Failed to update error status in DB: ${dbError}`);

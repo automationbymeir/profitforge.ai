@@ -20,7 +20,7 @@ async function reprocessMappingHandlerCore(
 
   try {
     // Use DocumentService for reprocessing logic
-    const documentService = getDocumentService();
+    const documentService = await getDocumentService();
     const result = await documentService.reprocess(documentId);
 
     context.log(

@@ -28,7 +28,7 @@ async function uploadHandlerCore(
 
   try {
     // Use DocumentService for upload logic
-    const documentService = getDocumentService();
+    const documentService = await getDocumentService();
     const result = await documentService.upload(file, vendorName, clientIp);
 
     return successResponse(

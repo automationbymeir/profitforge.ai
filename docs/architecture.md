@@ -9,11 +9,110 @@
 3. **Manual Review** - Human approval before production export
 
 **Tech Stack:**
+
 - Runtime: Node.js 20, TypeScript
 - Azure: Functions, Document Intelligence, AI Foundry, SQL Database, Blob Storage
 - AI: GPT-4o via Azure OpenAI
 - Testing: Vitest, Docker (Azurite, SQL Server)
 - Infrastructure: Pulumi (Azure Native)
+
+## Architecture Layers
+
+The application follows a clean, layered architecture separating concerns:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Triggers (HTTP, Blob, Queue, Timer)                    │
+│ - Thin routing layer                                    │
+│ - Parameter extraction                                  │
+│ - Middleware composition                                │
+└────────────────────┬────────────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────────────┐
+│ Service Layer (Business Logic)                          │
+│ - DocumentService, VendorService, OCRService            │
+│ - AIService, StorageService, VersionService             │
+│ - Orchestrates repositories and external APIs           │
+│ - Domain validation and business rules                  │
+└────────────────────┬────────────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────────────┐
+│ Data Access Layer (Repositories)                        │
+│ - DocumentRepository, VendorProductRepository           │
+│ - All SQL queries encapsulated                          │
+│ - Parameterized queries for security                    │
+│ - Connection pooling via singleton pattern              │
+└────────────────────┬────────────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────────────┐
+│ Database (Azure SQL)                                    │
+│ - vvocr.document_processing_results                     │
+│ - vvocr.vendor_products                                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Layer Responsibilities:**
+
+- **Triggers**: HTTP routing, parameter extraction, response formatting
+- **Services**: Business logic, orchestration, domain validation
+- **Repositories**: Database operations, query construction, data mapping
+- **Database**: Persistent storage, relational integrity, indexing
+
+## Data Access Layer (DAL)
+
+The DAL uses the **Repository Pattern** to encapsulate all database operations and eliminate embedded SQL from services.
+
+### Repository Architecture
+
+**Core Principles:**
+
+- One repository per domain entity (Document, VendorProduct)
+- All SQL queries encapsulated in repository methods
+- Services depend on repositories via dependency injection
+- Repositories initialized with connection pool from singleton
+
+**Benefits:**
+
+- **Testability**: Services unit test with mocked repositories
+- **Maintainability**: SQL changes isolated to repository layer
+- **Security**: All queries parameterized, preventing SQL injection
+- **Reusability**: Repository methods shared across services
+- **Type Safety**: TypeScript interfaces for inputs/outputs
+
+### Repository Classes
+
+#### DocumentRepository
+
+Manages all database operations for `vvocr.document_processing_results` table.
+
+**Key Methods:**
+
+| Method                           | Purpose                             | Returns          |
+| -------------------------------- | ----------------------------------- | ---------------- |
+| `create(input)`                  | Insert new document record          | UUID (result_id) |
+| `findById(id)`                   | Retrieve document by UUID           | Document \| null |
+| `findByVendor(vendor)`           | Get all documents for vendor        | Document[]       |
+| `findByDocumentPath(path)`       | Find documents by path              | Document[]       |
+| `updateOcrResults(id, data)`     | Update OCR extraction results       | void             |
+| `updateAiMapping(id, data)`      | Update AI mapping results           | void             |
+| `updateExportStatus(id, status)` | Mark document as exported           | void             |
+| `deleteById(id)`                 | Delete document by UUID             | void             |
+| `deleteByVendor(vendor)`         | Delete all vendor documents         | number           |
+| `createReprocessingVersion(id)`  | Create new version for reprocessing | UUID             |
+
+#### VendorProductRepository
+
+Manages all database operations for `vvocr.vendor_products` table.
+
+**Key Methods:**
+
+| Method                          | Purpose                       | Returns         |
+| ------------------------------- | ----------------------------- | --------------- |
+| `createBulk(products)`          | Insert multiple products      | number (count)  |
+| `findByVendor(vendor)`          | Get all products for vendor   | VendorProduct[] |
+| `findBySourceDocument(docId)`   | Get products from document    | VendorProduct[] |
+| `deleteByVendor(vendor)`        | Delete all vendor products    | number          |
+| `deleteBySourceDocument(docId)` | Delete products from document | number          |
 
 ## HTTP Handler Architecture
 
@@ -58,6 +157,7 @@ export const uploadHandler = withErrorHandler(withCors(withAuth(withRateLimit(up
 ```
 
 **Benefits:**
+
 - Separation of concerns
 - Consistent error handling
 - Testable middleware in isolation
@@ -97,14 +197,14 @@ Business logic extracted into reusable service classes shared across HTTP, Queue
 
 ### Service Classes
 
-| Service | Responsibility | Key Methods |
-|---------|---------------|-------------|
-| **DocumentService** | Document lifecycle management | `upload()`, `deleteDocument()`, `getResults()`, `reprocess()`, `confirmMapping()` |
-| **VendorService** | Vendor management | `deleteVendor()` |
-| **AIService** | OpenAI GPT-4o product mapping | `mapProducts()` |
-| **OCRService** | Azure Document Intelligence OCR | `processDocument()`, `queueAIMapping()` |
-| **StorageService** | Azure Blob Storage operations | `uploadBlob()`, `deleteBlob()`, `downloadBlob()`, `uploadBronzeLayer()` |
-| **VersionService** | Document version history | `getHistory()`, `deleteRun()` |
+| Service             | Responsibility                  | Key Methods                                                                       |
+| ------------------- | ------------------------------- | --------------------------------------------------------------------------------- |
+| **DocumentService** | Document lifecycle management   | `upload()`, `deleteDocument()`, `getResults()`, `reprocess()`, `confirmMapping()` |
+| **VendorService**   | Vendor management               | `deleteVendor()`                                                                  |
+| **AIService**       | OpenAI GPT-4o product mapping   | `mapProducts()`                                                                   |
+| **OCRService**      | Azure Document Intelligence OCR | `processDocument()`, `queueAIMapping()`                                           |
+| **StorageService**  | Azure Blob Storage operations   | `uploadBlob()`, `deleteBlob()`, `downloadBlob()`, `uploadBronzeLayer()`           |
+| **VersionService**  | Document version history        | `getHistory()`, `deleteRun()`                                                     |
 
 ### Singleton Pattern
 
@@ -122,6 +222,7 @@ export function getServiceName(): ServiceClass {
 ```
 
 **Benefits:**
+
 - Connection pooling (OpenAI, Document Intelligence clients)
 - Consistent state across invocations
 - Reduced initialization overhead
@@ -170,6 +271,7 @@ src/functions/
 ```
 
 **Rationale:**
+
 - Clear organization by domain and trigger type
 - Improved discoverability
 - Easy to add new functions following established patterns
@@ -179,19 +281,20 @@ src/functions/
 
 Phase 4 refactoring (commit: `6fa31cb58`) migrated to RESTful conventions:
 
-| Old Route | New Route | Parameter Change |
-|-----------|-----------|------------------|
-| `POST /api/upload` | `POST /api/documents` | No change (form data) |
-| `GET /api/getResults` | `GET /api/documents` | Query params remain |
-| `DELETE /api/deleteDocument?documentId=X` | `DELETE /api/documents/{id}` | Query → path param |
-| `POST /api/reprocessMapping` (body.id) | `POST /api/documents/{id}/reprocess` | Body → path param |
-| `POST /api/confirmMapping` (body.id) | `POST /api/documents/{id}/confirm` | Body → path param |
-| `POST /api/aiProductMapper` (body.id) | `POST /api/documents/{id}/mapping` | Body → path param |
-| `DELETE /api/deleteVendor?vendorName=X` | `DELETE /api/vendors/{name}` | Query → path param |
-| `GET /api/getVersionHistory?documentId=X` | `GET /api/documents/{id}/versions` | Query → path param |
-| `DELETE /api/deleteRun` | `DELETE /api/documents/{id}/versions/{runId}` | Body → path params |
+| Old Route                                 | New Route                                     | Parameter Change      |
+| ----------------------------------------- | --------------------------------------------- | --------------------- |
+| `POST /api/upload`                        | `POST /api/documents`                         | No change (form data) |
+| `GET /api/getResults`                     | `GET /api/documents`                          | Query params remain   |
+| `DELETE /api/deleteDocument?documentId=X` | `DELETE /api/documents/{id}`                  | Query → path param    |
+| `POST /api/reprocessMapping` (body.id)    | `POST /api/documents/{id}/reprocess`          | Body → path param     |
+| `POST /api/confirmMapping` (body.id)      | `POST /api/documents/{id}/confirm`            | Body → path param     |
+| `POST /api/aiProductMapper` (body.id)     | `POST /api/documents/{id}/mapping`            | Body → path param     |
+| `DELETE /api/deleteVendor?vendorName=X`   | `DELETE /api/vendors/{name}`                  | Query → path param    |
+| `GET /api/getVersionHistory?documentId=X` | `GET /api/documents/{id}/versions`            | Query → path param    |
+| `DELETE /api/deleteRun`                   | `DELETE /api/documents/{id}/versions/{runId}` | Body → path params    |
 
 **Benefits:**
+
 - RESTful resource-based URLs
 - Clear resource hierarchy (`documents/{id}/versions/{runId}`)
 - Standard HTTP methods for CRUD operations
@@ -262,6 +365,7 @@ Phase 4 refactoring (commit: `6fa31cb58`) migrated to RESTful conventions:
 Main processing table - one record per uploaded document.
 
 **Key columns:**
+
 - `document_id` - UUID primary key
 - `vendor_name` - Vendor identifier
 - `file_name` - Original filename
@@ -278,6 +382,7 @@ Main processing table - one record per uploaded document.
 Production catalog - only confirmed products.
 
 **Key columns:**
+
 - `product_id` - Auto-increment primary key
 - `document_id` - Foreign key to processing results
 - `vendor_name` - Denormalized vendor identifier
@@ -302,6 +407,7 @@ bronze-layer/
 ```
 
 **Purpose:**
+
 - Audit trail for compliance
 - Reprocess without re-OCR
 - Compare prompt versions
@@ -324,7 +430,7 @@ bronze-layer/
 ### Total
 
 | Pages | Doc Intel | GPT-4o | Total |
-|-------|-----------|--------|-------|
+| ----- | --------- | ------ | ----- |
 | 10    | $0.02     | $0.03  | $0.05 |
 | 50    | $0.08     | $0.07  | $0.15 |
 | 100   | $0.15     | $0.15  | $0.30 |
@@ -344,6 +450,7 @@ Costs tracked per document in `doc_intel_cost_usd` and `ai_model_cost_usd` colum
 5. Compare versions in bronze-layer
 
 **Benefits:**
+
 - Fast iteration on prompt quality
 - No additional OCR costs
 - Historical comparison of prompt effectiveness
@@ -378,6 +485,7 @@ The codebase underwent a comprehensive 5-phase refactoring (Jan 2026) transformi
 ### Phase 1: Middleware Extraction
 
 Extracted cross-cutting concerns into reusable middleware:
+
 - CORS handling → `cors.ts`
 - Authentication → `auth.ts`
 - Rate limiting → `rate-limit.ts`
@@ -386,6 +494,7 @@ Extracted cross-cutting concerns into reusable middleware:
 ### Phase 2: Service Layer Creation
 
 Extracted business logic into dedicated service classes:
+
 - DocumentService, VendorService, AIService, OCRService, StorageService, VersionService
 - Singleton pattern for connection pooling
 - Testable services independent of HTTP concerns
@@ -395,6 +504,7 @@ Extracted business logic into dedicated service classes:
 **Commit**: `28f259dec`
 
 Reorganized from flat structure to domain-based hierarchy:
+
 - HTTP functions → `http/{domain}/`
 - Queue triggers → `queues/`
 - Blob triggers → `blobs/`
@@ -405,6 +515,7 @@ Reorganized from flat structure to domain-based hierarchy:
 **Commit**: `6fa31cb58`
 
 Migrated to RESTful conventions:
+
 - Resource-based URLs (`/api/documents/{id}`)
 - Route parameters instead of query strings or body
 - Standard HTTP methods for CRUD operations
@@ -414,6 +525,7 @@ Migrated to RESTful conventions:
 **Commit**: `c260780c6`
 
 Centralized all domain types into `src/models/`:
+
 - 744 lines of documented types
 - Eliminated type duplication across services
 - Single source of truth for domain contracts
@@ -423,13 +535,15 @@ Centralized all domain types into `src/models/`:
 
 **Before:** 1 monolithic file (1,315 lines), mixed concerns, type duplication, flat structure
 
-**After:** 
+**After:**
+
 - 14 HTTP functions across 4 domain folders
 - Separated concerns: Middleware (5 files), Services (6 files), Models (8 files)
 - Type system: 744 lines of centralized types
 - RESTful routes with resource-based URLs
 
 **Benefits:**
+
 - Faster feature development (clear patterns)
 - Easier debugging (logic separated by layer)
 - More testable (services unit tested independently)

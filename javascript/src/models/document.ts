@@ -12,8 +12,11 @@ export type ProcessingStatus = 'pending' | 'ocr_complete' | 'completed' | 'faile
 
 /**
  * Export status of processed products
+ *
+ * Database default: 'not_exported'
+ * Schema values: not_exported, confirmed, exported, rejected
  */
-export type ExportStatus = 'pending' | 'confirmed';
+export type ExportStatus = 'not_exported' | 'pending' | 'confirmed' | 'exported' | 'rejected';
 
 /**
  * Document processing result record

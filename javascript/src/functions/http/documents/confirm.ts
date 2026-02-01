@@ -20,7 +20,7 @@ async function confirmMappingHandlerCore(
 
   try {
     // Use DocumentService for confirmation logic
-    const documentService = getDocumentService();
+    const documentService = await getDocumentService();
     const result = await documentService.confirmMapping(documentId);
 
     context.log(

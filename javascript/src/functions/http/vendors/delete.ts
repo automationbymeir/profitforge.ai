@@ -20,7 +20,7 @@ async function deleteVendorHandlerCore(
 
   try {
     // Use VendorService for deletion logic
-    const vendorService = getVendorService();
+    const vendorService = await getVendorService();
     const result = await vendorService.deleteVendor(vendorName);
 
     return successResponse({

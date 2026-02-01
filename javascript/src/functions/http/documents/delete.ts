@@ -21,7 +21,7 @@ async function deleteDocumentHandlerCore(
   try {
     // For now, use DocumentService.deleteDocument which handles single document deletion
     // TODO: In Phase 3 refactoring, enhance DocumentService to handle cascade deletion of all versions
-    const documentService = getDocumentService();
+    const documentService = await getDocumentService();
     const result = await documentService.deleteDocument(documentId);
 
     context.log(`✅ Deleted document with ${result.documentsDeleted} record(s)`);

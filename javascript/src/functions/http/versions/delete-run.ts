@@ -20,7 +20,7 @@ async function deleteRunHandlerCore(
 
   try {
     // Use VersionService for run deletion
-    const versionService = getVersionService();
+    const versionService = await getVersionService();
     const result = await versionService.deleteRun(documentId);
 
     context.log(`✅ Deleted run version ${result.version}`);

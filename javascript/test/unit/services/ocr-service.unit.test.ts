@@ -1,35 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { OCRService, getOCRService } from '../../../src/services/ocr-service.js';
+import type { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
+import type { Document } from '../../../src/models/document.js';
+import { OCRService } from '../../../src/services/ocr-service.js';
 import { getStorageService } from '../../../src/services/storage-service.js';
 import { mockStorageService } from '../setup/mocks.js';
 
 // Mock dependencies
 vi.mock('@azure/ai-document-intelligence');
 vi.mock('../../../src/services/storage-service.js');
-vi.mock('../../../src/utils/database.js', () => ({
-  withDatabase: vi.fn(),
-}));
 
 describe('OCRService - Unit Tests', () => {
   let ocrService: OCRService;
+  let mockDocumentRepo: DocumentRepository;
   let storageService: ReturnType<typeof mockStorageService>;
   let mockDocumentIntelligence: unknown;
 
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock withDatabase to return a document ID
-    const { withDatabase } = await import('../../../src/utils/database.js');
-    vi.mocked(withDatabase).mockImplementation(async (callback) => {
-      return callback({
-        request: () => ({
-          input: vi.fn().mockReturnThis(),
-          query: vi.fn().mockResolvedValue({
-            recordset: [{ result_id: 'test-document-uuid' }],
-          }),
-        }),
-      } as any);
-    });
+    // Create mock DocumentRepository
+    mockDocumentRepo = {
+      findByDocumentPath: vi.fn(),
+      updateOcrResults: vi.fn(),
+      updateStatus: vi.fn(),
+    } as unknown as DocumentRepository;
 
     // Use consolidated StorageService mock
     storageService = mockStorageService({
@@ -46,6 +40,7 @@ describe('OCRService - Unit Tests', () => {
     mockDocumentIntelligence = {
       beginAnalyzeDocument: vi.fn().mockResolvedValue({
         pollUntilDone: vi.fn().mockResolvedValue({
+          content: 'Product Name: Widget A\nSKU: W001',
           pages: [
             {
               pageNumber: 1,
@@ -70,7 +65,36 @@ describe('OCRService - Unit Tests', () => {
       }),
     };
 
+    // Mock findByDocumentPath to return document
+    const mockDocument: Document = {
+      result_id: 'test-document-uuid',
+      document_name: 'document.pdf',
+      document_path: 'test/document.pdf',
+      document_type: 'application/pdf',
+      vendor_name: 'TEST',
+      processing_status: 'pending',
+      export_status: 'not_exported',
+      reprocessing_count: 0,
+      parent_document_id: null,
+      doc_intel_page_count: null,
+      doc_intel_table_count: null,
+      doc_intel_cost_usd: null,
+      doc_intel_confidence_score: null,
+      ai_mapping_result: null,
+      ai_model_used: null,
+      ai_model_cost_usd: null,
+      ai_confidence_score: null,
+      ai_completeness_score: null,
+      product_count: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
+    vi.mocked(mockDocumentRepo.findByDocumentPath).mockResolvedValue([mockDocument]);
+    vi.mocked(mockDocumentRepo.updateOcrResults).mockResolvedValue(1);
+
     ocrService = new OCRService(
+      mockDocumentRepo,
       'https://test.cognitiveservices.azure.com',
       'test-key',
       'bronze-layer',
@@ -134,9 +158,15 @@ describe('OCRService - Unit Tests', () => {
 
       await ocrService.processDocument(blobContent, blobPath);
 
-      // Verify database update was called (through withDatabase mock)
-      const { withDatabase } = await import('../../../src/utils/database.js');
-      expect(withDatabase).toHaveBeenCalled();
+      // Verify OCR results were updated in database
+      expect(mockDocumentRepo.updateOcrResults).toHaveBeenCalled();
+      expect(mockDocumentRepo.updateOcrResults).toHaveBeenCalledWith(
+        expect.objectContaining({
+          result_id: 'test-document-uuid',
+          doc_intel_page_count: 1,
+          doc_intel_table_count: 1,
+        })
+      );
     });
 
     it('should extract tables correctly', async () => {
@@ -170,15 +200,6 @@ describe('OCRService - Unit Tests', () => {
 
       expect(result.tables).toHaveLength(0);
       expect(result.pageCount).toBeGreaterThan(0);
-    });
-  });
-
-  describe('singleton pattern', () => {
-    it('should return same instance on multiple calls', () => {
-      const instance1 = getOCRService();
-      const instance2 = getOCRService();
-
-      expect(instance1).toBe(instance2);
     });
   });
 });

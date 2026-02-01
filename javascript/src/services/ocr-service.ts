@@ -1,7 +1,6 @@
 import { AzureKeyCredential, DocumentAnalysisClient } from '@azure/ai-form-recognizer';
 import { QueueServiceClient } from '@azure/storage-queue';
-import sql from 'mssql';
-import { withDatabase } from '../utils/database.js';
+import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
 import { getStorageService } from './storage-service.js';
 
 export interface OCRResult {
@@ -31,6 +30,7 @@ export class OCRService {
   private queueName: string;
 
   constructor(
+    private documentRepo: DocumentRepository,
     endpoint: string,
     apiKey: string,
     bronzeLayerContainer: string = 'bronze-layer',
@@ -64,20 +64,16 @@ export class OCRService {
     const relativePath = pathParts.length > 1 ? pathParts.slice(1).join('/') : blobPath;
     const vendorName = pathParts.length > 1 ? pathParts[1] : 'unknown';
 
-    // Get document_id from database
-    const documentId = await withDatabase(async (pool) => {
-      const docResult = await pool.request().input('documentPath', sql.NVarChar, relativePath)
-        .query(`
-          SELECT result_id FROM vvocr.document_processing_results 
-          WHERE document_path = @documentPath
-        `);
+    // Get document from database
+    const documents = await this.documentRepo.findByDocumentPath(relativePath);
 
-      if (docResult.recordset.length === 0) {
-        throw new Error(`Document not found in database: ${relativePath}`);
-      }
+    if (documents.length === 0) {
+      throw new Error(`Document not found in database: ${relativePath}`);
+    }
 
-      return docResult.recordset[0].result_id;
-    });
+    // Get the latest document (should be at index 0 due to ORDER BY reprocessing_count ASC)
+    const document = documents[0];
+    const documentId = document.result_id;
 
     // Store raw PDF in bronze-layer
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -104,31 +100,19 @@ export class OCRService {
     // Update database with OCR results
     const processingDuration = Date.now() - startTime;
 
-    await withDatabase(async (pool) => {
-      await pool
-        .request()
-        .input('documentPath', sql.NVarChar, relativePath)
-        .input('extractedText', sql.NVarChar, content)
-        .input('structuredData', sql.NVarChar, JSON.stringify({ tables }))
-        .input('pageCount', sql.Int, pageCount)
-        .input('tableCount', sql.Int, tableCount)
-        .input('docIntelCost', sql.Decimal(10, 6), docIntelCost)
-        .input('duration', sql.Int, processingDuration)
-        .input('startedAt', sql.DateTime2, new Date(startTime)).query(`
-          UPDATE vvocr.document_processing_results 
-          SET 
-              doc_intel_extracted_text = @extractedText,
-              doc_intel_structured_data = @structuredData,
-              doc_intel_page_count = @pageCount,
-              doc_intel_table_count = @tableCount,
-              doc_intel_cost_usd = @docIntelCost,
-              processing_status = 'ocr_complete',
-              processing_started_at = @startedAt,
-              processing_duration_ms = @duration,
-              updated_at = GETUTCDATE()
-          WHERE document_path = @documentPath
-        `);
+    await this.documentRepo.updateOcrResults({
+      result_id: documentId,
+      doc_intel_extracted_text: content,
+      doc_intel_structured_data: JSON.stringify({ tables }),
+      doc_intel_confidence_score: null,
+      doc_intel_page_count: pageCount,
+      doc_intel_table_count: tableCount,
+      doc_intel_cost_usd: docIntelCost,
+      doc_intel_prompt_used: null,
     });
+
+    // Note: processing_status update to 'ocr_complete' happens inside updateOcrResults
+    // TODO: Add processing_started_at and processing_duration_ms to UpdateOcrResultsInput
 
     return {
       documentId,
@@ -161,19 +145,10 @@ export class OCRService {
     const pathParts = blobPath.split('/');
     const relativePath = pathParts.length > 1 ? pathParts.slice(1).join('/') : blobPath;
 
-    await withDatabase(async (pool) => {
-      await pool
-        .request()
-        .input('documentPath', sql.NVarChar, relativePath)
-        .input('error', sql.NVarChar, errorMessage).query(`
-          UPDATE vvocr.document_processing_results 
-          SET 
-              processing_status = 'failed',
-              error_message = @error,
-              updated_at = GETUTCDATE()
-          WHERE document_path = @documentPath
-        `);
-    });
+    const documents = await this.documentRepo.findByDocumentPath(relativePath);
+    if (documents.length > 0) {
+      await this.documentRepo.updateStatus(documents[0].result_id, 'failed', errorMessage);
+    }
   }
 }
 
@@ -183,7 +158,7 @@ let ocrServiceInstance: OCRService | null = null;
 /**
  * Get or create singleton OCRService instance
  */
-export function getOCRService(): OCRService {
+export async function getOCRService(): Promise<OCRService> {
   if (!ocrServiceInstance) {
     const endpoint = process.env.DOCUMENT_INTELLIGENCE_ENDPOINT;
     const apiKey = process.env.DOCUMENT_INTELLIGENCE_KEY;
@@ -192,7 +167,11 @@ export function getOCRService(): OCRService {
         'Missing Document Intelligence configuration (DOCUMENT_INTELLIGENCE_ENDPOINT or DOCUMENT_INTELLIGENCE_KEY)'
       );
     }
-    ocrServiceInstance = new OCRService(endpoint, apiKey);
+    const { getConnectionPool } = await import('../utils/database.js');
+    const { DocumentRepository } = await import('../data/repositories/DocumentRepository.js');
+    const pool = await getConnectionPool();
+    const documentRepo = new DocumentRepository(pool);
+    ocrServiceInstance = new OCRService(documentRepo, endpoint, apiKey);
   }
   return ocrServiceInstance;
 }
