@@ -53,7 +53,8 @@ export async function waitForFunctions(
 export function startFunctions(
   logPath: string,
   errorLogPath: string,
-  checkIfRunning: boolean = false
+  checkIfRunning: boolean = false,
+  envVars: Record<string, string> = {}
 ): Promise<ChildProcess> {
   return new Promise((resolve, reject) => {
     console.log('⚡ Starting Functions app...');
@@ -87,11 +88,15 @@ export function startFunctions(
       const logStream = createWriteStream(logPath, { flags: 'w' });
       const errorLogStream = createWriteStream(errorLogPath, { flags: 'w' });
 
-      // After build, start func
+      // After build, start func with injected environment variables
       const functionsProcess = spawn('func', ['start'], {
         stdio: 'pipe',
         shell: true,
         detached: true, // Create new process group so we can kill all children
+        env: {
+          ...process.env,
+          ...envVars,
+        },
       });
 
       let _output = ''; // Collected for potential debugging, written to log files

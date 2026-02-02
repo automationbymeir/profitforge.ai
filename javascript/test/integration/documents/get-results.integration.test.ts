@@ -6,7 +6,8 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { cleanTestDatabase, insertTestDocument } from '../helpers/test-db';
+import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
+import { cleanTestDatabase, getTestDbPool } from '../utils/helpers';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 
@@ -15,33 +16,47 @@ describe('Integration: Get Results Workflow', () => {
   let resultId1: string;
   let _resultId2: string;
   let _resultId3: string;
+  let documentRepo: DocumentRepository;
 
   beforeEach(async () => {
     // Clean and seed test data
     await cleanTestDatabase();
 
+    // Get repository
+    const pool = await getTestDbPool();
+    documentRepo = new DocumentRepository(pool);
+
     // Insert 3 test documents for the same vendor
-    resultId1 = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'doc1.pdf',
-      processingStatus: 'completed',
-      productCount: 5,
-      aiMappingResult: [{ code: 'A001', description: 'Product 1', price: 10.0 }],
+    resultId1 = await documentRepo.create({
+      vendor_name: testVendor,
+      document_name: 'doc1.pdf',
+      document_path: 'test/doc1.pdf',
+      document_size_bytes: 1000,
+      document_type: 'application/pdf',
+      processing_status: 'completed',
+      product_count: 5,
+      ai_mapping_result: JSON.stringify([{ code: 'A001', description: 'Product 1', price: 10.0 }]),
     });
 
-    _resultId2 = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'doc2.pdf',
-      processingStatus: 'completed',
-      productCount: 3,
-      aiMappingResult: [{ code: 'A002', description: 'Product 2', price: 20.0 }],
+    _resultId2 = await documentRepo.create({
+      vendor_name: testVendor,
+      document_name: 'doc2.pdf',
+      document_path: 'test/doc2.pdf',
+      document_size_bytes: 1000,
+      document_type: 'application/pdf',
+      processing_status: 'completed',
+      product_count: 3,
+      ai_mapping_result: JSON.stringify([{ code: 'A002', description: 'Product 2', price: 20.0 }]),
     });
 
-    _resultId3 = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'doc3.pdf',
-      processingStatus: 'pending',
-      productCount: 0,
+    _resultId3 = await documentRepo.create({
+      vendor_name: testVendor,
+      document_name: 'doc3.pdf',
+      document_path: 'test/doc3.pdf',
+      document_size_bytes: 1000,
+      document_type: 'application/pdf',
+      processing_status: 'pending',
+      product_count: 0,
     });
   });
 
@@ -122,11 +137,14 @@ describe('Integration: Get Results Workflow', () => {
 
   it('should parse JSON fields in response', async () => {
     // Arrange - Create document with JSON fields
-    await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'json-test.pdf',
-      processingStatus: 'completed',
-      aiMappingResult: [{ code: 'A001', price: 10.0 }],
+    await documentRepo.create({
+      vendor_name: testVendor,
+      document_name: 'json-test.pdf',
+      document_path: 'test/json-test.pdf',
+      document_size_bytes: 1000,
+      document_type: 'application/pdf',
+      processing_status: 'completed',
+      ai_mapping_result: JSON.stringify([{ code: 'A001', price: 10.0 }]),
     });
 
     // Act

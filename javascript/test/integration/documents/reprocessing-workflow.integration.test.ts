@@ -6,7 +6,8 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { cleanTestDatabase, getDocumentByResultId, insertTestDocument } from '../helpers/test-db';
+import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository';
+import { cleanTestDatabase, getTestDbPool } from '../utils//helpers';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 
@@ -19,17 +20,23 @@ describe('Integration: Reprocessing Workflow', () => {
 
   it('should create new version when reprocessing document', async () => {
     // Arrange - Create original document
-    const originalId = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'catalog.pdf',
-      processingStatus: 'completed',
-      productCount: 5,
-      aiMappingResult: [{ code: 'A001', price: 10.0 }],
+    const pool = await getTestDbPool();
+    const documentRepo = new DocumentRepository(pool);
+
+    const originalId = await documentRepo.create({
+      vendor_name: testVendor,
+      document_name: 'catalog.pdf',
+      document_path: `${testVendor}/catalog.pdf`,
+      document_size_bytes: 1024,
+      document_type: 'application/pdf',
+      processing_status: 'completed',
+      product_count: 5,
+      ai_mapping_result: JSON.stringify([{ code: 'A001', price: 10.0 }]),
     });
 
-    const original = await getDocumentByResultId(originalId);
-    expect(original.reprocessing_count).toBe(0);
-    expect(original.parent_document_id).toBeNull();
+    const original = await documentRepo.findById(originalId);
+    expect(original?.reprocessing_count).toBe(0);
+    expect(original?.parent_document_id).toBeNull();
 
     // Act - Trigger reprocessing
     const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/${originalId}/reprocess`, {
@@ -46,24 +53,30 @@ describe('Integration: Reprocessing Workflow', () => {
     expect(newVersionId).not.toBe(originalId);
 
     // Verify new version has correct metadata
-    const newVersion = await getDocumentByResultId(newVersionId);
-    expect(newVersion.reprocessing_count).toBe(1);
-    expect(newVersion.parent_document_id).toBe(originalId);
-    expect(newVersion.vendor_name).toBe('TEST_REPROCESS_01_26');
-    expect(newVersion.document_name).toBe('catalog.pdf');
+    const newVersion = await documentRepo.findById(newVersionId);
+    expect(newVersion?.reprocessing_count).toBe(1);
+    expect(newVersion?.parent_document_id).toBe(originalId);
+    expect(newVersion?.vendor_name).toBe('TEST_REPROCESS_01_26');
+    expect(newVersion?.document_name).toBe('catalog.pdf');
 
     // Verify original unchanged
-    const originalAfter = await getDocumentByResultId(originalId);
-    expect(originalAfter.reprocessing_count).toBe(0);
-    expect(originalAfter.parent_document_id).toBeNull();
+    const originalAfter = await documentRepo.findById(originalId);
+    expect(originalAfter?.reprocessing_count).toBe(0);
+    expect(originalAfter?.parent_document_id).toBeNull();
   });
 
   it('should support multiple reprocessing iterations', async () => {
     // Arrange - Create original
-    const originalId = await insertTestDocument({
-      vendorName: 'TEST_VENDOR',
-      documentName: 'catalog.pdf',
-      processingStatus: 'completed',
+    const pool = await getTestDbPool();
+    const documentRepo = new DocumentRepository(pool);
+
+    const originalId = await documentRepo.create({
+      vendor_name: 'TEST_VENDOR',
+      document_name: 'catalog.pdf',
+      document_path: 'TEST_VENDOR/catalog.pdf',
+      document_size_bytes: 1024,
+      document_type: 'application/pdf',
+      processing_status: 'completed',
     });
 
     // Act - Reprocess twice
@@ -82,14 +95,14 @@ describe('Integration: Reprocessing Workflow', () => {
     const version2Id = result2.newResultId;
 
     // Assert - Verify version chain
-    const version1 = await getDocumentByResultId(version1Id);
-    expect(version1.reprocessing_count).toBe(1);
-    expect(version1.parent_document_id).toBe(originalId);
+    const version1 = await documentRepo.findById(version1Id);
+    expect(version1?.reprocessing_count).toBe(1);
+    expect(version1?.parent_document_id).toBe(originalId);
 
-    const version2 = await getDocumentByResultId(version2Id);
-    expect(version2.reprocessing_count).toBe(2);
+    const version2 = await documentRepo.findById(version2Id);
+    expect(version2?.reprocessing_count).toBe(2);
     // Tree structure: all versions point to original root, not linear chain
-    expect(version2.parent_document_id).toBe(originalId);
+    expect(version2?.parent_document_id).toBe(originalId);
   });
 
   it('should reject reprocessing with invalid UUID', async () => {

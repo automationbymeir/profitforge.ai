@@ -13,8 +13,9 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockDocumentIntelligence, mockOpenAI } from '../helpers/azure-ai-mocks';
-import { getDocumentsByVendor } from '../helpers/test-db';
+import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository';
+import { mockDocumentIntelligence, mockOpenAI } from '../utils/fixtures/azure-ai-mocks';
+import { getTestDbPool } from '../utils/helpers';
 
 // TODO: Import your Azure Functions app for Supertest
 // This requires exposing the app in a testable way
@@ -57,7 +58,9 @@ describe('Integration: Upload Workflow', () => {
     expect(data.vendorName).toBe(testVendor);
 
     // Verify database record created
-    const docs = await getDocumentsByVendor(testVendor);
+    const pool = await getTestDbPool();
+    const documentRepo = new DocumentRepository(pool);
+    const docs = await documentRepo.findByVendor(testVendor);
     expect(docs).toHaveLength(1);
     expect(docs[0].processing_status).toBe('pending');
   });

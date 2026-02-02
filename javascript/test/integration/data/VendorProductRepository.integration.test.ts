@@ -11,7 +11,7 @@ import type { CreateDocumentInput } from '../../../src/data/repositories/Documen
 import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
 import type { CreateVendorProductInput } from '../../../src/data/repositories/VendorProductRepository.js';
 import { VendorProductRepository } from '../../../src/data/repositories/VendorProductRepository.js';
-import { cleanTestDatabase, getTestDbPool } from '../helpers/test-db.js';
+import { cleanTestDatabase, getTestDbPool } from '../utils/helpers.js';
 
 describe('VendorProductRepository Integration Tests', () => {
   let pool: sql.ConnectionPool;

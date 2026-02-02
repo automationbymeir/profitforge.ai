@@ -6,10 +6,10 @@
  */
 
 import { vi } from 'vitest';
-import corruptedDocument from './fixtures/document-intelligence/corrupted-document.json';
-import sampleOcrResult from './fixtures/document-intelligence/sample-ocr-result.json';
-import errorResponse from './fixtures/openai/error-response.json';
-import sampleProductMapping from './fixtures/openai/sample-product-mapping.json';
+import corruptedDocument from './document-intelligence/corrupted-document.json';
+import sampleOcrResult from './document-intelligence/sample-ocr-result.json';
+import errorResponse from './openai/error-response.json';
+import sampleProductMapping from './openai/sample-product-mapping.json';
 
 export type MockScenario = 'success' | 'corrupted-ocr' | 'openai-error' | 'custom';
 
@@ -113,15 +113,4 @@ export function createCustomOCRResponse(textContent: string, confidence: number 
       ],
     },
   };
-}
-
-/**
- * Mock environment variables for integration tests
- */
-export function mockAIEnvironmentVariables() {
-  process.env.DOCUMENT_INTELLIGENCE_ENDPOINT = 'https://test-doc-intel.cognitiveservices.azure.com';
-  process.env.DOCUMENT_INTELLIGENCE_KEY = 'test-key-12345';
-  process.env.AI_PROJECT_ENDPOINT = 'https://test-openai.openai.azure.com';
-  process.env.AI_PROJECT_KEY = 'test-openai-key-67890';
-  process.env.AI_MODEL_NAME = 'gpt-4o';
 }

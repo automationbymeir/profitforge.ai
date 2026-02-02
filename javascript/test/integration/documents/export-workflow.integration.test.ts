@@ -7,12 +7,8 @@
 
 import sql from 'mssql';
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  cleanTestDatabase,
-  getDocumentByResultId,
-  getTestDbPool,
-  insertTestDocument,
-} from '../helpers/test-db';
+import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
+import { cleanTestDatabase, getTestDbPool } from '../utils/helpers';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 
@@ -25,22 +21,28 @@ describe('Integration: Export/Confirm Workflow', () => {
 
   it('should export products to vendor_products table', async () => {
     // Arrange - Create document with products
+    const pool = await getTestDbPool();
+    const documentRepo = new DocumentRepository(pool);
+
     const products = [
       { name: 'Product 1', sku: 'A001', price: 10.0, unit: 'case', description: 'Product 1 desc' },
       { name: 'Product 2', sku: 'A002', price: 20.0, unit: 'case', description: 'Product 2 desc' },
     ];
 
-    const documentId = await insertTestDocument({
-      vendorName: 'TEST_VENDOR',
-      documentName: 'catalog.pdf',
-      processingStatus: 'completed',
-      productCount: 2,
-      aiMappingResult: { products },
+    const documentId = await documentRepo.create({
+      vendor_name: 'TEST_VENDOR',
+      document_name: 'catalog.pdf',
+      document_path: 'TEST_VENDOR/catalog.pdf',
+      document_size_bytes: 1024,
+      document_type: 'application/pdf',
+      processing_status: 'completed',
+      product_count: 2,
+      ai_mapping_result: JSON.stringify({ products }),
     });
 
     // Verify initial export status
-    const beforeExport = await getDocumentByResultId(documentId);
-    expect(beforeExport.export_status).toBe('not_exported');
+    const beforeExport = await documentRepo.findById(documentId);
+    expect(beforeExport?.export_status).toBe('not_exported');
 
     // Act - Confirm mapping
     const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/${documentId}/confirm`, {
@@ -73,8 +75,8 @@ describe('Integration: Export/Confirm Workflow', () => {
     expect(productsResult.recordset[0].sku).toBe('A001');
 
     // Verify export status updated to 'confirmed'
-    const afterExport = await getDocumentByResultId(documentId);
-    expect(afterExport.export_status).toBe('confirmed');
+    const afterExport = await documentRepo.findById(documentId);
+    expect(afterExport?.export_status).toBe('confirmed');
   });
 
   it('should reject confirmation with invalid UUID', async () => {
@@ -101,11 +103,17 @@ describe('Integration: Export/Confirm Workflow', () => {
 
   it('should reject confirmation if no products to export', async () => {
     // Arrange - Document with no products
-    const documentId = await insertTestDocument({
-      vendorName: 'TEST_VENDOR',
-      documentName: 'empty.pdf',
-      processingStatus: 'completed',
-      productCount: 0,
+    const pool = await getTestDbPool();
+    const documentRepo = new DocumentRepository(pool);
+
+    const documentId = await documentRepo.create({
+      vendor_name: 'TEST_VENDOR',
+      document_name: 'empty.pdf',
+      document_path: 'TEST_VENDOR/empty.pdf',
+      document_size_bytes: 1024,
+      document_type: 'application/pdf',
+      processing_status: 'completed',
+      product_count: 0,
     });
 
     // Act
@@ -120,13 +128,19 @@ describe('Integration: Export/Confirm Workflow', () => {
 
   it('should handle double confirmation gracefully', async () => {
     // Arrange
+    const pool = await getTestDbPool();
+    const documentRepo = new DocumentRepository(pool);
+
     const products = [{ name: 'Product 1', sku: 'A001', price: 10.0, unit: 'each' }];
-    const documentId = await insertTestDocument({
-      vendorName: 'TEST_VENDOR',
-      documentName: 'catalog.pdf',
-      processingStatus: 'completed',
-      productCount: 1,
-      aiMappingResult: { products },
+    const documentId = await documentRepo.create({
+      vendor_name: 'TEST_VENDOR',
+      document_name: 'catalog.pdf',
+      document_path: 'TEST_VENDOR/catalog.pdf',
+      document_size_bytes: 1024,
+      document_type: 'application/pdf',
+      processing_status: 'completed',
+      product_count: 1,
+      ai_mapping_result: JSON.stringify({ products }),
     });
 
     // Act - Confirm twice

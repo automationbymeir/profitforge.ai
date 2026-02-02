@@ -2,14 +2,37 @@
  * Vitest Global Setup for E2E Tests
  *
  * E2E tests use production Azure resources (database, blob storage, AI services).
- * Two modes:
- * 1. Local dev: Start local Functions app with production credentials
- * 2. CI/CD: Use deployed Functions app (FUNCTION_APP_URL env var)
+ *
+ * Environment Variable Loading Strategy:
+ * =====================================
+ *
+ * Dev Environment:
+ * - Automatically loads .env.e2e file if it exists
+ * - .env.e2e should contain all Azure credentials and FUNCTION_APP_URL=http://localhost:7071
+ * - Global setup loads vars BEFORE starting Functions app
+ *
+ * CI Environment (GitHub Actions):
+ * - Uses GitHub Secrets exported as environment variables
+ * - No .env.e2e file needed
+ * - FUNCTION_APP_URL points to deployed Azure Functions app
+ *
+ * Two Execution Modes:
+ * ====================
+ *
+ * 1. Local Functions (FUNCTION_APP_URL=http://localhost:7071):
+ *    - Starts local Functions app with env vars injected
+ *    - Uses production Azure resources (DB, Storage, AI)
+ *    - Command: npm run test:e2e:local
+ *
+ * 2. Deployed Functions (FUNCTION_APP_URL=https://...):
+ *    - Uses already-deployed Functions app
+ *    - No local Functions startup needed
+ *    - Command: npm run test:e2e
  */
 
 import { ChildProcess } from 'child_process';
 import { config } from 'dotenv';
-import { existsSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { getTestConfig, TestMode } from '../../config.js';
 import { cleanBlobs, cleanQueue } from '../../tools/cleanup';
@@ -20,7 +43,6 @@ import {
   waitForFunctions,
 } from '../../tools/setup-utils.js';
 
-const SETTINGS_PATH = 'local.settings.json';
 const FUNC_LOG_PATH = 'test/functions-e2e-output.log';
 const FUNC_ERROR_LOG_PATH = 'test/functions-e2e-error.log';
 
@@ -40,12 +62,6 @@ async function cleanup() {
   // Stop Functions if we started it locally
   if (useLocalFunctions) {
     await stopFunctions(functionsProcess);
-
-    // Delete local.settings.json (e2e-specific config)
-    if (existsSync(SETTINGS_PATH)) {
-      unlinkSync(SETTINGS_PATH);
-      console.log('✓ Deleted local.settings.json');
-    }
   }
 
   console.log('\n✅ Test environment cleaned up!\n');
@@ -81,14 +97,29 @@ export default async function globalSetup() {
   const mode = 'e2e' as TestMode;
   console.log('\n🔧 Setting up e2e test environment...\n');
 
-  // Load .env.e2e file if it exists (local development)
+  // Load environment variables
+  // Priority: 1) Existing env vars (CI), 2) .env.e2e file (Dev)
   const envPath = resolve(process.cwd(), '.env.e2e');
-  if (existsSync(envPath)) {
-    config({ path: envPath });
-    console.log('✓ Loaded .env.e2e');
-  } else if (useLocalFunctions) {
-    console.warn('⚠️  Warning: .env.e2e not found. E2E tests require real Azure credentials.');
-    console.warn('   Create .env.e2e from .env.e2e.example\n');
+  const hasEnvFile = existsSync(envPath);
+  const hasEnvVars = !!process.env.FUNCTION_APP_URL;
+
+  if (hasEnvFile) {
+    // Dev: Load from .env.e2e (won't override existing env vars)
+    config({ path: envPath, override: false });
+    console.log('✓ Loaded .env.e2e (dev mode)');
+  } else if (hasEnvVars) {
+    // CI: Using environment variables from GitHub secrets
+    console.log('✓ Using environment variables (CI mode)');
+  } else {
+    console.error('\n❌ No environment configuration found!');
+    console.error('   Dev: Create .env.e2e from .env.e2e.example');
+    console.error('   CI: Ensure GitHub secrets are configured\n');
+    throw new Error('Missing environment configuration');
+  }
+
+  // Validate required environment variables
+  if (!process.env.FUNCTION_APP_URL) {
+    throw new Error('FUNCTION_APP_URL is required');
   }
 
   // Register signal handlers for Ctrl+C and other interrupts
@@ -101,16 +132,14 @@ export default async function globalSetup() {
       // Clean up old test data first to prevent stale triggers
       await cleanupOldTestData();
 
-      const settings = {
-        IsEncrypted: false,
-        Values: getTestConfig(mode),
-      };
-
-      writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));
-      console.log('✓ Configured local.settings.json for e2e tests');
-
-      // 4. Start local Functions app
-      functionsProcess = await startFunctions(FUNC_LOG_PATH, FUNC_ERROR_LOG_PATH, true);
+      // Start local Functions app with injected environment variables
+      console.log('✓ Injecting e2e test environment variables');
+      functionsProcess = await startFunctions(
+        FUNC_LOG_PATH,
+        FUNC_ERROR_LOG_PATH,
+        true,
+        getTestConfig(mode)
+      );
     } else {
       console.log(`📍 Mode: Deployed Functions at ${process.env.FUNCTION_APP_URL}\n`);
     }

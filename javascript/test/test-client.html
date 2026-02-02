@@ -33,6 +33,12 @@
         font-weight: bold;
         margin-bottom: 8px;
       }
+      .hint {
+        display: block;
+        font-size: 0.9em;
+        color: #666;
+        margin-top: 4px;
+      }
       input[type='text'],
       input[type='file'] {
         width: 100%;
@@ -40,6 +46,15 @@
         border: 1px solid #ccc;
         border-radius: 4px;
         box-sizing: border-box;
+      }
+      input.invalid {
+        border-color: #a80000;
+      }
+      .validation-error {
+        color: #a80000;
+        font-size: 0.9em;
+        margin-top: 4px;
+        display: none;
       }
       button {
         background: #0078d4;
@@ -91,18 +106,19 @@
     <div class="card">
       <form id="uploadForm">
         <div class="form-group">
-          <label for="functionUrl">Function App URL</label>
+          <label for="vendorId">
+            Vendor Name
+            <span class="hint">Format: VENDOR_NAME_MM_YY (e.g., BETTER_LIVING_11_25)</span>
+          </label>
           <input
             type="text"
-            id="functionUrl"
-            value="http://localhost:7071"
-            placeholder="http://localhost:7071 or https://..."
+            id="vendorId"
+            placeholder="e.g., BETTER_LIVING_11_25"
             required
+            pattern="[A-Z0-9]+(_[A-Z0-9]+)*_\d{2}_\d{2}"
+            title="Vendor name must be in format VENDOR_NAME_MM_YY (uppercase letters, numbers, underscores, ending with MM_YY)"
           />
-        </div>
-        <div class="form-group">
-          <label for="vendorId">Vendor ID</label>
-          <input type="text" id="vendorId" placeholder="e.g. VENDOR-123" required />
+          <div id="vendorIdError" class="validation-error"></div>
         </div>
         <div class="form-group">
           <label for="file">Select Document (PDF/Image)</label>
@@ -120,14 +136,72 @@
       const resultDiv = document.getElementById('result');
       const submitBtn = document.getElementById('submitBtn');
       const loadingDiv = document.getElementById('loading');
+      const vendorIdInput = document.getElementById('vendorId');
+      const vendorIdError = document.getElementById('vendorIdError');
+
+      // Vendor name validation (matching backend logic)
+      function validateVendorName(vendorName) {
+        if (!vendorName) {
+          return { valid: false, error: 'Vendor name is required' };
+        }
+
+        // Format: VENDOR_NAME_MM_YY (alphanumeric with underscores, ending in MM_YY)
+        const pattern = /^[A-Z0-9]+(_[A-Z0-9]+)*_\d{2}_\d{2}$/;
+
+        if (!pattern.test(vendorName)) {
+          return {
+            valid: false,
+            error:
+              'Vendor name must be in format VENDOR_NAME_MM_YY (e.g., BETTER_LIVING_11_25). Only uppercase letters, numbers, underscores, and MM_YY suffix allowed.',
+          };
+        }
+
+        // Extract and validate month
+        const parts = vendorName.split('_');
+        const month = parts[parts.length - 2];
+        const monthNum = parseInt(month, 10);
+
+        if (monthNum < 1 || monthNum > 12) {
+          return {
+            valid: false,
+            error: `Invalid month: ${month}. Month must be between 01 and 12.`,
+          };
+        }
+
+        return { valid: true };
+      }
+
+      // Real-time validation
+      vendorIdInput.addEventListener('input', () => {
+        const validation = validateVendorName(vendorIdInput.value);
+        if (!validation.valid && vendorIdInput.value) {
+          vendorIdInput.classList.add('invalid');
+          vendorIdError.textContent = validation.error;
+          vendorIdError.style.display = 'block';
+        } else {
+          vendorIdInput.classList.remove('invalid');
+          vendorIdError.style.display = 'none';
+        }
+      });
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
-        const uploadUrl = `${baseUrl}/api/upload`;
-        const vendorId = document.getElementById('vendorId').value;
+        const vendorId = vendorIdInput.value;
         const fileInput = document.getElementById('file');
+
+        // Validate vendor name before submission
+        const validation = validateVendorName(vendorId);
+        if (!validation.valid) {
+          vendorIdInput.classList.add('invalid');
+          vendorIdError.textContent = validation.error;
+          vendorIdError.style.display = 'block';
+          return;
+        }
+
+        // Use localhost:7071 as default for local testing
+        const baseUrl = 'http://localhost:7071';
+        const uploadUrl = `${baseUrl}/api/upload`;
 
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
@@ -161,7 +235,7 @@
           }
         } catch (error) {
           resultDiv.className = 'error';
-          resultDiv.innerHTML = `<strong>Fetch Error:</strong>\n${error.message}\n\nMake sure the Function URL is correct and CORS is enabled in the Azure Function portal.`;
+          resultDiv.innerHTML = `<strong>Fetch Error:</strong>\n${error.message}\n\nMake sure the local function app is running on http://localhost:7071 and CORS is enabled.`;
         } finally {
           resultDiv.style.display = 'block';
           loadingDiv.style.display = 'none';
@@ -171,4 +245,3 @@
     </script>
   </body>
 </html>
->

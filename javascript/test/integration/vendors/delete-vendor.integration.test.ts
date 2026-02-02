@@ -6,13 +6,19 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { cleanAzuriteBlobs, uploadTestBlob } from '../helpers/azurite';
-import { cleanTestDatabase, getDocumentsByVendor, insertTestDocument } from '../helpers/test-db';
+import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
+import {
+  cleanAzuriteBlobs,
+  cleanTestDatabase,
+  getTestDbPool,
+  uploadDocumentViaService,
+} from '../utils/helpers.js';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 
 describe('Integration: Delete Vendor Workflow', () => {
   const testVendor = 'TEST_DELETE_VENDOR_01_26';
+  const testVendor2 = 'TEST_DELETE_VENDOR_02_26'; // Different month for second document
 
   beforeEach(async () => {
     await cleanTestDatabase();
@@ -20,30 +26,20 @@ describe('Integration: Delete Vendor Workflow', () => {
   });
 
   it('should delete all documents for a vendor', async () => {
-    // Arrange - Create 2 documents for the vendor
-    const _doc1Id = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'doc1.pdf',
-      blobName: 'test/doc1.pdf',
-      processingStatus: 'completed',
-    });
-
-    const _doc2Id = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'doc2.pdf',
-      blobName: 'test/doc2.pdf',
-      processingStatus: 'completed',
-    });
-
-    // Upload blobs to Azurite
-    await uploadTestBlob('test/doc1.pdf', Buffer.from('test1'));
-    await uploadTestBlob('test/doc2.pdf', Buffer.from('test2'));
+    // Arrange - Upload 2 documents for different vendors via service
+    await uploadDocumentViaService(testVendor);
+    await uploadDocumentViaService(testVendor2);
 
     // Verify documents exist
-    const beforeDocs = await getDocumentsByVendor(testVendor);
-    expect(beforeDocs).toHaveLength(2);
+    const pool = await getTestDbPool();
+    const documentRepo = new DocumentRepository(pool);
 
-    // Act - Delete vendor
+    const doc1 = await documentRepo.findByVendor(testVendor);
+    const doc2 = await documentRepo.findByVendor(testVendor2);
+    expect(doc1).toHaveLength(1);
+    expect(doc2).toHaveLength(1);
+
+    // Act - Delete first vendor
     const response = await fetch(`${FUNCTION_BASE_URL}/api/vendors/${testVendor}`, {
       method: 'DELETE',
     });
@@ -51,12 +47,14 @@ describe('Integration: Delete Vendor Workflow', () => {
     // Assert
     expect(response.status).toBe(200);
     const result = await response.json();
-    expect(result.documentsDeleted).toBe(2);
+    expect(result.documentsDeleted).toBe(1);
     expect(result.blobsDeleted).toBeGreaterThanOrEqual(0); // May fail gracefully
 
-    // Verify documents deleted from DB
-    const afterDocs = await getDocumentsByVendor(testVendor);
-    expect(afterDocs).toHaveLength(0);
+    // Verify only vendor1 documents deleted from DB
+    const afterDoc1 = await documentRepo.findByVendor(testVendor);
+    const afterDoc2 = await documentRepo.findByVendor(testVendor2);
+    expect(afterDoc1).toHaveLength(0);
+    expect(afterDoc2).toHaveLength(1); // Vendor2 still exists
   });
 
   it('should return 404 when vendor has no documents', async () => {
@@ -82,24 +80,18 @@ describe('Integration: Delete Vendor Workflow', () => {
   });
 
   it('should delete vendor with multiple versions', async () => {
-    // Arrange - Create original and reprocessed version
-    const originalId = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'catalog.pdf',
-      processingStatus: 'completed',
-      reprocessingCount: 0,
-    });
+    // Arrange - Upload document, then create reprocessed version via repository
+    const uploadResult = await uploadDocumentViaService(testVendor);
+    const originalId = uploadResult.resultId;
 
-    const _reprocessedId = await insertTestDocument({
-      vendorName: testVendor,
-      documentName: 'catalog.pdf',
-      processingStatus: 'completed',
-      reprocessingCount: 1,
-      parentDocumentId: originalId,
-    });
+    const pool = await getTestDbPool();
+    const documentRepo = new DocumentRepository(pool);
+
+    // Create reprocessed version (simulating reprocessing workflow)
+    const _reprocessedId = await documentRepo.createReprocessingVersion(originalId, null);
 
     // Verify 2 versions exist
-    const beforeDocs = await getDocumentsByVendor(testVendor);
+    const beforeDocs = await documentRepo.findByVendor(testVendor);
     expect(beforeDocs).toHaveLength(2);
 
     // Act - Delete vendor
@@ -113,7 +105,7 @@ describe('Integration: Delete Vendor Workflow', () => {
     expect(result.documentsDeleted).toBe(2);
 
     // Verify all versions deleted
-    const afterDocs = await getDocumentsByVendor(testVendor);
+    const afterDocs = await documentRepo.findByVendor(testVendor);
     expect(afterDocs).toHaveLength(0);
   });
 });

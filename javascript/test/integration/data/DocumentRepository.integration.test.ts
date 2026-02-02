@@ -9,7 +9,7 @@ import type sql from 'mssql';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import type { CreateDocumentInput } from '../../../src/data/repositories/DocumentRepository.js';
 import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
-import { cleanTestDatabase, getTestDbPool } from '../helpers/test-db.js';
+import { cleanTestDatabase, getTestDbPool } from '../utils/helpers.js';
 
 describe('DocumentRepository Integration Tests', () => {
   let pool: sql.ConnectionPool;
