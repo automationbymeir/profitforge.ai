@@ -20,33 +20,10 @@ export function createStorageResources(
   location: string,
   stack: string
 ): StorageResources {
-  // Data Lake Gen2 Storage Account
-  // const dataLake = new azurenative.storage.StorageAccount(`${stack}-datalake`, {
-  //   resourceGroupName,
-  //   accountName: `${stack}datalake${Date.now().toString().slice(-6)}`,
-  //   location,
-  //   kind: "StorageV2",
-  //   sku: {
-  //     name: "Standard_LRS",
-  //   },
-  //   isHnsEnabled: true, // Enable hierarchical namespace for Data Lake Gen2
-  //   accessTier: "Hot",
-  //   allowBlobPublicAccess: false,
-  //   minimumTlsVersion: "TLS1_2",
-  // });
-
-  // // Data Lake Gen2 Filesystem (using blob container)
-  // const dataLakeFilesystem = new azurenative.storage.BlobContainer(`${stack}-filesystem`, {
-  //   resourceGroupName,
-  //   accountName: dataLake.name,
-  //   containerName: `${stack}-vendordata`,
-  //   publicAccess: azurenative.storage.PublicAccess.None,
-  // });
-
   // Blob Storage Account for uploads
   const blobStorage = new azurenative.storage.StorageAccount(`${stack}-blobstorage`, {
     resourceGroupName,
-    accountName: `${stack.replace(/-/g, '')}pvstorage`, // Remove dashes for Azure naming requirements
+    accountName: `${stack}pvstorage`,
     location,
     kind: 'StorageV2',
     sku: {
@@ -82,17 +59,17 @@ export function createStorageResources(
 
   // Get primary storage key for connection string
   const storageKeys = azurenative.storage.listStorageAccountKeysOutput({
-    resourceGroupName: azureConfig.resourceGroup,
+    resourceGroupName,
     accountName: blobStorage.name,
   });
   const storageConnectionString = pulumi.interpolate`DefaultEndpointsProtocol=https;AccountName=${blobStorage.name};AccountKey=${storageKeys.keys[0].value};EndpointSuffix=core.windows.net`;
 
   // Create code container for deployment
   const codeContainer = new azurenative.storage.BlobContainer(`${stack}-deployments`, {
-    resourceGroupName: azureConfig.resourceGroup,
+    resourceGroupName,
     accountName: blobStorage.name,
     containerName: `${stack}-deployments`,
-    // publicAccess: azurenative.storage.PublicAccess.None,
+    publicAccess: azurenative.storage.PublicAccess.None,
   });
 
   // Pack the built target functions with flat structure for Azure Functions
@@ -124,8 +101,6 @@ export function createStorageResources(
   const functionBlobUrl = pulumi.interpolate`https://${blobStorage.name}.blob.core.windows.net/${codeContainer.name}/${codeBlob.name}?${functionBlobSAS.serviceSasToken}`;
 
   return {
-    // dataLake,
-    // dataLakeFilesystem,
     blobStorage,
     uploadsContainer,
     bronzeLayerContainer,

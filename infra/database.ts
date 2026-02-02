@@ -97,32 +97,12 @@ export function createDatabaseResources(
 
   const schemaHash = crypto.createHash('md5').update(schemaScriptContent).digest('hex');
 
-  const deploySchema = new mssql.Script(
+  new mssql.Script(
     'deploy-schema',
     {
       databaseId: database.id,
-      updateScript: `
-        ${schemaScriptContent}
-        
-        -- Track schema version for Pulumi
-        IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'vvocr') EXEC('CREATE SCHEMA vvocr');
-        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'schema_migrations' AND schema_id = SCHEMA_ID('vvocr'))
-        BEGIN
-            CREATE TABLE vvocr.schema_migrations (version_hash VARCHAR(64) PRIMARY KEY, applied_at DATETIME2 DEFAULT GETUTCDATE());
-        END
-        
-        -- Update or Insert version
-        IF EXISTS (SELECT * FROM vvocr.schema_migrations)
-            UPDATE vvocr.schema_migrations SET version_hash = '${schemaHash}', applied_at = GETUTCDATE();
-        ELSE
-            INSERT INTO vvocr.schema_migrations (version_hash) VALUES ('${schemaHash}');
-      `,
-      readScript: `
-        IF EXISTS (SELECT * FROM sys.tables WHERE name = 'schema_migrations' AND schema_id = SCHEMA_ID('vvocr'))
-          SELECT TOP 1 [version_hash] as [hash] FROM [vvocr].[schema_migrations]
-        ELSE
-          SELECT '' as [hash]
-      `,
+      updateScript: schemaScriptContent,
+      readScript: `SELECT '${schemaHash}' as [hash]`,
       state: {
         hash: schemaHash,
       },
@@ -133,81 +113,8 @@ export function createDatabaseResources(
     }
   );
 
-  // Helper to create views safely as separate Pulumi resources
-  const createView = (name: string, definition: string) => {
-    return new mssql.Script(
-      `view-${name}`,
-      {
-        databaseId: database.id,
-        updateScript: `IF OBJECT_ID('vvocr.${name}', 'V') IS NOT NULL DROP VIEW vvocr.${name}; EXEC('${definition.replace(
-          /'/g,
-          "''"
-        )}');`,
-        readScript: `IF OBJECT_ID('vvocr.${name}', 'V') IS NOT NULL SELECT 'exists' as [status] ELSE SELECT '' as [status]`,
-        state: { status: 'exists' },
-      },
-      { provider: mssqlProvider, dependsOn: [deploySchema] }
-    );
-  };
-
-  createView(
-    'v_recent_processing_summary',
-    `
-  CREATE VIEW vvocr.v_recent_processing_summary AS
-  SELECT 
-      r.result_id,
-      r.document_name,
-      r.processing_status,
-      r.ai_model_used,
-      r.doc_intel_confidence_score,
-      r.ai_confidence_score,
-      r.total_cost_usd,
-      r.processing_duration_ms,
-      r.requires_manual_review,
-      r.uploaded_at,
-      r.processing_completed_at,
-      q.validation_status as review_status
-  FROM vvocr.document_processing_results r
-  LEFT JOIN vvocr.manual_review_queue q ON r.result_id = q.result_id
-  WHERE r.uploaded_at >= DATEADD(day, -7, GETUTCDATE());
-  `
-  );
-
-  createView(
-    'v_daily_cost_summary',
-    `
-  CREATE VIEW vvocr.v_daily_cost_summary AS
-  SELECT 
-      tracking_date,
-      service_name,
-      SUM(units_consumed) as total_units,
-      SUM(total_cost_usd) as total_cost_usd,
-      COUNT(*) as transaction_count
-  FROM vvocr.cost_tracking
-  GROUP BY tracking_date, service_name;
-  `
-  );
-
-  createView(
-    'v_processing_performance',
-    `
-  CREATE VIEW vvocr.v_processing_performance AS
-  SELECT 
-      e.execution_run_id,
-      e.execution_type,
-      e.ai_model_used,
-      e.documents_processed,
-      e.documents_succeeded,
-      e.documents_failed,
-      e.total_cost_usd,
-      e.avg_processing_time_ms,
-      e.avg_confidence_score,
-      e.execution_started_at,
-      e.execution_duration_ms
-  FROM vvocr.execution_log e
-  WHERE e.execution_completed_at IS NOT NULL;
-  `
-  );
+  // Views removed - schema simplified to only document_processing_results and vendor_products
+  // Re-add views when cost_tracking, execution_log, and manual_review_queue tables are added
 
   return {
     sqlServer,

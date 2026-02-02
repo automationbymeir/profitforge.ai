@@ -33,10 +33,15 @@ npm test                    # Unit tests (no infrastructure needed)
 npm run test:integration    # Integration tests (Docker auto-starts)
 npm run test:e2e            # E2E tests (requires Azure credentials)
 
-# 4. Start local functions for development
+# 4. local dev with deployed azure resources, keys stored in .env.e2e.
+# npm run dev runs:
+# - watch build for automatic rebuild
+# - local azure Functions with the env vars from .env.e2e
+# - client at localhost:3000
+
 cd javascript
-npm run build
-npm run start
+set -a; source .env.e2e; FUNCTION_APP_URL=http://localhost:7071; set +a;
+npm run dev
 ```
 
 ## Project Structure

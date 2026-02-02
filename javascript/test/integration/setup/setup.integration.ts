@@ -13,9 +13,6 @@ import { cleanTestDatabase, closeTestDbPool, getTestDbPool } from '../helpers/te
 beforeAll(async () => {
   console.log('🔧 Setting up integration test environment...');
 
-  // NOTE: Docker should already be running (manually started with npm run db:test:up)
-  // If not running, start with: docker compose -f test/integration/setup/docker-compose.test.yml up -d
-
   // Set environment for integration tests
   process.env.NODE_ENV = 'test';
   process.env.FUNCTIONS_WORKER_RUNTIME = 'node';
@@ -61,9 +58,6 @@ afterAll(async () => {
 
   // Close connections
   await closeTestDbPool();
-
-  // NOTE: Docker containers left running for faster subsequent test runs
-  // To stop manually: docker compose -f test/integration/setup/docker-compose.test.yml down
 
   console.log('✅ Test infrastructure cleaned up');
 });

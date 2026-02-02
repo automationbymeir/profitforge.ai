@@ -20,6 +20,11 @@ az account set --subscription "your-subscription-id"
 pulumi stack init staging
 pulumi stack select staging
 
+# 3. Verifying stack
+pulumi stack
+# or
+pulumi stack ls
+
 # 3. Configure
 pulumi config set azure-native:location eastus
 pulumi config set azure-native:subscriptionId "your-sub-id"
