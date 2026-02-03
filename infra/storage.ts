@@ -77,7 +77,7 @@ export function createStorageResources(
     resourceGroupName: azureConfig.resourceGroup,
     accountName: blobStorage.name,
     containerName: codeContainer.name,
-    source: new pulumi.asset.FileArchive('./javascript'),
+    source: new pulumi.asset.FileArchive('./code'),
     blobName: `${stack}-functions-v2.zip`, // Force new deployment
     type: azurenative.storage.BlobType.Block,
   });

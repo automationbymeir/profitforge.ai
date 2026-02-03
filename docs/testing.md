@@ -86,7 +86,7 @@ The global setup (`test/integration/setup/setup.global.integration.ts`) handles:
 - SQL Server: `localhost:1433`, database: `master`, schema: `vvocr`
 - User: `sa`, Password: `TestPassword123!`
 - Azurite: `localhost:10000/10001/10002`
-- Connection strings hardcoded in `javascript/test/config.ts`
+- Connection strings injected via .env.integration in test config
 - Schema auto-initialized from `infra/vvocr-schema.sql`
 
 > [!WARNING]
@@ -137,7 +137,7 @@ npm run test:e2e
 **Option 2: Manual `.env.e2e` file**
 
 ```bash
-cd javascript
+cd code
 cp .env.e2e.example .env.e2e
 # Edit .env.e2e with real Azure credentials
 npm run test:e2e
@@ -186,7 +186,7 @@ npm run test:e2e
 ### Unit Test Pattern
 
 ```typescript
-// javascript/src/functions/api.test.ts
+// code/src/functions/api.test.ts
 import { describe, it, expect, vi } from 'vitest';
 
 describe('uploadDocument', () => {
@@ -204,7 +204,7 @@ describe('uploadDocument', () => {
 ### Integration Test Pattern
 
 ```typescript
-// javascript/test/integration/upload-api.integration.test.ts
+// code/test/integration/upload-api.integration.test.ts
 import { describe, it, expect } from 'vitest';
 import { db } from '../helpers/test-db';
 import { uploadToAzurite } from '../helpers/azurite';
@@ -231,7 +231,7 @@ describe('Upload → OCR', () => {
 ### E2E Test Pattern
 
 ```typescript
-// javascript/test/e2e/upload-to-completion.e2e.test.ts
+// code/test/e2e/upload-to-completion.e2e.test.ts
 import { describe, it, expect } from 'vitest';
 import { uploadDocument } from '../helpers/api-client';
 
@@ -307,7 +307,7 @@ mockOpenAI(products); // Mock GPT-4o response
 **Integration tests fail with "fetch failed" error:**
 
 - Verify Azure Functions are running: `curl http://localhost:7071/api/sanity`
-- Start Functions: `cd javascript && npm start`
+- Start Functions: `cd code && npm start`
 - Wait 10 seconds for Functions to fully initialize
 
 **Integration tests fail with SQL connection error:**

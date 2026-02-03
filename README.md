@@ -25,7 +25,7 @@ Upload PDF → Azure Blob → Document Intelligence (OCR) → GPT-4o (Product Ex
 npm install
 
 # 2. Configure environment (for E2E tests only)
-cp javascript/.env.e2e.example javascript/.env.e2e
+cp code/.env.e2e.example code/.env.e2e
 # Edit .env.e2e with real Azure credentials
 
 # 3. Run tests (infrastructure auto-starts)
@@ -39,7 +39,7 @@ npm run test:e2e            # E2E tests (requires Azure credentials)
 # - local azure Functions with the env vars from .env.e2e
 # - client at localhost:3000
 
-cd javascript
+cd code
 set -a; source .env.e2e; FUNCTION_APP_URL=http://localhost:7071; set +a;
 npm run dev
 ```
@@ -47,7 +47,7 @@ npm run dev
 ## Project Structure
 
 ```
-javascript/src/functions/
+code/src/functions/
 ├── api.ts                     # Upload, status, reprocess, confirm, delete
 ├── documentProcessor.ts       # OCR stage (blob trigger)
 ├── aiProductMapper.ts         # AI mapping stage (HTTP trigger)
