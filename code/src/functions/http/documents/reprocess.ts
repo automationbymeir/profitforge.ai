@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { withCors, withErrorHandler } from '../../../middleware/index.js';
-import { getDocumentService } from '../../../services/index.js';
+import { createDocumentService } from '../../../services/index.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
 
 /**
@@ -20,7 +20,7 @@ async function reprocessMappingHandlerCore(
 
   try {
     // Use DocumentService for reprocessing logic
-    const documentService = await getDocumentService();
+    const documentService = await createDocumentService();
     const result = await documentService.reprocess(documentId);
 
     context.log(

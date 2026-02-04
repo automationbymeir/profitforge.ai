@@ -16,7 +16,7 @@
  */
 
 import { ChildProcess } from 'child_process';
-import { DotenvConfigOutput, config as loadEnv } from 'dotenv';
+import { config as loadEnv } from 'dotenv';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { getConnectionPool } from '../../../src/utils/database.js';
@@ -52,17 +52,32 @@ async function cleanup() {
 export default async function globalSetup() {
   console.log(`\n🔧 Setting up integration test environment...\n`);
 
-  // Load .env.integration from the setup folder
-  const envPath = resolve(__dirname, '.env.integration');
-  let dotenvConfigOutput: DotenvConfigOutput;
+  // Load .env.integration from the setup folder (optional in CI/CD)
+  const envPath = resolve(__dirname, '.example.env.integration');
+  let envVars: Record<string, string> = {};
 
   if (existsSync(envPath)) {
-    dotenvConfigOutput = loadEnv({ path: envPath, override: false });
+    const dotenvConfigOutput = loadEnv({ path: envPath, override: true });
     console.log('✓ Loaded .env.integration');
+    envVars = dotenvConfigOutput.parsed || {};
   } else {
-    throw new Error(
-      'Missing .env.integration file. Copy from .env.integration in test/integration/setup/'
-    );
+    // In CI/CD, env vars are already set in process.env
+    console.log('✓ Using environment variables from process.env (CI/CD mode)');
+    // Extract only the vars we need for Functions
+    const requiredVars = [
+      'SQL_CONNECTION_STRING',
+      'STORAGE_CONNECTION_STRING',
+      'DOCUMENT_INTELLIGENCE_KEY',
+      'DOCUMENT_INTELLIGENCE_ENDPOINT',
+      'AI_PROJECT_KEY',
+      'AI_PROJECT_ENDPOINT',
+      'FUNCTION_APP_URL',
+    ];
+    for (const key of requiredVars) {
+      if (process.env[key]) {
+        envVars[key] = process.env[key] as string;
+      }
+    }
   }
 
   // Register signal handlers for Ctrl+C and other interrupts
@@ -86,12 +101,7 @@ export default async function globalSetup() {
 
     // Start Functions app with injected environment variables from process.env
     console.log('✓ Injecting integration test environment variables');
-    functionsProcess = await startFunctions(
-      FUNC_LOG_PATH,
-      FUNC_ERROR_LOG_PATH,
-      false,
-      dotenvConfigOutput.parsed || {}
-    );
+    functionsProcess = await startFunctions(FUNC_LOG_PATH, FUNC_ERROR_LOG_PATH, envVars);
     await waitForFunctions();
 
     console.log(`\n✅ Integration test environment ready!\n`);

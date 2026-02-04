@@ -2,12 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
 import type { Document } from '../../../src/models/document.js';
 import { OCRService } from '../../../src/services/ocr-service.js';
-import { getStorageService } from '../../../src/services/storage-service.js';
 import { mockStorageService } from '../setup/mocks.js';
 
 // Mock dependencies
 vi.mock('@azure/ai-document-intelligence');
-vi.mock('../../../src/services/storage-service.js');
 
 describe('OCRService - Unit Tests', () => {
   let ocrService: OCRService;
@@ -34,7 +32,6 @@ describe('OCRService - Unit Tests', () => {
         .fn()
         .mockResolvedValue({ url: 'https://test.blob.core.windows.net/bronze/ocr.json' }),
     });
-    vi.mocked(getStorageService).mockReturnValue(storageService as any);
 
     // Mock Document Intelligence client
     mockDocumentIntelligence = {
@@ -93,12 +90,17 @@ describe('OCRService - Unit Tests', () => {
     vi.mocked(mockDocumentRepo.findByDocumentPath).mockResolvedValue([mockDocument]);
     vi.mocked(mockDocumentRepo.updateOcrResults).mockResolvedValue(1);
 
+    // Mock QueueService
+    const mockQueueService = {
+      sendMessage: vi.fn().mockResolvedValue(undefined),
+    };
+
     ocrService = new OCRService(
       mockDocumentRepo,
+      storageService as any,
+      mockQueueService as any,
       'https://test.cognitiveservices.azure.com',
-      'test-key',
-      'bronze-layer',
-      'ai-mapping-queue'
+      'test-key'
     );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (ocrService as any).client = mockDocumentIntelligence;
@@ -115,7 +117,7 @@ describe('OCRService - Unit Tests', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((mockDocumentIntelligence as any).beginAnalyzeDocument).toHaveBeenCalled();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((storageService as any).uploadToBronzeLayer).toHaveBeenCalled();
+      expect((storageService as any).uploadBlob).toHaveBeenCalled();
     });
 
     it('should calculate token usage and costs', async () => {
@@ -128,14 +130,14 @@ describe('OCRService - Unit Tests', () => {
       expect(result.cost).toBeGreaterThan(0);
     });
 
-    it('should upload OCR result to bronze layer', async () => {
+    it('should upload OCR result to storage', async () => {
       const blobContent = Buffer.from('test pdf content');
       const blobPath = 'test/document.pdf';
 
       await ocrService.processDocument(blobContent, blobPath);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((storageService as any).uploadToBronzeLayer).toHaveBeenCalled();
+      expect((storageService as any).uploadBlob).toHaveBeenCalled();
     });
 
     it('should handle API errors gracefully', async () => {

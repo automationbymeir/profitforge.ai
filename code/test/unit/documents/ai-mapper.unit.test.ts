@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock services BEFORE importing the handler
-vi.mock('../../../../../src/services/index.js', () => ({
-  getAIService: vi.fn(),
+vi.mock('../../../src/services/index.js', () => ({
+  createAIService: vi.fn(),
 }));
 
-import { aiProductMapperHandler } from '../../../../../src/functions/http/documents/ai-mapper';
-import { getAIService } from '../../../../../src/services/index.js';
-import { mockInvocationContext } from '../../../setup/mocks';
+import { aiProductMapperHandler } from '../../../src/functions/http/documents/ai-mapper';
+import { createAIService } from '../../../src/services/index.js';
+import { mockInvocationContext } from '../setup/mocks';
 
 describe('AI Product Mapper - HTTP Handler - Unit Tests', () => {
   beforeEach(() => {
@@ -30,7 +30,7 @@ describe('AI Product Mapper - HTTP Handler - Unit Tests', () => {
         },
       }),
     };
-    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
+    vi.mocked(createAIService).mockImplementation(() => mockAIService as any);
   });
 
   it('should return 400 when documentId is missing', async () => {
@@ -52,7 +52,7 @@ describe('AI Product Mapper - HTTP Handler - Unit Tests', () => {
         .fn()
         .mockRejectedValue(Object.assign(new Error('Document not found'), { statusCode: 404 })),
     };
-    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
+    vi.mocked(createAIService).mockImplementation(() => mockAIService as any);
 
     const request = {
       params: { id: 'nonexistent-uuid' },
@@ -77,7 +77,7 @@ describe('AI Product Mapper - HTTP Handler - Unit Tests', () => {
           )
         ),
     };
-    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
+    vi.mocked(createAIService).mockImplementation(() => mockAIService as any);
 
     const request = {
       params: { id: 'test-uuid-1234' },
@@ -108,7 +108,7 @@ describe('AI Product Mapper - HTTP Handler - Unit Tests', () => {
     const mockAIService = {
       mapProducts: vi.fn().mockRejectedValue(new Error('AI API error')),
     };
-    vi.mocked(getAIService).mockReturnValue(mockAIService as any);
+    vi.mocked(createAIService).mockImplementation(() => mockAIService as any);
 
     const request = {
       params: { id: 'test-uuid-1234' },

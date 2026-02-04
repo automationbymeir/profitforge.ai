@@ -1,6 +1,6 @@
 import { BlobServiceClient } from '@azure/storage-blob';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getStorageService, StorageService } from '../../../src/services/storage-service.js';
+import { StorageService } from '../../../src/data/storage.js';
 import { mockBlobServiceClient } from '../setup/mocks.js';
 
 // Mock Azure Storage SDK
@@ -40,7 +40,9 @@ describe('StorageService - Unit Tests', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((mockContainerClient as any).getBlockBlobClient).toHaveBeenCalledWith(blobName);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((mockBlockBlobClient as any).upload).toHaveBeenCalledWith(content, content.length);
+      expect((mockBlockBlobClient as any).upload).toHaveBeenCalledWith(content, content.length, {
+        blobHTTPHeaders: undefined,
+      });
       expect(result.url).toBeDefined();
       expect(result.url).toContain('test.blob.core.windows.net');
     });
@@ -85,7 +87,8 @@ describe('StorageService - Unit Tests', () => {
     });
   });
 
-  describe('uploadToBronzeLayer', () => {
+  describe.skip('uploadToBronzeLayer', () => {
+    // Skipped: uploadToBronzeLayer method removed - services use uploadBlob directly
     it('should upload to bronze layer with metadata', async () => {
       const containerName = 'bronze-layer';
       const blobName = 'ocr-results/test-uuid.json';
@@ -115,10 +118,11 @@ describe('StorageService - Unit Tests', () => {
     });
   });
 
-  describe('singleton pattern', () => {
+  describe.skip('singleton pattern', () => {
+    // Skipped: Singleton pattern removed in favor of direct instantiation
     it('should return same instance on multiple calls', () => {
-      const instance1 = getStorageService();
-      const instance2 = getStorageService();
+      const instance1 = new StorageService();
+      const instance2 = new StorageService();
 
       expect(instance1).toBe(instance2);
     });

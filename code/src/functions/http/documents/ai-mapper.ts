@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { withCors, withErrorHandler } from '../../../middleware/index.js';
-import { getAIService } from '../../../services/index.js';
+import { createAIService } from '../../../services/index.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
 
 /**
@@ -20,7 +20,7 @@ async function aiProductMapperHandlerCore(
 
   try {
     // Use AIService for mapping logic
-    const aiService = getAIService();
+    const aiService = createAIService();
     const result = await aiService.mapProducts(documentId);
 
     context.log(`✅ AI Product Mapping complete for document ${documentId}`);

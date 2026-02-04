@@ -1,7 +1,9 @@
 import { AzureKeyCredential, DocumentAnalysisClient } from '@azure/ai-form-recognizer';
-import { QueueServiceClient } from '@azure/storage-queue';
+import { BlobServiceClient } from '@azure/storage-blob';
 import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
-import { getStorageService } from './storage-service.js';
+import { StorageService } from '../data/storage.js';
+import type { QueueService } from '../functions/infra-adapters/queues.js';
+import { getStorageConnectionString } from '../utils/config.js';
 
 export interface OCRResult {
   documentId: string;
@@ -25,20 +27,19 @@ export interface OCRResult {
  */
 export class OCRService {
   private client: DocumentAnalysisClient;
-  private storageService = getStorageService();
-  private bronzeLayerContainer: string;
-  private queueName: string;
+  private storageService: StorageService;
+  private queueService: QueueService;
 
   constructor(
     private documentRepo: DocumentRepository,
+    storageService: StorageService,
+    queueService: QueueService,
     endpoint: string,
-    apiKey: string,
-    bronzeLayerContainer: string = 'bronze-layer',
-    queueName: string = 'ai-mapping-queue'
+    apiKey: string
   ) {
+    this.storageService = storageService;
+    this.queueService = queueService;
     this.client = new DocumentAnalysisClient(endpoint, new AzureKeyCredential(apiKey));
-    this.bronzeLayerContainer = bronzeLayerContainer;
-    this.queueName = queueName;
   }
 
   /**
@@ -59,29 +60,25 @@ export class OCRService {
     // Calculate cost: $1.50 per 1,000 pages
     const docIntelCost = (pageCount / 1000) * 1.5;
 
-    // Extract path - blob trigger gives full path like "uploads/vendor/file.pdf"
-    const pathParts = blobPath.split('/');
-    const relativePath = pathParts.length > 1 ? pathParts.slice(1).join('/') : blobPath;
-    const vendorName = pathParts.length > 1 ? pathParts[1] : 'unknown';
+    // blobPath is the document path within the container (e.g., "VENDOR_NAME/file.pdf")
+    const documentPath = blobPath;
 
     // Get document from database
-    const documents = await this.documentRepo.findByDocumentPath(relativePath);
+    const documents = await this.documentRepo.findByDocumentPath(documentPath);
 
     if (documents.length === 0) {
-      throw new Error(`Document not found in database: ${relativePath}`);
+      throw new Error(`Document not found in database: ${documentPath}`);
     }
 
     // Get the latest document (should be at index 0 due to ORDER BY reprocessing_count ASC)
     const document = documents[0];
     const documentId = document.result_id;
 
-    // Store raw PDF in bronze-layer
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const fileName = pathParts[pathParts.length - 1];
-    const rawBlobPath = `raw/${vendorName}/${timestamp}-${fileName}`;
-    await this.storageService.uploadBlob(this.bronzeLayerContainer, rawBlobPath, blob);
+    // Store OCR output as `ocr.json` in the same folder as the original PDF
+    const pathParts = blobPath.split('/');
+    const folderParts = pathParts.length > 1 ? pathParts.slice(0, pathParts.length - 1) : [];
+    const ocrBlobPath = folderParts.length > 0 ? `${folderParts.join('/')}/ocr.json` : 'ocr.json';
 
-    // Store OCR output in bronze-layer
     const ocrResult = {
       documentId,
       timestamp: new Date().toISOString(),
@@ -91,10 +88,14 @@ export class OCRService {
       tableCount,
       cost: docIntelCost,
     };
-    await this.storageService.uploadToBronzeLayer(
-      this.bronzeLayerContainer,
-      `ocr/${documentId}.json`,
-      ocrResult
+
+    const documentsContainer = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';
+    const jsonBuffer = Buffer.from(JSON.stringify(ocrResult, null, 2));
+    await this.storageService.uploadBlob(
+      documentsContainer,
+      ocrBlobPath,
+      jsonBuffer,
+      'application/json'
     );
 
     // Update database with OCR results
@@ -129,49 +130,84 @@ export class OCRService {
    * Queue AI mapping for a document
    */
   async queueAIMapping(documentId: string): Promise<void> {
-    const queueServiceClient = QueueServiceClient.fromConnectionString(
-      process.env.STORAGE_CONNECTION_STRING!
-    );
-    const queueClient = queueServiceClient.getQueueClient(this.queueName);
-    await queueClient.createIfNotExists();
+    await this.queueService.queueAIMapping(documentId);
+  }
 
-    await queueClient.sendMessage(Buffer.from(JSON.stringify({ documentId })).toString('base64'));
+  /**
+   * Process document from queue message (downloads blob, runs OCR, queues AI)
+   */
+  async processDocumentFromQueue(documentId: string, blobPath: string): Promise<OCRResult> {
+    const startTime = Date.now();
+
+    // Download blob from storage
+    const documentsContainer = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';
+    const blobServiceClient = BlobServiceClient.fromConnectionString(getStorageConnectionString());
+    const containerClient = blobServiceClient.getContainerClient(documentsContainer);
+    const blobClient = containerClient.getBlobClient(blobPath);
+
+    const downloadResponse = await blobClient.download();
+    if (!downloadResponse.readableStreamBody) {
+      throw new Error(`Failed to download blob: ${blobPath}`);
+    }
+    const blob = await this.streamToBuffer(downloadResponse.readableStreamBody);
+
+    // Process with existing logic
+    const result = await this.processDocument(blob, blobPath, startTime);
+
+    // Queue AI mapping
+    try {
+      await this.queueAIMapping(result.documentId);
+    } catch (queueError: unknown) {
+      const errorMessage = queueError instanceof Error ? queueError.message : String(queueError);
+      console.warn(`⚠️ Failed to queue AI mapping: ${errorMessage}`);
+    }
+
+    return result;
+  }
+
+  /**
+   * Helper to convert stream to buffer
+   */
+  private async streamToBuffer(readableStream: NodeJS.ReadableStream): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      readableStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+      readableStream.on('end', () => resolve(Buffer.concat(chunks)));
+      readableStream.on('error', reject);
+    });
   }
 
   /**
    * Mark document as failed in database
    */
   async markAsFailed(blobPath: string, errorMessage: string): Promise<void> {
-    const pathParts = blobPath.split('/');
-    const relativePath = pathParts.length > 1 ? pathParts.slice(1).join('/') : blobPath;
-
-    const documents = await this.documentRepo.findByDocumentPath(relativePath);
+    const documents = await this.documentRepo.findByDocumentPath(blobPath);
     if (documents.length > 0) {
       await this.documentRepo.updateStatus(documents[0].result_id, 'failed', errorMessage);
     }
   }
 }
 
-// Singleton instance
-let ocrServiceInstance: OCRService | null = null;
-
 /**
- * Get or create singleton OCRService instance
+ * Create an OCRService instance
+ *
+ * For testing: inject dependencies via constructor
+ * For production: use this factory to create with real dependencies
  */
-export async function getOCRService(): Promise<OCRService> {
-  if (!ocrServiceInstance) {
-    const endpoint = process.env.DOCUMENT_INTELLIGENCE_ENDPOINT;
-    const apiKey = process.env.DOCUMENT_INTELLIGENCE_KEY;
-    if (!endpoint || !apiKey) {
-      throw new Error(
-        'Missing Document Intelligence configuration (DOCUMENT_INTELLIGENCE_ENDPOINT or DOCUMENT_INTELLIGENCE_KEY)'
-      );
-    }
-    const { getConnectionPool } = await import('../utils/database.js');
-    const { DocumentRepository } = await import('../data/repositories/DocumentRepository.js');
-    const pool = await getConnectionPool();
-    const documentRepo = new DocumentRepository(pool);
-    ocrServiceInstance = new OCRService(documentRepo, endpoint, apiKey);
+export async function createOCRService(): Promise<OCRService> {
+  const endpoint = process.env.DOCUMENT_INTELLIGENCE_ENDPOINT;
+  const apiKey = process.env.DOCUMENT_INTELLIGENCE_KEY;
+  if (!endpoint || !apiKey) {
+    throw new Error(
+      'Missing Document Intelligence configuration (DOCUMENT_INTELLIGENCE_ENDPOINT or DOCUMENT_INTELLIGENCE_KEY)'
+    );
   }
-  return ocrServiceInstance;
+  const { getConnectionPool } = await import('../utils/database.js');
+  const { DocumentRepository } = await import('../data/repositories/DocumentRepository.js');
+  const { QueueService } = await import('../functions/infra-adapters/queues.js');
+  const pool = await getConnectionPool();
+  const documentRepo = new DocumentRepository(pool);
+  const storageService = new StorageService(getStorageConnectionString());
+  const queueService = new QueueService(getStorageConnectionString());
+  return new OCRService(documentRepo, storageService, queueService, endpoint, apiKey);
 }

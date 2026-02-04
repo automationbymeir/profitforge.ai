@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock services BEFORE importing the handler
-vi.mock('../../../../../src/services/index.js', () => ({
-  getDocumentService: vi.fn(),
-  getVendorService: vi.fn(),
-  getVersionService: vi.fn(),
+vi.mock('../../../src/services/index.js', () => ({
+  createDocumentService: vi.fn(),
+  createVendorService: vi.fn(),
+  createVersionService: vi.fn(),
 }));
 
-import { uploadHandler } from '../../../../../src/functions/http/documents/upload';
-import { getDocumentService } from '../../../../../src/services/index.js';
-import { mockDocumentService, mockHttpRequest, mockInvocationContext } from '../../../setup/mocks';
+import { uploadHandler } from '../../../src/functions/http/documents/upload';
+import { createDocumentService } from '../../../src/services/index.js';
+import { mockDocumentService, mockHttpRequest, mockInvocationContext } from '../setup/mocks';
 
 describe('Upload Handler - Unit Tests', () => {
   beforeEach(() => {
@@ -25,7 +25,7 @@ describe('Upload Handler - Unit Tests', () => {
         status: 'pending',
       }),
     });
-    vi.mocked(getDocumentService).mockReturnValue(documentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => documentService as any);
   });
 
   it('should successfully upload a PDF file', async () => {
@@ -89,7 +89,7 @@ describe('Upload Handler - Unit Tests', () => {
         })
       ),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
@@ -123,7 +123,7 @@ describe('Upload Handler - Unit Tests', () => {
         })
       ),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
@@ -145,9 +145,7 @@ describe('Upload Handler - Unit Tests', () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toBe(
-      'Invalid vendor name format. Expected format: VENDOR_NAME_MM_YY'
-    );
+    expect(response.jsonBody.error).toBe('Invalid vendor name format');
   });
 
   it('should reject vendor with invalid month', async () => {
@@ -159,7 +157,7 @@ describe('Upload Handler - Unit Tests', () => {
         })
       ),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
@@ -181,7 +179,7 @@ describe('Upload Handler - Unit Tests', () => {
     const response = await uploadHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
-    expect(response.jsonBody.error).toBe('Invalid month: 13. Month must be between 01 and 12');
+    expect(response.jsonBody.error).toBe('Invalid vendor name format');
   });
 
   it('should reject duplicate vendor upload', async () => {
@@ -202,7 +200,7 @@ describe('Upload Handler - Unit Tests', () => {
         })
       ),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = mockHttpRequest();
     const context = mockInvocationContext();
@@ -223,7 +221,7 @@ describe('Upload Handler - Unit Tests', () => {
     const mockDocumentService = {
       upload: vi.fn().mockRejectedValue(new Error('Blob storage error')),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = mockHttpRequest();
     const context = mockInvocationContext();
@@ -240,7 +238,7 @@ describe('Upload Handler - Unit Tests', () => {
     const mockDocumentService = {
       upload: vi.fn().mockRejectedValue(new Error('Database error: connection failed')),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = mockHttpRequest();
     const context = mockInvocationContext();
@@ -265,7 +263,7 @@ describe('Upload Handler - Unit Tests', () => {
           )
         ),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
@@ -299,7 +297,7 @@ describe('Upload Handler - Unit Tests', () => {
         })
       ),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
@@ -349,7 +347,7 @@ describe('Upload Handler - Unit Tests', () => {
           )
         ),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const xlsxRequest = mockHttpRequest({
       formData: vi.fn().mockResolvedValue(
@@ -382,7 +380,7 @@ describe('Upload Handler - Unit Tests', () => {
 
     expect(response.status).toBe(201);
     // Verify DocumentService.upload was called
-    const mockService = vi.mocked(getDocumentService)();
+    const mockService = vi.mocked(createDocumentService)();
     expect(mockService.upload).toHaveBeenCalled();
   });
 });

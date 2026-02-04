@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock mssql before importing the handler
 vi.mock('mssql');
-vi.mock('../../../../../src/utils/database');
+vi.mock('../../../src/utils/database');
 
-import { getResults } from '../../../../../src/functions/http/documents/get-results';
-import { withDatabase } from '../../../../../src/utils/database';
-import { mockInvocationContext } from '../../../setup/mocks';
+import { getResults } from '../../../src/functions/http/documents/get-results';
+import { withDatabase } from '../../../src/utils/database';
+import { mockInvocationContext } from '../setup/mocks';
 
 describe('Get Results API - HTTP Handler - Unit Tests', () => {
   beforeEach(() => {

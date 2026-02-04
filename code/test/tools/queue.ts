@@ -191,7 +191,7 @@ export async function purgeQueue() {
       console.log(`   Already empty`);
     }
   } catch (_e) {
-    console.log(`   Queue doesn't exist (this is fine)`);
+    console.log(`   Poison queue doesn't exist (this is fine)`);
   }
 
   console.log(`\n✅ Purge complete\n`);

@@ -22,9 +22,10 @@ export function isPortInUse(): boolean {
  * Wait for Functions app to be ready
  */
 export async function waitForFunctions(
-  url: string = 'http://localhost:7071/api/health',
+  entryPoint: string = 'http://localhost:7071/',
   maxAttempts: number = 30
 ): Promise<void> {
+  const url = `${entryPoint}api/health`;
   for (let i = 0; i < maxAttempts; i++) {
     try {
       const response = await fetch(url);
@@ -53,17 +54,22 @@ export async function waitForFunctions(
 export function startFunctions(
   logPath: string,
   errorLogPath: string,
-  checkIfRunning: boolean = false,
   envVars: Record<string, string> = {}
 ): Promise<ChildProcess> {
   return new Promise((resolve, reject) => {
     console.log('⚡ Starting Functions app...');
 
-    // Check if already running (e2e mode)
-    if (checkIfRunning && isPortInUse()) {
-      console.log('   ℹ Functions already running on port 7071');
-      resolve(null as any); // Return null to indicate no process was started
-      return;
+    // Always check and kill any existing Functions process
+    if (isPortInUse()) {
+      console.log('   (Port 7071 in use, killing existing process...)');
+      try {
+        execSync('pkill -f "func start"', { stdio: 'ignore' });
+        // Wait a moment for process to die
+        execSync('sleep 1');
+        console.log('   ✓ Existing process killed');
+      } catch (_error) {
+        // Ignore errors - process might already be dead
+      }
     }
 
     console.log('   (Building TypeScript...)');
@@ -99,45 +105,12 @@ export function startFunctions(
         },
       });
 
-      let _output = ''; // Collected for potential debugging, written to log files
-      let resolved = false;
+      // Pipe streams to log files
+      functionsProcess.stdout?.pipe(logStream);
+      functionsProcess.stderr?.pipe(errorLogStream);
 
-      functionsProcess.stdout?.on('data', (data) => {
-        const text = data.toString();
-        _output += text;
-        logStream.write(text);
-
-        // Look for "Host started" or similar message
-        if (
-          !resolved &&
-          (text.includes('Host lock lease acquired') ||
-            text.includes('Worker process started') ||
-            text.includes('Job host started') ||
-            text.includes('Host started'))
-        ) {
-          resolved = true;
-          resolve(functionsProcess);
-        }
-      });
-
-      functionsProcess.stderr?.on('data', (data) => {
-        const text = data.toString();
-        _output += text;
-        errorLogStream.write(text);
-      });
-
-      // Fallback timeout - different for integration vs e2e
-      const timeout = checkIfRunning ? 20000 : 10000;
-      setTimeout(() => {
-        if (!resolved) {
-          console.log(`   (Timeout reached after ${timeout / 1000}s, assuming Functions started)`);
-          if (checkIfRunning) {
-            console.log('   (Will verify with health check...)');
-          }
-          resolved = true;
-          resolve(functionsProcess);
-        }
-      }, timeout);
+      // Return immediately - caller will use waitForFunctions() to verify readiness
+      resolve(functionsProcess);
     });
   });
 }

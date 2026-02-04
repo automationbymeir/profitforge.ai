@@ -9,7 +9,6 @@ export type AllowedFileType = (typeof ALLOWED_FILE_TYPES)[number];
 
 // Container Names
 export const STORAGE_CONTAINER_DOCUMENTS = 'uploads';
-export const BRONZE_LAYER_CONTAINER = 'bronze-layer';
 
 // Database Schema
 export const DB_SCHEMA = 'vvocr';

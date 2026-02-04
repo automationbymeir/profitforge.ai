@@ -16,7 +16,9 @@ import {
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 
-describe('Integration: Delete Vendor Workflow', () => {
+describe.skip('Integration: Delete Vendor Workflow', () => {
+  // Skipped: Vendor delete endpoint is currently commented out
+  // TODO: Re-enable when vendor management endpoints are restored
   const testVendor = 'TEST_DELETE_VENDOR_01_26';
   const testVendor2 = 'TEST_DELETE_VENDOR_02_26'; // Different month for second document
 

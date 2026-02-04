@@ -23,12 +23,16 @@ export class StorageService {
   async uploadBlob(
     containerName: string,
     blobPath: string,
-    buffer: Buffer
+    buffer: Buffer,
+    contentType?: string
   ): Promise<{ url: string }> {
     const containerClient = this.blobServiceClient.getContainerClient(containerName);
     const blockBlobClient = containerClient.getBlockBlobClient(blobPath);
 
-    await blockBlobClient.upload(buffer, buffer.length);
+    // Upload with content type metadata
+    await blockBlobClient.upload(buffer, buffer.length, {
+      blobHTTPHeaders: contentType ? { blobContentType: contentType } : undefined,
+    });
 
     return {
       url: blockBlobClient.url,
@@ -46,43 +50,23 @@ export class StorageService {
   }
 
   /**
-   * Upload JSON data to bronze-layer storage for audit trail
+   * Get blob properties (metadata)
    */
-  async uploadToBronzeLayer(
-    containerName: string,
-    path: string,
-    data: unknown
-  ): Promise<{ url: string }> {
-    const jsonBuffer = Buffer.from(JSON.stringify(data, null, 2));
-    return this.uploadBlob(containerName, path, jsonBuffer);
-  }
+  async getBlobProperties(containerName: string, blobPath: string) {
+    const containerClient = this.blobServiceClient.getContainerClient(containerName);
+    const blockBlobClient = containerClient.getBlockBlobClient(blobPath);
 
-  /**
-   * Upload text data to bronze-layer storage
-   */
-  async uploadTextToBronzeLayer(
-    containerName: string,
-    path: string,
-    text: string
-  ): Promise<{ url: string }> {
-    const textBuffer = Buffer.from(text);
-    return this.uploadBlob(containerName, path, textBuffer);
-  }
-}
-
-// Singleton instance
-let storageServiceInstance: StorageService | null = null;
-
-/**
- * Get or create singleton StorageService instance
- */
-export function getStorageService(): StorageService {
-  if (!storageServiceInstance) {
-    const connectionString = process.env.STORAGE_CONNECTION_STRING;
-    if (!connectionString) {
-      throw new Error('STORAGE_CONNECTION_STRING environment variable is not set');
+    if (!(await blockBlobClient.exists())) {
+      throw new Error(`Blob not found: ${containerName}/${blobPath}`);
     }
-    storageServiceInstance = new StorageService(connectionString);
+
+    const properties = await blockBlobClient.getProperties();
+
+    return {
+      contentType: properties.contentType,
+      contentLength: properties.contentLength,
+      createdOn: properties.createdOn,
+      lastModified: properties.lastModified,
+    };
   }
-  return storageServiceInstance;
 }

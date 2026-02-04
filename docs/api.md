@@ -29,13 +29,16 @@ Response format: All successful responses return JSON with `jsonBody` property.
 - Max 50 uploads per day (demo mode)
 
 ```http
-POST /api/documents
+POST /api/documents/upload
+```
+
 Content-Type: multipart/form-data
-x-api-key: your-api-key  # Required in demo mode
+x-api-key: your-api-key # Required in demo mode
 
 file: <PDF file>
 vendorName: string
-```
+
+````
 
 **Response:**
 
@@ -46,7 +49,7 @@ vendorName: string
   "documentPath": "uploads/vendor/filename.pdf",
   "vendorName": "ACME Corp"
 }
-```
+````
 
 **Side effects:**
 
@@ -155,7 +158,7 @@ DELETE /api/documents/{id}
 ### Reprocess Document
 
 ```http
-POST /api/documents/{id}/reprocess
+POST /api/documents/{id}/reprocess-ocr
 ```
 
 **Path Parameters:**
@@ -181,7 +184,7 @@ POST /api/documents/{id}/reprocess
 ### Trigger AI Mapping
 
 ```http
-POST /api/documents/{id}/mapping
+POST /api/documents/{id}/reprocess-ai-mapping
 ```
 
 **Path Parameters:**
@@ -212,12 +215,13 @@ POST /api/documents/{id}/mapping
 ### Confirm & Export
 
 ```http
-POST /api/documents/{id}/confirm
+POST /api/documents/{id}/confirm/{version-id}
 ```
 
 **Path Parameters:**
 
 - `id` - Document UUID
+- `version-id` - Version run number
 
 **Effect:** Inserts products into `vendor_products` table, marks as `confirmed`
 
@@ -270,13 +274,13 @@ GET /api/documents/{id}/versions
 ### Delete Version Run
 
 ```http
-DELETE /api/documents/{id}/versions/{runId}
+DELETE /api/documents/{id}/versions/{version-id}
 ```
 
 **Path Parameters:**
 
 - `id` - Document UUID
-- `runId` - Run number to delete
+- `version-id` - Run number to delete
 
 **Response:**
 

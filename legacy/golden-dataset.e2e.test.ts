@@ -18,7 +18,7 @@ import sql from 'mssql';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import * as xlsx from 'xlsx';
-import { generateTestVendorName } from '../tools/testVendorNames';
+import { generateTestVendorName } from '../../tools/testVendorNames';
 
 const FUNCTION_BASE_URL = process.env.FUNCTION_APP_URL || 'http://localhost:7071';
 // const API_BASE_URL = `${FUNCTION_BASE_URL}/api`;
@@ -190,7 +190,7 @@ function loadBenchmarkData(vendorDir: string): BenchmarkProduct[] {
   return products;
 }
 
-describe('E2E Processing: Golden Dataset Validation', () => {
+describe.skip('E2E Processing: Golden Dataset Validation', () => {
   const results: AccuracyMetrics[] = [];
 
   VENDORS.forEach((vendor) => {

@@ -1,7 +1,9 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { withAuth, withCors, withErrorHandler, withRateLimit } from '../../../middleware/index.js';
-import { getDocumentService } from '../../../services/index.js';
+import { createDocumentService } from '../../../services/index.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
+import { incrementDailyUploadCount, incrementIpUploadCount } from '../../../utils/usageTracker.js';
+import { validateVendorName } from '../../../utils/validations.js';
 
 /**
  * Upload Handler Core - Business logic for document uploads
@@ -25,11 +27,37 @@ async function uploadHandlerCore(
   if (!file || !vendorName) {
     return errorResponse('Missing file or vendor name in request', 400);
   }
+  // Validate vendor name
+  if (!validateVendorName(vendorName)) {
+    return errorResponse('Invalid vendor name format', 400);
+  }
+
+  // Validate file type (HTTP-layer concern)
+  const ALLOWED_FILE_TYPES = ['application/pdf'];
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return errorResponse(`Unsupported file type: ${file.type}. Only PDF files are allowed.`, 400);
+  }
+
+  // Validate file size (demo mode only - HTTP-layer concern)
+  if (process.env.IS_DEMO_MODE === 'true') {
+    const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '0');
+    const maxBytes = MAX_FILE_SIZE_MB * 1024 * 1024;
+    if (file.size > maxBytes) {
+      return errorResponse(
+        `File size exceeds limit of ${MAX_FILE_SIZE_MB}MB (demo environment)`,
+        400
+      );
+    }
+  }
 
   try {
     // Use DocumentService for upload logic
-    const documentService = await getDocumentService();
-    const result = await documentService.upload(file, vendorName, clientIp);
+    const documentService = await createDocumentService();
+    const result = await documentService.upload(file, vendorName);
+
+    // Increment usage counters (cross-cutting concern)
+    await incrementDailyUploadCount();
+    await incrementIpUploadCount(clientIp);
 
     return successResponse(
       {

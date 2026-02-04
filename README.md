@@ -40,7 +40,7 @@ npm run test:e2e            # E2E tests (requires Azure credentials)
 # - client at localhost:3000
 
 cd code
-set -a; source .env.e2e; FUNCTION_APP_URL=http://localhost:7071; set +a;
+set -a; source .env; FUNCTION_APP_URL=http://localhost:7071; set +a;
 npm run dev
 ```
 

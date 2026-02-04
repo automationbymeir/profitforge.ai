@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { withCors, withErrorHandler } from '../../../middleware/index.js';
-import { getDocumentService } from '../../../services/index.js';
+import { createDocumentService } from '../../../services/index.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
 
 /**
@@ -19,17 +19,13 @@ async function deleteDocumentHandlerCore(
   }
 
   try {
-    // For now, use DocumentService.deleteDocument which handles single document deletion
-    // TODO: In Phase 3 refactoring, enhance DocumentService to handle cascade deletion of all versions
-    const documentService = await getDocumentService();
-    const result = await documentService.deleteDocument(documentId);
+    const documentService = await createDocumentService();
+    await documentService.deleteDocument(documentId);
 
-    context.log(`✅ Deleted document with ${result.documentsDeleted} record(s)`);
+    context.log(`✅ Deleted document ${documentId}`);
 
     return successResponse({
       message: 'Document deleted successfully',
-      documentsDeleted: result.documentsDeleted,
-      blobsDeleted: result.blobsDeleted,
     });
   } catch (error: unknown) {
     // Handle custom error codes from service

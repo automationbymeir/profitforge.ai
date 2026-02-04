@@ -54,7 +54,7 @@ describe('Integration: Upload Workflow', () => {
     expect(response.status).toBe(201);
     const data = await response.json();
     expect(data.resultId).toBeDefined();
-    expect(data.documentName).toBe('TEST_UPLOAD_API_01_26.pdf');
+    expect(data.documentName).toBe('test.pdf'); // Service stores original filename
     expect(data.vendorName).toBe(testVendor);
 
     // Verify database record created

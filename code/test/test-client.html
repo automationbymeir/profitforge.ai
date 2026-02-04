@@ -201,11 +201,11 @@
 
         // Use localhost:7071 as default for local testing
         const baseUrl = 'http://localhost:7071';
-        const uploadUrl = `${baseUrl}/api/upload`;
+        const uploadUrl = `${baseUrl}/api/documents/upload`;
 
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
-        formData.append('vendorId', vendorId);
+        formData.append('vendorName', vendorId);
 
         // UI State
         resultDiv.style.display = 'none';
@@ -227,7 +227,7 @@
               `<strong>✅ Upload Successful!</strong>\n\n` +
               `Result ID: ${data.resultId}\n` +
               `File Path: ${data.filePath}\n` +
-              `Vendor ID: ${data.vendorId}\n\n` +
+              `Vendor Name: ${data.vendorName}\n\n` +
               `Document is being processed in the background...\n\n` +
               `<a href="results-viewer.html?resultId=${data.resultId}" style="display:inline-block;margin-top:10px;padding:10px 20px;background:#0078d4;color:white;text-decoration:none;border-radius:4px;">View Results →</a>`;
           } else {

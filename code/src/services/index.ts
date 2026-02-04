@@ -1,7 +1,7 @@
 // Service exports
 export {
+  createDocumentService,
   DocumentService,
-  getDocumentService,
   type ConfirmResult,
   type DeleteResult,
   type DocumentInfo,
@@ -9,18 +9,16 @@ export {
   type UploadResult,
 } from './document-service.js';
 
-export { VendorService, getVendorService, type VendorDeleteResult } from './vendor-service.js';
-
 export {
-  VersionService,
   getVersionService,
+  VersionService,
   type DeleteRunResult,
   type VersionHistoryResult,
   type VersionInfo,
 } from './version-service.js';
 
-export { AIService, getAIService, type AIMappingResult, type Product } from './ai-service.js';
+export { AIService, createAIService, type AIMappingResult, type Product } from './ai-service.js';
 
-export { OCRService, getOCRService, type OCRResult } from './ocr-service.js';
+export { createOCRService, OCRService, type OCRResult } from './ocr-service.js';
 
-export { StorageService, getStorageService } from './storage-service.js';
+export { StorageService } from '../data/storage.js';

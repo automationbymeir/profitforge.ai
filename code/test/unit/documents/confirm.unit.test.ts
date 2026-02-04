@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock services BEFORE importing the handler
-vi.mock('../../../../../src/services/index.js', () => ({
-  getDocumentService: vi.fn(),
-  getVendorService: vi.fn(),
-  getVersionService: vi.fn(),
+vi.mock('../../../src/services/index.js', () => ({
+  createDocumentService: vi.fn(),
+  createVendorService: vi.fn(),
+  createVersionService: vi.fn(),
 }));
 
-import { confirmMappingHandler } from '../../../../../src/functions/http/documents/confirm';
-import { getDocumentService } from '../../../../../src/services/index.js';
-import { mockInvocationContext } from '../../../setup/mocks';
+import { confirmMappingHandler } from '../../../src/functions/http/documents/confirm';
+import { createDocumentService } from '../../../src/services/index.js';
+import { mockInvocationContext } from '../setup/mocks';
 
 describe('Confirm Mapping Handler - Unit Tests', () => {
   beforeEach(() => {
@@ -22,7 +22,7 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
         vendor: 'ACME',
       }),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
   });
 
   it('should export products to vendor_products table', async () => {
@@ -57,7 +57,7 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
         .fn()
         .mockRejectedValue(Object.assign(new Error('Document not found'), { statusCode: 404 })),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = {
       params: { id: 'nonexistent-uuid' },
@@ -79,7 +79,7 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
         })
       ),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = {
       params: { id: 'test-uuid-1234' },
@@ -101,7 +101,7 @@ describe('Confirm Mapping Handler - Unit Tests', () => {
           Object.assign(new Error('No products found in mapping result'), { statusCode: 400 })
         ),
     };
-    vi.mocked(getDocumentService).mockReturnValue(mockDocumentService as any);
+    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
 
     const request = {
       params: { id: 'test-uuid-1234' },

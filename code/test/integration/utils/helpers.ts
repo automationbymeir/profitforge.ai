@@ -44,7 +44,7 @@ export async function uploadDocumentViaService(
   const { getDocumentService } = await import('../../../src/services/document-service.js');
 
   // Use vendor-light.pdf (259KB) for fast tests
-  const defaultPdfPath = join(__dirname, 'fixtures/vendor-light.pdf');
+  const defaultPdfPath = join(__dirname, '../../../fixtures/vendor-light.pdf');
   const pdfBuffer = readFileSync(pdfPath || defaultPdfPath);
 
   // Create File object from buffer

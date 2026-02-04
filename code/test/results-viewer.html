@@ -101,6 +101,12 @@
         padding: 6px 12px;
         font-size: 14px;
       }
+      .action-buttons-vendor {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-left: auto;
+      }
       .action-buttons {
         display: flex;
         gap: 10px;
@@ -120,6 +126,13 @@
         background: #0078d4;
         color: white;
         padding: 20px 25px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      .card-header-content {
+        flex: 1;
       }
       .card-header h2 {
         font-size: 1.5em;
@@ -410,7 +423,7 @@
         const resultId = document.getElementById('resultId').value.trim();
         const vendor = document.getElementById('vendor').value.trim();
 
-        let url = `${baseUrl}/api/getResults?limit=10`;
+        let url = `${baseUrl}/api/documents?limit=10`;
         if (resultId) url += `&resultId=${encodeURIComponent(resultId)}`;
         if (vendor) url += `&vendor=${encodeURIComponent(vendor)}`;
 
@@ -439,7 +452,7 @@
 
       async function loadVersionHistory(documentId, baseUrl) {
         try {
-          const response = await fetch(`${baseUrl}/api/getVersionHistory?documentId=${documentId}`);
+          const response = await fetch(`${baseUrl}/api/documents/${documentId}/versions`);
           if (response.ok) {
             const data = await response.json();
             currentVersions[data.rootDocumentId] = data.versions;
@@ -474,8 +487,14 @@
         return `
           <div class="results-card" id="card-${result.result_id}">
             <div class="card-header">
-              <h2>${vendor} <span class="product-count">${products.length} products</span></h2>
-              <div class="card-meta">📄 ${result.document_name} • 📅 ${new Date(result.created_at).toLocaleString()}</div>
+              <div class="card-header-content">
+                <h2>${vendor} <span class="product-count">${products.length} products</span></h2>
+                <div class="card-meta">📄 ${result.document_name} • 📅 ${new Date(result.created_at).toLocaleString()}</div>
+              </div>
+              <div class="action-buttons-vendor">
+                ${result.processing_status === 'completed' || result.processing_status === 'ocr_complete' ? `<button class="secondary" onclick="reprocessMapping('${result.result_id}')">🔄 Rerun AI</button>` : ''}
+                <button class="danger" onclick="deleteDocument('${result.result_id}')">🗑️ Delete All</button>
+              </div>
             </div>
             <div class="card-body">
               ${renderVersionCarousel(versions, result, rootId, baseUrl)}
@@ -523,9 +542,7 @@
 
               <div class="action-buttons">
                 ${result.processing_status === 'completed' && result.export_status === 'pending' ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export</button>` : ''}
-                ${result.processing_status === 'completed' || result.processing_status === 'ocr_complete' ? `<button class="secondary" onclick="reprocessMapping('${result.result_id}')">🔄 Rerun AI</button>` : ''}
                 ${result.parent_document_id ? `<button class="danger small" onclick="deleteRun('${result.result_id}')">🗑️ Delete Run</button>` : ''}
-                <button class="danger" onclick="deleteDocument('${result.result_id}')">🗑️ Delete All</button>
               </div>
 
               ${
@@ -620,10 +637,9 @@
           return;
         const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
         try {
-          const response = await fetch(`${baseUrl}/api/confirmMapping`, {
+          const response = await fetch(`${baseUrl}/api/documents/${documentId}/confirm`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ documentId }),
           });
           const data = await response.json();
           if (response.ok) {
@@ -643,22 +659,23 @@
         if (!confirm('Create new version for AI remapping? Original results preserved.')) return;
         const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
         try {
-          const reprocessResponse = await fetch(`${baseUrl}/api/reprocessMapping`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ documentId }),
-          });
+          const reprocessResponse = await fetch(
+            `${baseUrl}/api/documents/${documentId}/reprocess`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
           const reprocessData = await reprocessResponse.json();
           if (!reprocessResponse.ok) {
             alert(`❌ Error: ${reprocessData.error}`);
             return;
           }
-          const newDocumentId = reprocessData.newDocumentId;
+          const newResultId = reprocessData.newResultId;
           alert(`✅ New version created (v${reprocessData.version})! Triggering AI mapping...`);
-          const mapResponse = await fetch(`${baseUrl}/api/aiProductMapper`, {
+          const mapResponse = await fetch(`${baseUrl}/api/documents/${newResultId}/mapping`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ documentId: newDocumentId }),
           });
           const mapData = await mapResponse.json();
           if (mapResponse.ok) {
@@ -679,7 +696,7 @@
         const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
         try {
           const response = await fetch(
-            `${baseUrl}/api/deleteRun?documentId=${encodeURIComponent(documentId)}`,
+            `${baseUrl}/api/documents/${encodeURIComponent(documentId)}/versions/${encodeURIComponent(documentId)}`,
             { method: 'DELETE' }
           );
           const data = await response.json();
@@ -704,7 +721,7 @@
         const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
         try {
           const response = await fetch(
-            `${baseUrl}/api/deleteDocument?documentId=${encodeURIComponent(documentId)}`,
+            `${baseUrl}/api/documents/${encodeURIComponent(documentId)}`,
             { method: 'DELETE' }
           );
           const data = await response.json();

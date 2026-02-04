@@ -1,7 +1,6 @@
 import sql from 'mssql';
 import { OpenAI } from 'openai';
 import { withDatabase } from '../utils/database.js';
-import { getStorageService } from './storage-service.js';
 
 interface TableCell {
   kind: string;
@@ -54,22 +53,20 @@ export interface AIMappingResult {
  * - OpenAI GPT-4o integration for product extraction
  * - Column mapping analysis
  * - Quality metrics calculation
- * - Bronze-layer storage of AI results
+ * - AI results persisted to database
  * - Database updates
  */
 export class AIService {
   private openai: OpenAI;
-  private storageService = getStorageService();
-  private bronzeLayerContainer: string;
 
-  constructor(endpoint: string, apiKey: string, bronzeLayerContainer: string = 'bronze-layer') {
+  constructor(endpoint: string, apiKey: string) {
     this.openai = new OpenAI({
       apiKey,
       baseURL: `${endpoint}/openai/deployments/gpt-4o`,
       defaultQuery: { 'api-version': '2024-08-01-preview' },
       defaultHeaders: { 'api-key': apiKey },
     });
-    this.bronzeLayerContainer = bronzeLayerContainer;
+    // No bronze-layer usage; AI mapping results are stored in DB
   }
 
   /**
@@ -332,9 +329,6 @@ Context: ${fullText.substring(0, 2000)}`;
 
     const processingDuration = Date.now() - startTime;
 
-    // Store in bronze-layer
-    const version = document.reprocessing_count || 0;
-
     const mappingResultJson = {
       documentId,
       timestamp: new Date().toISOString(),
@@ -355,17 +349,8 @@ Context: ${fullText.substring(0, 2000)}`;
       },
     };
 
-    await this.storageService.uploadToBronzeLayer(
-      this.bronzeLayerContainer,
-      `ai-mapping/${documentId}-v${version}.json`,
-      mappingResultJson
-    );
-
-    await this.storageService.uploadTextToBronzeLayer(
-      this.bronzeLayerContainer,
-      `prompts/${documentId}-mapping-v${version}.txt`,
-      headerMappingPrompt
-    );
+    // Previously we stored AI mapping artifacts in a bronze-layer container.
+    // This project no longer uses a bronze-layer; artifacts are persisted in the database only.
 
     // Update database with AI mapping results
     await withDatabase(async (pool) => {
@@ -423,20 +408,17 @@ Context: ${fullText.substring(0, 2000)}`;
   }
 }
 
-// Singleton instance
-let aiServiceInstance: AIService | null = null;
-
 /**
- * Get or create singleton AIService instance
+ * Create an AIService instance
+ *
+ * For testing: inject dependencies via constructor
+ * For production: use this factory to create with real dependencies
  */
-export function getAIService(): AIService {
-  if (!aiServiceInstance) {
-    const endpoint = process.env.AI_PROJECT_ENDPOINT;
-    const apiKey = process.env.AI_PROJECT_KEY;
-    if (!endpoint || !apiKey) {
-      throw new Error('Missing AI project configuration (AI_PROJECT_ENDPOINT or AI_PROJECT_KEY)');
-    }
-    aiServiceInstance = new AIService(endpoint, apiKey);
+export function createAIService(): AIService {
+  const endpoint = process.env.AI_PROJECT_ENDPOINT;
+  const apiKey = process.env.AI_PROJECT_KEY;
+  if (!endpoint || !apiKey) {
+    throw new Error('Missing AI project configuration (AI_PROJECT_ENDPOINT or AI_PROJECT_KEY)');
   }
-  return aiServiceInstance;
+  return new AIService(endpoint, apiKey);
 }

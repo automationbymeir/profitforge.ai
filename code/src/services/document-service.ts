@@ -1,10 +1,10 @@
 import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
 import { VendorProductRepository } from '../data/repositories/VendorProductRepository.js';
+import { StorageService } from '../data/storage.js';
+import { QueueService } from '../functions/infra-adapters/queues.js';
 import { ProcessingStatus } from '../models/document.js';
 import { Product } from '../models/product.js';
-import { incrementDailyUploadCount, incrementIpUploadCount } from '../utils/usageTracker.js';
-import { getVendorFileName, validateVendorName } from '../utils/validations.js';
-import { getStorageService } from './storage-service.js';
+import { getStorageConnectionString } from '../utils/config.js';
 
 export interface UploadResult {
   resultId: string;
@@ -52,120 +52,70 @@ export interface ConfirmResult {
  * - Result retrieval and querying
  */
 export class DocumentService {
-  private storageService = getStorageService();
   private documentsContainer: string;
   private documentRepo: DocumentRepository;
   private vendorProductRepo: VendorProductRepository;
+  private storageService: StorageService;
+  private queueService: QueueService;
 
   constructor(
     documentRepo: DocumentRepository,
     vendorProductRepo: VendorProductRepository,
+    storageService: StorageService,
+    queueService: QueueService,
     documentsContainer: string = 'uploads'
   ) {
     this.documentRepo = documentRepo;
     this.vendorProductRepo = vendorProductRepo;
+    this.storageService = storageService;
+    this.queueService = queueService;
     this.documentsContainer = documentsContainer;
-  }
-
-  /**
-   * Get vendor path for blob storage
-   */
-  private getVendorPath(vendorName: string): string {
-    return vendorName;
-  }
-
-  /**
-   * Validate file size against configured limit
-   */
-  private validateFileSize(fileSize: number): boolean {
-    const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '0');
-    const maxBytes = MAX_FILE_SIZE_MB * 1024 * 1024;
-    return fileSize > maxBytes ? false : true;
   }
 
   /**
    * Upload a document with vendor name
    */
-  async upload(
-    file: File,
-    vendorName: string,
-    clientIp: string = 'unknown'
-  ): Promise<UploadResult> {
-    // Validate vendor name
-    const vendorValidation = validateVendorName(vendorName);
-    if (!vendorValidation.valid) {
-      const error = new Error(`Invalid vendor name format: ${vendorValidation.error}`) as Error & {
-        statusCode: number;
-      };
-      error.statusCode = 400;
-      throw error;
-    }
-
-    // Validate file type
-    const ALLOWED_FILE_TYPES = ['application/pdf'];
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      const error = new Error(
-        `Unsupported file type: ${file.type}. Only PDF files are allowed.`
-      ) as Error & { statusCode: number };
-      error.statusCode = 400;
-      throw error;
-    }
-
-    // Validate file size (demo mode only)
-    if (process.env.IS_DEMO_MODE === 'true' && !this.validateFileSize(file.size)) {
-      const error = new Error(
-        `File size exceeds limit of ${process.env.MAX_FILE_SIZE_MB}MB (demo environment)`
-      ) as Error & { statusCode: number };
-      error.statusCode = 400;
-      throw error;
-    }
-
-    // Get standardized file name
-    const standardFileName = getVendorFileName(vendorName);
+  async upload(file: File, vendorName: string): Promise<UploadResult> {
     const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const filePath = `${this.getVendorPath(vendorName)}/${standardFileName}`;
+    const filePath = `${vendorName}/${file.name}`;
 
-    // Check for duplicate vendor (one-to-one mapping enforcement)
+    // Check for duplicate vendor (one-to-one mapping enforcement - business rule)
     const existingDocs = await this.documentRepo.findByVendor(vendorName);
 
     if (existingDocs.length > 0) {
       const existingDoc = existingDocs[0];
-      const error = new Error('Vendor already exists') as Error & {
-        statusCode: number;
-        details: unknown;
-      };
-      error.statusCode = 409;
-      error.details = {
-        message: `A document already exists for vendor ${vendorName}. Please delete the existing document first.`,
-        existingDocument: {
-          resultId: existingDoc.result_id,
-          documentName: existingDoc.document_name,
-          status: existingDoc.processing_status,
+      throw Object.assign(new Error('Vendor already exists'), {
+        statusCode: 409,
+        details: {
+          message: `A document already exists for vendor ${vendorName}. Please delete the existing document first.`,
+          existingDocument: {
+            resultId: existingDoc.result_id,
+            documentName: existingDoc.document_name,
+            status: existingDoc.processing_status,
+          },
         },
-      };
-      throw error;
+      });
     }
 
-    // Upload to blob storage
-    await this.storageService.uploadBlob(this.documentsContainer, filePath, fileBuffer);
+    // Upload to blob storage with correct content type
+    await this.storageService.uploadBlob(this.documentsContainer, filePath, fileBuffer, file.type);
 
     // Register in database
     const resultId = await this.documentRepo.create({
       vendor_name: vendorName,
-      document_name: standardFileName,
+      document_name: file.name,
       document_path: filePath,
       document_type: file.type,
       processing_status: 'pending',
       document_size_bytes: file.size,
     });
 
-    // Increment usage counters
-    await incrementDailyUploadCount();
-    await incrementIpUploadCount(clientIp);
+    // Queue OCR processing (replaces blob trigger)
+    await this.queueService.queueOCRProcessing(resultId, filePath);
 
     return {
       resultId,
-      documentName: standardFileName,
+      documentName: file.name,
       vendorName,
       filePath,
       status: 'pending',
@@ -175,32 +125,43 @@ export class DocumentService {
   /**
    * Delete a specific document by ID
    */
-  async deleteDocument(documentId: string): Promise<DeleteResult> {
+  async deleteDocument(documentId: string): Promise<void> {
     // Get document info
     const document = await this.documentRepo.findById(documentId);
-
     if (!document) {
-      const error = new Error('Document not found') as Error & { statusCode: number };
-      error.statusCode = 404;
-      throw error;
+      return;
     }
-
-    // Delete blob
-    let blobsDeleted = 0;
     try {
       await this.storageService.deleteBlob(this.documentsContainer, document.document_path);
-      blobsDeleted = 1;
     } catch (error) {
       console.warn(`Failed to delete blob ${document.document_path}:`, error);
     }
-
     // Delete database record
-    const documentsDeleted = await this.documentRepo.deleteById(documentId);
+    try {
+      await this.documentRepo.deleteById(document.result_id);
+    } catch (error) {
+      console.warn(`Failed to delete document ${document.result_id}:`, error);
+    }
 
-    return {
-      documentsDeleted,
-      blobsDeleted,
-    };
+    return;
+  }
+
+  /**
+   * Delete all documents for a specific vendor
+   */
+  async deleteByVendorName(vendorName: string): Promise<void> {
+    // Get all documents for vendor
+    const documents = await this.documentRepo.findByVendor(vendorName);
+
+    if (documents.length === 0) {
+      return;
+    }
+    // Delete all documents in parallel
+    await Promise.all(
+      documents.map(async (document) => {
+        this.deleteDocument(document.result_id);
+      })
+    );
   }
 
   /**
@@ -311,6 +272,36 @@ export class DocumentService {
   }
 
   /**
+   * Get processing status for a document
+   */
+  async getProcessStatus(resultId: string): Promise<ProcessingStatus> {
+    const document = await this.documentRepo.findById(resultId);
+
+    if (!document) {
+      const error = new Error('Document not found') as Error & { statusCode: number };
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return document.processing_status;
+  }
+
+  /**
+   * Get full document record by ID
+   */
+  async getDocument(resultId: string): Promise<import('../models/document.js').Document> {
+    const document = await this.documentRepo.findById(resultId);
+
+    if (!document) {
+      const error = new Error('Document not found') as Error & { statusCode: number };
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return document;
+  }
+
+  /**
    * Get results with optional filtering
    */
   async getResults(filters?: {
@@ -337,23 +328,27 @@ export class DocumentService {
   }
 }
 
-// Singleton instance
-let documentServiceInstance: DocumentService | null = null;
-
 /**
- * Get or create singleton DocumentService instance
+ * Create a DocumentService instance
+ *
+ * For testing: inject dependencies via constructor
+ * For production: use this factory to create with real dependencies
  */
-export async function getDocumentService(): Promise<DocumentService> {
-  if (!documentServiceInstance) {
-    // Import withDatabase here to avoid circular dependency issues
-    const { getConnectionPool } = await import('../utils/database.js');
-    const pool = await getConnectionPool();
+export async function createDocumentService(): Promise<DocumentService> {
+  const { getConnectionPool } = await import('../utils/database.js');
+  const pool = await getConnectionPool();
 
-    const documentRepo = new DocumentRepository(pool);
-    const vendorProductRepo = new VendorProductRepository(pool);
-    const containerName = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';
+  const documentRepo = new DocumentRepository(pool);
+  const vendorProductRepo = new VendorProductRepository(pool);
+  const storageService = new StorageService(getStorageConnectionString());
+  const queueService = new QueueService(getStorageConnectionString());
+  const containerName = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';
 
-    documentServiceInstance = new DocumentService(documentRepo, vendorProductRepo, containerName);
-  }
-  return documentServiceInstance;
+  return new DocumentService(
+    documentRepo,
+    vendorProductRepo,
+    storageService,
+    queueService,
+    containerName
+  );
 }

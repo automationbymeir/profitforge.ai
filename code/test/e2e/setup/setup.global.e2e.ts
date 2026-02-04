@@ -31,11 +31,10 @@
  */
 
 import { ChildProcess } from 'child_process';
-import { config } from 'dotenv';
+import { config as loadEnv } from 'dotenv';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
-import { getTestConfig, TestMode } from '../../config.js';
-import { cleanBlobs, cleanQueue } from '../../tools/cleanup';
+import { cleanQueue } from '../../tools/cleanup';
 import {
   registerSignalHandlers,
   startFunctions,
@@ -48,7 +47,7 @@ const FUNC_ERROR_LOG_PATH = 'test/functions-e2e-error.log';
 
 let functionsProcess: ChildProcess | null = null;
 let isCleaningUp = false;
-const useLocalFunctions = process.env.FUNCTION_APP_URL?.includes('http://localhost:');
+let useLocalFunctions: boolean = false;
 
 /**
  * Cleanup function
@@ -69,57 +68,39 @@ async function cleanup() {
 
 /**
  * Global setup for e2e tests
-}
-
-/**
- * Clean up old test data from production Azure before starting tests
- * 
- * Note: We only clean blobs and queue messages, NOT the database because:
- * - Database records don't trigger any automation (only blobs/queues do)
- * - Tests create isolated data with unique test vendor names
- * - Preserving old test data helps with debugging
  */
-async function cleanupOldTestData(): Promise<void> {
-  try {
-    console.log('🧹 Cleaning up old test data from Azure...');
-
-    // Use existing cleanup functions
-    await cleanBlobs();
-    await cleanQueue();
-
-    console.log('✓ Old test data cleaned');
-  } catch (error) {
-    console.warn('⚠️  Failed to clean old test data (non-critical):', error);
-  }
-}
 
 export default async function globalSetup() {
-  const mode = 'e2e' as TestMode;
-  console.log('\n🔧 Setting up e2e test environment...\n');
+  console.log(`\n🔧 Setting up integration test environment...\n`);
 
-  // Load environment variables
-  // Priority: 1) Existing env vars (CI), 2) .env.e2e file (Dev)
-  const envPath = resolve(process.cwd(), '.env.e2e');
-  const hasEnvFile = existsSync(envPath);
-  const hasEnvVars = !!process.env.FUNCTION_APP_URL;
+  // Load .env.integration from the setup folder (optional in CI/CD)
+  const envPath = resolve(__dirname, '.env');
+  let envVars: Record<string, string> = {};
 
-  if (hasEnvFile) {
-    // Dev: Load from .env.e2e (won't override existing env vars)
-    config({ path: envPath, override: false });
-    console.log('✓ Loaded .env.e2e (dev mode)');
-  } else if (hasEnvVars) {
-    // CI: Using environment variables from GitHub secrets
-    console.log('✓ Using environment variables (CI mode)');
+  if (existsSync(envPath)) {
+    const dotenvConfigOutput = loadEnv({ path: envPath, override: true });
+    console.log('✓ Loaded .env');
+    envVars = dotenvConfigOutput.parsed || {};
+    useLocalFunctions = process.env.FUNCTION_APP_URL?.includes('http://localhost:') || false;
+    console.log('localFunctions:', useLocalFunctions);
   } else {
-    console.error('\n❌ No environment configuration found!');
-    console.error('   Dev: Create .env.e2e from .env.e2e.example');
-    console.error('   CI: Ensure GitHub secrets are configured\n');
-    throw new Error('Missing environment configuration');
-  }
-
-  // Validate required environment variables
-  if (!process.env.FUNCTION_APP_URL) {
-    throw new Error('FUNCTION_APP_URL is required');
+    // In CI/CD, env vars are already set in process.env
+    console.log('✓ Using environment variables from process.env (CI/CD mode)');
+    // Extract only the vars we need for Functions
+    const requiredVars = [
+      'SQL_CONNECTION_STRING',
+      'STORAGE_CONNECTION_STRING',
+      'DOCUMENT_INTELLIGENCE_KEY',
+      'DOCUMENT_INTELLIGENCE_ENDPOINT',
+      'AI_PROJECT_KEY',
+      'AI_PROJECT_ENDPOINT',
+      'FUNCTION_APP_URL',
+    ];
+    for (const key of requiredVars) {
+      if (process.env[key]) {
+        envVars[key] = process.env[key] as string;
+      }
+    }
   }
 
   // Register signal handlers for Ctrl+C and other interrupts
@@ -130,23 +111,16 @@ export default async function globalSetup() {
       console.log('📍 Mode: Local Functions with production Azure resources\n');
 
       // Clean up old test data first to prevent stale triggers
-      await cleanupOldTestData();
+      await cleanQueue();
 
       // Start local Functions app with injected environment variables
       console.log('✓ Injecting e2e test environment variables');
-      functionsProcess = await startFunctions(
-        FUNC_LOG_PATH,
-        FUNC_ERROR_LOG_PATH,
-        true,
-        getTestConfig(mode)
-      );
+      functionsProcess = await startFunctions(FUNC_LOG_PATH, FUNC_ERROR_LOG_PATH, envVars);
     } else {
       console.log(`📍 Mode: Deployed Functions at ${process.env.FUNCTION_APP_URL}\n`);
     }
 
-    console.log(`   (Waiting for Functions at ${process.env.FUNCTION_APP_URL})...`);
-    await waitForFunctions(`${process.env.FUNCTION_APP_URL}/api/helloWorld`, 60);
-    console.log('\n✅ e2e test environment ready!\n');
+    await waitForFunctions(process.env.FUNCTION_APP_URL);
 
     // Return teardown function
     return cleanup;
