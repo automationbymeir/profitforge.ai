@@ -13,9 +13,10 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository';
-import { getConnectionPool } from '../../../src/utils/database';
-import { mockDocumentIntelligence, mockOpenAI } from '../utils/fixtures/azure-ai-mocks';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository';
+import { getConnectionPool } from '../../src/utils/database';
+import { mockDocumentIntelligence, mockOpenAI } from './common/fixtures/azure-ai-mocks';
+import { cleanTestDatabase } from './common/utils';
 
 // TODO: Import your Azure Functions app for Supertest
 // This requires exposing the app in a testable way
@@ -26,7 +27,10 @@ const FUNCTION_BASE_URL = 'http://localhost:7071';
 describe('Integration: Upload Workflow', () => {
   const testVendor = 'TEST_UPLOAD_API_01_26';
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Clean database to ensure test isolation
+    await cleanTestDatabase();
+
     // Mock AI services for this test
     vi.mock('@azure/ai-document-intelligence', () => ({
       DocumentIntelligenceClient: vi.fn(() => mockDocumentIntelligence('success')),
@@ -39,7 +43,7 @@ describe('Integration: Upload Workflow', () => {
 
   it('should upload a PDF and trigger blob processing', async () => {
     // Arrange
-    const testPDF = readFileSync(join(__dirname, '../../e2e/docs/samplePDF.pdf'));
+    const testPDF = readFileSync(join(__dirname, '../fixtures/vendor-light.pdf'));
     const formData = new FormData();
     formData.append('file', new Blob([testPDF], { type: 'application/pdf' }), 'test.pdf');
     formData.append('vendorName', testVendor);

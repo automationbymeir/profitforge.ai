@@ -6,9 +6,9 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository';
-import { getConnectionPool } from '../../../src/utils/database';
-import { cleanTestDatabase } from '../utils//helpers';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository';
+import { getConnectionPool } from '../../src/utils/database';
+import { cleanTestDatabase } from './common/utils';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 

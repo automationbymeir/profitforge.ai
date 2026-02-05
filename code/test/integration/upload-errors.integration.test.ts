@@ -6,9 +6,9 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { TEST_FILE_METADATA, TEST_VENDOR_PREFIXES } from '../../fixtures/test-data';
-import { generateTestVendorName } from '../../tools/testVendorNames';
-import { cleanTestDatabase } from '../utils/helpers';
+import { TEST_FILE_METADATA, TEST_VENDOR_PREFIXES } from '../fixtures/test-data';
+import { generateTestVendorName } from '../tools/testVendorNames';
+import { cleanTestDatabase } from './common/utils';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 

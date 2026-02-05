@@ -7,10 +7,10 @@
 
 import type sql from 'mssql';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import type { CreateDocumentInput } from '../../../src/data/repositories/DocumentRepository.js';
-import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
-import { getConnectionPool } from '../../../src/utils/database.js';
-import { cleanTestDatabase } from '../utils/helpers.js';
+import type { CreateDocumentInput } from '../../src/data/repositories/DocumentRepository.js';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.js';
+import { getConnectionPool } from '../../src/utils/database.js';
+import { cleanTestDatabase } from './common/utils';
 
 describe('DocumentRepository Integration Tests', () => {
   let pool: sql.ConnectionPool;

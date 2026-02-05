@@ -6,7 +6,7 @@
  */
 
 import { afterEach } from 'vitest';
-import { cleanTestDatabase } from '../utils/helpers';
+import { cleanTestDatabase } from '../common/utils';
 import { cleanAzuriteBlobs, cleanAzuriteQueue } from './utils';
 
 afterEach(async () => {

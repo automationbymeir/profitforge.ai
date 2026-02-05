@@ -6,7 +6,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { cleanTestDatabase } from '../utils/helpers';
+import { cleanTestDatabase } from './common/utils';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 

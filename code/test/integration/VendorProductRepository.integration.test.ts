@@ -7,12 +7,12 @@
 
 import type sql from 'mssql';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import type { CreateDocumentInput } from '../../../src/data/repositories/DocumentRepository.js';
-import { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
-import type { CreateVendorProductInput } from '../../../src/data/repositories/VendorProductRepository.js';
-import { VendorProductRepository } from '../../../src/data/repositories/VendorProductRepository.js';
-import { getConnectionPool } from '../../../src/utils/database.js';
-import { cleanTestDatabase } from '../utils/helpers.js';
+import type { CreateDocumentInput } from '../../src/data/repositories/DocumentRepository.js';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.js';
+import type { CreateVendorProductInput } from '../../src/data/repositories/VendorProductRepository.js';
+import { VendorProductRepository } from '../../src/data/repositories/VendorProductRepository.js';
+import { getConnectionPool } from '../../src/utils/database.js';
+import { cleanTestDatabase } from './common/utils';
 
 describe('VendorProductRepository Integration Tests', () => {
   let pool: sql.ConnectionPool;
