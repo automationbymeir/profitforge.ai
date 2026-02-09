@@ -48,8 +48,7 @@ export interface Document {
   export_status: ExportStatus;
   exported_at: Date | null;
 
-  processing_started_at: number;
-  doc_intel_end_time: number;
+  processing_started_at: Date;
   doc_intel_cost_usd: number | null;
   doc_intel_confidence_score: number | null;
   doc_intel_prompt_used: string | null;

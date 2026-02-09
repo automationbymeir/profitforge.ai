@@ -9,7 +9,7 @@
     "watch": "tsc --watch",
     "prestart": "npm run build",
     "start": "func start",
-    "dev": "tsc --watch & func start & npx serve test -p 3000",
+    "dev": "tsc --watch & func start & npx serve dev -p 3000",
     "test": "npm run test:unit && npm run test:integration",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:watch": "vitest",

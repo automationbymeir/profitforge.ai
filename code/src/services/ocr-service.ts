@@ -125,8 +125,6 @@ export class OCRService {
         doc_intel_confidence_score: ocrMetadata.confidenceScore || null,
         doc_intel_cost_usd: ocrMetadata.cost,
         doc_intel_prompt_used: 'prebuilt-layout',
-        processing_started_at: ocrMetadata.ocrStartTime,
-        doc_intel_end_time: ocrMetadata.ocrEndTime,
       });
 
       console.log(`✅ Updated database with OCR results for ${documentId}`);

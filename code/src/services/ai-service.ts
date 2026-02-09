@@ -283,7 +283,7 @@ Context: ${fullText.substring(0, 2000)}`;
     }
 
     const ocrData = JSON.parse(ocrBlob.toString('utf-8'));
-    const tables = ocrData.tables || [];
+    const tables = ocrData.ocrResponse?.tables || ocrData.tables || [];
 
     // Analyze ALL table headers
     const allHeaders: Array<{ tableIdx: number; colIdx: number; header: string }> = [];
@@ -363,7 +363,6 @@ Context: ${fullText.substring(0, 2000)}`;
       ai_completeness_score: completenessScore,
       ai_prompt_tokens: promptTokens,
       ai_completion_tokens: completionTokens,
-      vendor_name: document.vendor_name,
     });
 
     return {

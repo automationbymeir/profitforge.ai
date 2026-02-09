@@ -1,6 +1,5 @@
 import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
 import { VendorProductRepository } from '../data/repositories/VendorProductRepository.js';
-import { ProcessingStatus } from '../functions/http/common/models/document.js';
 import { Product } from '../functions/http/common/models/product.js';
 import { QueueService } from '../functions/infra-adapters/queues.js';
 import { StorageService } from './index.js';
@@ -82,6 +81,7 @@ export class RunService {
       processing_status: 'pending',
       document_size_bytes: fileSize,
       export_status: 'not_exported',
+      processing_started_at: new Date(),
     });
 
     // Queue OCR processing
@@ -143,16 +143,14 @@ export class RunService {
       processing_status: 'ocr_complete', // Skip OCR, go straight to AI
       document_size_bytes: latestRun.document_size_bytes || 0,
       export_status: 'not_exported',
+      processing_started_at: new Date(),
     });
-
     // Copy OCR metadata to new run
     await this.documentRepo.updateOcrResults({
       result_id: newRunId,
       doc_intel_confidence_score: latestRun.doc_intel_confidence_score || null,
       doc_intel_cost_usd: latestRun.doc_intel_cost_usd || 0,
       doc_intel_prompt_used: latestRun.doc_intel_prompt_used || null,
-      processing_started_at: latestRun.processing_started_at || 0,
-      doc_intel_end_time: latestRun.doc_intel_end_time || 0,
     });
 
     // Queue AI mapping (queue expects just the resultId string)
@@ -168,56 +166,11 @@ export class RunService {
   }
 
   /**
-   * Get run details by ID
-   */
-  async getRunById(runId: string): Promise<RunInfo> {
-    const doc = await this.documentRepo.findById(runId);
-
-    if (!doc) {
-      throw Object.assign(new Error('Run not found'), {
-        statusCode: 404,
-        details: {
-          message: `Processing run ${runId} not found`,
-        },
-      });
-    }
-
-    return {
-      resultId: doc.result_id,
-      vendorName: doc.vendor_name,
-      documentPath: doc.document_path,
-      documentName: doc.document_name || '',
-      processingStatus: doc.processing_status || 'unknown',
-      exportStatus: doc.export_status || undefined,
-      createdAt: doc.created_at,
-      updatedAt: doc.updated_at,
-    };
-  }
-
-  /**
    * Delete a specific processing run
    * Does NOT delete blob storage files or other runs for same vendor
    */
   async deleteRun(runId: string): Promise<void> {
     await this.documentRepo.deleteById(runId);
-  }
-
-  /**
-   * Get processing status for a specific run
-   */
-  async getRunStatus(resultId: string): Promise<ProcessingStatus> {
-    const document = await this.documentRepo.findById(resultId);
-
-    if (!document) {
-      throw Object.assign(new Error('Run not found'), {
-        statusCode: 404,
-        details: {
-          message: `Processing run ${resultId} not found`,
-        },
-      });
-    }
-
-    return document.processing_status;
   }
 
   /**

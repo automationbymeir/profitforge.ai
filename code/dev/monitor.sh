@@ -1,11 +1,18 @@
 #!/bin/bash
 
-# Live monitoring of uploads - refreshes every 3 seconds
+# Live monitoring of uploads - refreshes every 15 seconds
 # Usage: ./monitor.sh
 
-STORAGE_ACCOUNT="deveitanpvstorage"
+# Load environment variables from .env file and strip quotes
+if [ -f "../.env" ]; then
+    set -a
+    source ../.env
+    set +a
+fi
+
+STORAGE_ACCOUNT="devpvstorage"
 CONTAINER="uploads"
-CONNECTION_STRING="${STORAGE_CONNECTION_STRING:-$(cat ../../local.settings.json | grep STORAGE_CONNECTION_STRING | cut -d'"' -f4)}"
+CONNECTION_STRING="${STORAGE_CONNECTION_STRING}"
 
 echo "🔍 Monitoring Uploads - Press Ctrl+C to stop"
 echo "Refreshing every 15 seconds..."
@@ -36,9 +43,9 @@ while true; do
     echo ""
     echo "📊 DATABASE (Recent 5 uploads):"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    node -e "
+    SQL_CONNECTION_STRING="${SQL_CONNECTION_STRING}" node -e "
         const sql = require('mssql');
-        const config = 'Server=tcp:dev-eitan-vvocr-sql0d3c18e3.database.windows.net,1433;Database=dev-eitan-vvocr-db;User ID=sqladmin;Password=MySecurePassword123!;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;';
+        const config = process.env.SQL_CONNECTION_STRING;
         
         (async () => {
             try {
@@ -49,7 +56,7 @@ while true; do
                         document_name,
                         processing_status,
                         FORMAT(uploaded_at, 'yyyy-MM-dd HH:mm:ss') as uploaded,
-                        ISNULL(CAST(total_cost_usd AS VARCHAR), 'N/A') as cost
+                        ISNULL(CAST((ISNULL(doc_intel_cost_usd, 0) + ISNULL(ai_model_cost_usd, 0)) AS VARCHAR), 'N/A') as cost
                     FROM vvocr.document_processing_results
                     ORDER BY uploaded_at DESC
                 \`);
@@ -65,17 +72,17 @@ while true; do
                 });
                 await pool.close();
             } catch (err) {
-                console.log('⚠️  Database connection failed');
+                console.error('⚠️  Database connection failed:', err.message);
             }
         })();
-    " 2>/dev/null
+    " 2>&1
     
     echo ""
     echo "📦 VENDOR PRODUCTS (Total count):"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    node -e "
+    SQL_CONNECTION_STRING="${SQL_CONNECTION_STRING}" node -e "
         const sql = require('mssql');
-        const config = 'Server=tcp:dev-eitan-vvocr-sql0d3c18e3.database.windows.net,1433;Database=dev-eitan-vvocr-db;User ID=sqladmin;Password=MySecurePassword123!;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;';
+        const config = process.env.SQL_CONNECTION_STRING;
         
         (async () => {
             try {
@@ -93,10 +100,10 @@ while true; do
                 console.log(\`Total Products: \${row.total_products} | Unique Vendors: \${row.unique_vendors} | Source Documents: \${row.source_documents}\`);
                 await pool.close();
             } catch (err) {
-                console.log('⚠️  Could not fetch vendor products data');
+                console.error('⚠️  Could not fetch vendor products data:', err.message);
             }
         })();
-    " 2>/dev/null
+    " 2>&1
     
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

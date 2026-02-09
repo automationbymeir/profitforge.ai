@@ -191,32 +191,32 @@
         background: #d4edda;
         color: #155724;
       }
-      /* Version Carousel */
-      .version-carousel {
+      /* Run Carousel */
+      .run-carousel {
         background: #f8f9fa;
         border-radius: 8px;
         padding: 20px;
         margin-bottom: 20px;
       }
-      .version-carousel-header {
+      .run-carousel-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin-bottom: 15px;
       }
-      .version-carousel-title {
+      .run-carousel-title {
         font-size: 1.1em;
         font-weight: 600;
         color: #333;
       }
-      .version-list {
+      .run-list {
         display: flex;
         gap: 10px;
         overflow-x: auto;
         padding: 10px 0;
       }
-      .version-card {
-        min-width: 200px;
+      .run-card {
+        min-width: 220px;
         background: white;
         border: 2px solid #e0e0e0;
         border-radius: 6px;
@@ -224,26 +224,27 @@
         cursor: pointer;
         transition: all 0.2s;
       }
-      .version-card:hover {
+      .run-card:hover {
         border-color: #0078d4;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
-      .version-card.active {
+      .run-card.active {
         border-color: #0078d4;
         background: #f0f7ff;
+        box-shadow: 0 2px 8px rgba(0, 120, 212, 0.2);
       }
-      .version-card-header {
+      .run-card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 10px;
       }
-      .version-number {
+      .run-number {
         font-weight: 700;
         color: #0078d4;
-        font-size: 1.1em;
+        font-size: 0.9em;
       }
-      .version-badge {
+      .run-badge {
         background: #28a745;
         color: white;
         padding: 3px 8px;
@@ -251,7 +252,7 @@
         font-size: 0.75em;
         font-weight: 600;
       }
-      .version-stats {
+      .run-stats {
         font-size: 0.85em;
         color: #666;
         line-height: 1.8;
@@ -378,6 +379,75 @@
       .confidence-score-value.low {
         color: #dc3545;
       }
+      /* Run Carousel */
+      .run-carousel {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .run-carousel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+      }
+      .run-carousel-title {
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #333;
+      }
+      .run-list {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 10px 0;
+      }
+      .run-card {
+        min-width: 220px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .run-card:hover {
+        border-color: #0078d4;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .run-card.active {
+        border-color: #0078d4;
+        background: #f0f7ff;
+        box-shadow: 0 2px 8px rgba(0, 120, 212, 0.2);
+      }
+      .run-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+        gap: 5px;
+      }
+      .run-number {
+        font-weight: 700;
+        color: #0078d4;
+        font-size: 0.85em;
+        line-height: 1.3;
+      }
+      .run-badge {
+        background: #28a745;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.75em;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .run-stats {
+        font-size: 0.85em;
+        color: #666;
+        line-height: 1.8;
+      }
     </style>
   </head>
   <body>
@@ -415,7 +485,7 @@
     </div>
 
     <script>
-      let currentVersions = {};
+      let activeRuns = {}; // Track active run per vendor
 
       async function loadResults() {
         const content = document.getElementById('content');
@@ -440,32 +510,105 @@
             return;
           }
 
-          for (const result of results) {
-            await loadVersionHistory(result.result_id, baseUrl);
-          }
+          // Group results by vendor_name
+          const grouped = {};
+          results.forEach((result) => {
+            const vendor = result.vendor_name;
+            if (!grouped[vendor]) grouped[vendor] = [];
+            grouped[vendor].push(result);
+          });
 
-          content.innerHTML = results.map((result) => renderResultCard(result, baseUrl)).join('');
+          // Sort each vendor's runs by created_at DESC (most recent first)
+          Object.values(grouped).forEach((runs) => {
+            runs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          });
+
+          // Render grouped cards (sorted by most recent run's timestamp)
+          const vendorGroups = Object.entries(grouped).sort(
+            (a, b) => new Date(b[1][0].created_at) - new Date(a[1][0].created_at)
+          );
+
+          content.innerHTML = vendorGroups
+            .map(([vendor, runs]) => renderVendorCard(runs, baseUrl))
+            .join('');
         } catch (error) {
           content.innerHTML = `<div class="error"><strong>Error loading results:</strong><br/>${error.message}</div>`;
         }
       }
 
-      async function loadVersionHistory(documentId, baseUrl) {
-        try {
-          const response = await fetch(`${baseUrl}/api/documents/${documentId}/versions`);
-          if (response.ok) {
-            const data = await response.json();
-            currentVersions[data.rootDocumentId] = data.versions;
-          }
-        } catch (error) {
-          console.error('Failed to load version history:', error);
-        }
+      function renderVendorCard(runs, baseUrl) {
+        const vendor = runs[0].vendor_name;
+        const activeRunId = activeRuns[vendor] || runs[0].result_id;
+        const activeRun = runs.find((r) => r.result_id === activeRunId) || runs[0];
+
+        return `
+          <div class="results-card" id="vendor-${vendor}">
+            <div class="card-header">
+              <div class="card-header-content">
+                <h2>${vendor}</h2>
+                <div class="card-meta">📄 ${activeRun.document_name} • ${runs.length} processing run${runs.length > 1 ? 's' : ''}</div>
+              </div>
+              <div class="action-buttons-vendor">
+                ${activeRun.processing_status === 'completed' || activeRun.processing_status === 'ocr_complete' ? `<button class="secondary" onclick="reprocessMapping('${activeRun.result_id}')">🔄 Rerun AI</button>` : ''}
+                <button class="danger" onclick="deleteDocument('${activeRun.result_id}')">🗑️ Delete All</button>
+              </div>
+            </div>
+            <div class="card-body">
+              ${renderRunCarousel(runs, vendor, activeRunId)}
+              <div id="run-details-${vendor}">
+                ${renderRunDetails(activeRun, baseUrl)}
+              </div>
+            </div>
+          </div>
+        `;
       }
 
-      function renderResultCard(result, baseUrl) {
-        const rootId = result.parent_document_id || result.result_id;
-        const versions = currentVersions[rootId] || [result];
+      function renderRunCarousel(runs, vendor, activeRunId) {
+        return `
+          <div class="run-carousel">
+            <div class="run-carousel-header">
+              <span class="run-carousel-title">📊 Processing Runs (${runs.length})</span>
+            </div>
+            <div class="run-list">
+              ${runs.map((run, index) => renderRunCard(run, vendor, activeRunId, index === 0)).join('')}
+            </div>
+          </div>
+        `;
+      }
 
+      function renderRunCard(run, vendor, activeRunId, isLatest) {
+        const isActive = run.result_id === activeRunId;
+        const confidence = run.ai_confidence_score || 0;
+        const products = run.ai_mapping_result
+          ? (typeof run.ai_mapping_result === 'string'
+              ? JSON.parse(run.ai_mapping_result)
+              : run.ai_mapping_result
+            ).products || []
+          : [];
+
+        return `
+          <div class="run-card ${isActive ? 'active' : ''}" onclick="selectRun('${vendor}', '${run.result_id}')">
+            <div class="run-card-header">
+              <span class="run-number">${new Date(run.created_at).toLocaleDateString()} ${new Date(run.created_at).toLocaleTimeString()}</span>
+              ${isLatest ? '<span class="run-badge">Latest</span>' : ''}
+            </div>
+            <div class="run-stats">
+              <div>📦 ${products.length} products</div>
+              <div>💰 $${((run.ai_model_cost_usd || 0) + (run.doc_intel_cost_usd || 0)).toFixed(4)}</div>
+              <div>🎯 ${confidence.toFixed(0)}% confidence</div>
+              <div><span class="status ${run.processing_status}">${run.processing_status}</span></div>
+            </div>
+            <div class="confidence-bar"><div class="confidence-fill ${getConfidenceClass(confidence)}" style="width: ${confidence}%"></div></div>
+          </div>
+        `;
+      }
+
+      function selectRun(vendor, runId) {
+        activeRuns[vendor] = runId;
+        loadResults(); // Reload to update UI
+      }
+
+      function renderRunDetails(result, baseUrl) {
         let mappingResult = null;
         if (result.ai_mapping_result) {
           mappingResult =
@@ -478,27 +621,12 @@
 
         const products = mappingResult?.products || [];
         const qualityMetrics = mappingResult?.qualityMetrics || {};
-        const vendor = result.vendor_name || mappingResult?.vendor || 'Unknown';
         const statusClass = result.processing_status || 'pending';
         const confidenceScore = result.ai_confidence_score || qualityMetrics.confidenceScore || 0;
         const completenessScore =
           result.ai_completeness_score || qualityMetrics.completenessScore || 0;
 
         return `
-          <div class="results-card" id="card-${result.result_id}">
-            <div class="card-header">
-              <div class="card-header-content">
-                <h2>${vendor} <span class="product-count">${products.length} products</span></h2>
-                <div class="card-meta">📄 ${result.document_name} • 📅 ${new Date(result.created_at).toLocaleString()}</div>
-              </div>
-              <div class="action-buttons-vendor">
-                ${result.processing_status === 'completed' || result.processing_status === 'ocr_complete' ? `<button class="secondary" onclick="reprocessMapping('${result.result_id}')">🔄 Rerun AI</button>` : ''}
-                <button class="danger" onclick="deleteDocument('${result.result_id}')">🗑️ Delete All</button>
-              </div>
-            </div>
-            <div class="card-body">
-              ${renderVersionCarousel(versions, result, rootId, baseUrl)}
-
               <div class="info-grid">
                 <div class="info-item">
                   <span class="info-label">Status</span>
@@ -519,10 +647,6 @@
                   <div class="confidence-bar"><div class="confidence-fill ${getConfidenceClass(completenessScore)}" style="width: ${completenessScore}%"></div></div>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">Version</span>
-                  <span class="info-value">v${result.reprocessing_count || 0}</span>
-                </div>
-                <div class="info-item">
                   <span class="info-label">AI Model</span>
                   <span class="info-value">${result.ai_model_used || 'N/A'}</span>
                 </div>
@@ -534,15 +658,12 @@
                   <span class="info-label">AI Cost</span>
                   <span class="info-value">$${(result.ai_model_cost_usd || 0).toFixed(4)}</span>
                 </div>
-                <div class="info-item">
-                  <span class="info-label">Total Cost</span>
-                  <span class="info-value">$${((result.doc_intel_cost_usd || 0) + (result.ai_model_cost_usd || 0)).toFixed(4)}</span>
-                </div>
               </div>
 
               <div class="action-buttons">
-                ${result.processing_status === 'completed' && result.export_status === 'pending' ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export</button>` : ''}
-                ${result.parent_document_id ? `<button class="danger small" onclick="deleteRun('${result.result_id}')">🗑️ Delete Run</button>` : ''}
+                ${result.processing_status === 'completed' && result.export_status !== 'confirmed' && result.export_status !== 'exported' ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export</button>` : ''}
+                ${result.export_status === 'confirmed' || result.export_status === 'exported' ? `<span class="status confirmed" style="padding: 10px 20px;">✓ Exported</span>` : ''}
+                <button class="danger small" onclick="deleteRun('${result.result_id}')">🗑️ Delete This Run</button>
               </div>
 
               ${
@@ -562,53 +683,11 @@
                   </div>
                 </details>
               `
-                  : `<div class="empty-state" style="margin-top: 20px;"><h3>No products extracted</h3><p>${result.processing_status === 'completed' ? 'Document processed but no products found' : 'Processing not yet complete'}</p></div>`
+                  : `<div class="empty-state" style="margin-top: 20px;">
+                      <h3>No products extracted</h3>
+                      <p>${result.processing_status === 'completed' ? 'Document processed but no products found' : 'Processing not yet complete'}</p>
+                    </div>`
               }
-            </div>
-          </div>
-        `;
-      }
-
-      function renderVersionCarousel(versions, currentVersion, rootId, baseUrl) {
-        if (versions.length <= 1) return '';
-
-        return `
-          <div class="version-carousel">
-            <div class="version-carousel-header">
-              <span class="version-carousel-title">📊 Processing History (${versions.length} versions)</span>
-            </div>
-            <div class="version-list">
-              ${versions
-                .sort((a, b) => (b.reprocessing_count || 0) - (a.reprocessing_count || 0))
-                .map((v) => renderVersionCard(v, currentVersion, rootId))
-                .join('')}
-            </div>
-          </div>
-        `;
-      }
-
-      function renderVersionCard(version, currentVersion, rootId) {
-        const isActive = version.result_id === currentVersion.result_id;
-        const maxVersion = Math.max(
-          ...(currentVersions[rootId] || []).map((v) => v.reprocessing_count || 0)
-        );
-        const isLatest = version.reprocessing_count === maxVersion;
-        const confidence = version.ai_confidence_score || 0;
-
-        return `
-          <div class="version-card ${isActive ? 'active' : ''}" onclick="switchVersion('${version.result_id}')">
-            <div class="version-card-header">
-              <span class="version-number">v${version.reprocessing_count || 0}</span>
-              ${isLatest ? '<span class="version-badge">Latest</span>' : ''}
-            </div>
-            <div class="version-stats">
-              <div>📦 ${version.product_count || 0} products</div>
-              <div>💰 $${((version.ai_model_cost_usd || 0) + (version.doc_intel_cost_usd || 0)).toFixed(4)}</div>
-              <div>🎯 ${confidence.toFixed(0)}% confidence</div>
-              <div>📅 ${new Date(version.created_at).toLocaleDateString()}</div>
-            </div>
-            <div class="confidence-bar"><div class="confidence-fill ${getConfidenceClass(confidence)}" style="width: ${confidence}%"></div></div>
-          </div>
         `;
       }
 
@@ -616,11 +695,6 @@
         if (score >= 80) return 'high';
         if (score >= 60) return 'medium';
         return 'low';
-      }
-
-      function switchVersion(versionId) {
-        document.getElementById('resultId').value = versionId;
-        loadResults();
       }
 
       window.addEventListener('DOMContentLoaded', () => {
@@ -637,7 +711,7 @@
           return;
         const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
         try {
-          const response = await fetch(`${baseUrl}/api/documents/${documentId}/confirm`, {
+          const response = await fetch(`${baseUrl}/api/documents/runs/${documentId}/confirm`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
           });
@@ -655,48 +729,48 @@
         }
       }
 
-      async function reprocessMapping(documentId) {
+      async function reprocessMapping(resultId) {
         if (!confirm('Create new version for AI remapping? Original results preserved.')) return;
         const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+
+        // First, get the vendor name for this result
         try {
+          const resultResponse = await fetch(`${baseUrl}/api/documents?resultId=${resultId}`);
+          const results = await resultResponse.json();
+          if (!results || results.length === 0) {
+            alert('❌ Error: Could not find result');
+            return;
+          }
+          const vendorName = results[0].vendor_name;
+
+          // Now trigger AI reprocessing with vendor name
           const reprocessResponse = await fetch(
-            `${baseUrl}/api/documents/${documentId}/reprocess`,
+            `${baseUrl}/api/documents/${encodeURIComponent(vendorName)}/process-ai-mapping`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
             }
           );
           const reprocessData = await reprocessResponse.json();
-          if (!reprocessResponse.ok) {
-            alert(`❌ Error: ${reprocessData.error}`);
-            return;
-          }
-          const newResultId = reprocessData.newResultId;
-          alert(`✅ New version created (v${reprocessData.version})! Triggering AI mapping...`);
-          const mapResponse = await fetch(`${baseUrl}/api/documents/${newResultId}/mapping`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          const mapData = await mapResponse.json();
-          if (mapResponse.ok) {
+          if (reprocessResponse.ok) {
             alert(
-              `✅ Reprocessing complete! ${mapData.productCount} products extracted (v${reprocessData.version}).`
+              `✅ Reprocessing complete! New run created for ${vendorName}. ${reprocessData.productCount || 'Processing'} products.`
             );
             loadResults();
           } else {
-            alert(`❌ Mapping error: ${mapData.error}`);
+            alert(`❌ Error: ${reprocessData.error}`);
           }
         } catch (error) {
           alert(`❌ Network error: ${error.message}`);
         }
       }
 
-      async function deleteRun(documentId) {
+      async function deleteRun(runId) {
         if (!confirm('Delete this specific run version? This cannot be undone.')) return;
         const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
         try {
           const response = await fetch(
-            `${baseUrl}/api/documents/${encodeURIComponent(documentId)}/versions/${encodeURIComponent(documentId)}`,
+            `${baseUrl}/api/documents/runs/${encodeURIComponent(runId)}`,
             { method: 'DELETE' }
           );
           const data = await response.json();
@@ -711,7 +785,7 @@
         }
       }
 
-      async function deleteDocument(documentId) {
+      async function deleteDocument(resultId) {
         if (
           !confirm(
             'Delete ALL versions of this document? This will remove all processing runs and the original file. This cannot be undone.'
@@ -719,14 +793,25 @@
         )
           return;
         const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+
+        // First, get the vendor name for this result
         try {
+          const resultResponse = await fetch(`${baseUrl}/api/documents?resultId=${resultId}`);
+          const results = await resultResponse.json();
+          if (!results || results.length === 0) {
+            alert('❌ Error: Could not find result');
+            return;
+          }
+          const vendorName = results[0].vendor_name;
+
+          // Now delete the vendor document
           const response = await fetch(
-            `${baseUrl}/api/documents/${encodeURIComponent(documentId)}`,
+            `${baseUrl}/api/documents/${encodeURIComponent(vendorName)}`,
             { method: 'DELETE' }
           );
           const data = await response.json();
           if (response.ok) {
-            alert(`✅ ${data.message} (${data.versionsDeleted} versions removed)`);
+            alert(`✅ ${data.message}`);
             loadResults();
           } else {
             alert(`❌ Error: ${data.error}`);

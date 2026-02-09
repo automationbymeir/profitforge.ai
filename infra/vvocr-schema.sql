@@ -103,7 +103,6 @@ BEGIN
         created_at DATETIME2 DEFAULT GETUTCDATE(),
         updated_at DATETIME2 DEFAULT GETUTCDATE(),
         
-        FOREIGN KEY (source_document_id) REFERENCES vvocr.document_processing_results(result_id),
         INDEX IX_vendor_products_vendor_id (vendor_id),
         INDEX IX_vendor_products_sku (sku),
         INDEX IX_vendor_products_source_doc (source_document_id)

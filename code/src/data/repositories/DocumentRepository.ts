@@ -29,6 +29,7 @@ export interface CreateDocumentInput {
   vendor_name: string;
   processing_status: ProcessingStatus;
   export_status: ExportStatus;
+  processing_started_at: Date;
 }
 
 /**
@@ -40,8 +41,6 @@ export interface UpdateOcrResultsInput {
   // doc_intel_extracted_text: string | null;
   // doc_intel_structured_data: string | null;
   // Small metadata stored in DB:
-  processing_started_at: number;
-  doc_intel_end_time: number;
   doc_intel_confidence_score: number | null;
   doc_intel_cost_usd: number | null;
   doc_intel_prompt_used: string | null;
@@ -60,7 +59,6 @@ export interface UpdateAiMappingInput {
   ai_completeness_score: number | null;
   ai_prompt_tokens: number | null;
   ai_completion_tokens: number | null;
-  vendor_name?: string;
 }
 
 /**
@@ -107,13 +105,14 @@ export class DocumentRepository {
       .input('fileSize', sql.BigInt, input.document_size_bytes)
       .input('fileType', sql.NVarChar, input.document_type)
       .input('status', sql.NVarChar, input.processing_status || 'pending')
-      .input('exportStatus', sql.NVarChar, input.export_status || 'not_exported').query(`
+      .input('exportStatus', sql.NVarChar, input.export_status || 'not_exported')
+      .input('processingStartedAt', sql.DateTime, input.processing_started_at).query(`
         INSERT INTO vvocr.document_processing_results 
         (document_name, document_path, document_size_bytes, document_type, processing_status, vendor_name,
-         export_status)
+         export_status, processing_started_at)
         OUTPUT INSERTED.result_id
         VALUES (@documentName, @documentPath, @fileSize, @fileType, @status, @vendorName,
-                @exportStatus)
+                @exportStatus, @processingStartedAt )
       `);
 
     return result.recordset[0].result_id;
@@ -433,30 +432,7 @@ export class DocumentRepository {
       .input('promptTokens', sql.Int, input.ai_prompt_tokens)
       .input('completionTokens', sql.Int, input.ai_completion_tokens);
 
-    // Add optional vendor_name if provided
-    if (input.vendor_name) {
-      request.input('vendorName', sql.NVarChar, input.vendor_name);
-    }
-
-    const query = input.vendor_name
-      ? `
-        UPDATE vvocr.document_processing_results
-        SET 
-          ai_mapping_result = @mappingResult,
-          ai_model_used = @modelUsed,
-          ai_prompt_used = @promptUsed,
-          ai_model_cost_usd = @modelCost,
-          ai_confidence_score = @confidenceScore,
-          ai_completeness_score = @completenessScore,
-          ai_prompt_tokens = @promptTokens,
-          ai_completion_tokens = @completionTokens,
-          vendor_name = @vendorName,
-          processing_status = 'completed',
-          processing_completed_at = GETUTCDATE(),
-          updated_at = GETUTCDATE()
-        WHERE result_id = @resultId
-      `
-      : `
+    const query = `
         UPDATE vvocr.document_processing_results
         SET 
           ai_mapping_result = @mappingResult,
