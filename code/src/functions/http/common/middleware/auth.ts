@@ -1,5 +1,5 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { errorResponse } from '../utils/httpHelpers.js';
+import { errorResponse } from '../../../../utils/httpHelpers.js';
 
 type Handler = (req: HttpRequest, context: InvocationContext) => Promise<HttpResponseInit>;
 

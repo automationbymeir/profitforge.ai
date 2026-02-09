@@ -2,40 +2,42 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock services BEFORE importing the handler
 vi.mock('../../../src/services/index.js', () => ({
-  createDocumentService: vi.fn(),
-  createVendorService: vi.fn(),
-  createVersionService: vi.fn(),
+  createAIService: vi.fn(),
 }));
 
-import { reprocessMappingHandler } from '../../../src/functions/http/documents/reprocess';
-import { createDocumentService } from '../../../src/services/index.js';
+import { aiProductMapperHandler } from '../../../src/functions/http/documents/ai-mapper.js';
+import { createAIService } from '../../../src/services/index.js';
 import { mockInvocationContext } from '../setup/mocks';
 
-describe('Reprocess Mapping Handler - Unit Tests', () => {
+describe('AI Product Mapper Handler - Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock DocumentService
-    const mockDocumentService = {
-      reprocess: vi.fn().mockResolvedValue({
-        newResultId: 'test-uuid-5678',
-        nextStep: 'Will be queued for AI mapping',
+    // Mock AIService
+    const mockAIService = {
+      mapProducts: vi.fn().mockResolvedValue({
+        documentId: 'test-uuid-1234',
+        vendor: 'TEST_VENDOR',
+        productCount: 5,
+        processingDuration: 1500,
+        usage: { input: 1000, output: 500 },
+        cost: 0.025,
       }),
     };
-    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
+    vi.mocked(createAIService).mockImplementation(() => mockAIService as any);
   });
 
-  it('should successfully reprocess a document by creating immutable version', async () => {
+  it('should successfully map products for a document', async () => {
     const request = {
       params: { id: 'test-uuid-1234' },
     };
     const context = mockInvocationContext();
 
-    const response = await reprocessMappingHandler(request as any, context as any);
+    const response = await aiProductMapperHandler(request as any, context as any);
 
     expect(response.status).toBe(200);
-    expect(response.jsonBody.newResultId).toBe('test-uuid-5678');
-    expect(response.jsonBody.nextStep).toContain('AI mapping');
+    expect(response.jsonBody.documentId).toBe('test-uuid-1234');
+    expect(response.jsonBody.productCount).toBe(5);
   });
 
   it('should return 400 when documentId is missing', async () => {
@@ -44,25 +46,25 @@ describe('Reprocess Mapping Handler - Unit Tests', () => {
     };
     const context = mockInvocationContext();
 
-    const response = await reprocessMappingHandler(request as any, context as any);
+    const response = await aiProductMapperHandler(request as any, context as any);
 
     expect(response.status).toBe(400);
     expect(response.jsonBody.error).toContain('Missing document ID');
   });
 
-  it('should handle database errors', async () => {
+  it('should handle AI service errors', async () => {
     // Mock service to throw error
-    const mockDocumentService = {
-      reprocess: vi.fn().mockRejectedValue(new Error('Database error')),
+    const mockAIService = {
+      mapProducts: vi.fn().mockRejectedValue(new Error('AI processing error')),
     };
-    vi.mocked(createDocumentService).mockImplementation(() => mockDocumentService as any);
+    vi.mocked(createAIService).mockImplementation(() => mockAIService as any);
 
     const request = {
       params: { id: 'test-uuid-1234' },
     };
     const context = mockInvocationContext();
 
-    const response = await reprocessMappingHandler(request as any, context as any);
+    const response = await aiProductMapperHandler(request as any, context as any);
 
     expect(response.status).toBe(500);
   });

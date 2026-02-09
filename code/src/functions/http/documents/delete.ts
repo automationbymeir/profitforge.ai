@@ -1,7 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { withCors, withErrorHandler } from '../../../middleware/index.js';
 import { createDocumentService } from '../../../services/index.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
+import { withCors, withErrorHandler } from '../common/middleware/index.js';
 
 /**
  * Delete Document Handler - HTTP DELETE endpoint to remove document and ALL versions
@@ -12,17 +12,17 @@ async function deleteDocumentHandlerCore(
 ): Promise<HttpResponseInit> {
   context.log(`Delete document request received`);
 
-  const documentId = req.params.id;
+  const vendorName = req.params.vendorName;
 
-  if (!documentId) {
-    return errorResponse('Missing document ID in route', 400);
+  if (!vendorName) {
+    return errorResponse('Missing vendorName in route', 400);
   }
 
   try {
     const documentService = await createDocumentService();
-    await documentService.deleteDocument(documentId);
+    await documentService.deleteDocument(vendorName);
 
-    context.log(`✅ Deleted document ${documentId}`);
+    context.log(`✅ Deleted document ${vendorName}`);
 
     return successResponse({
       message: 'Document deleted successfully',
@@ -40,7 +40,7 @@ async function deleteDocumentHandlerCore(
 export const deleteDocumentHandler = withErrorHandler(withCors(deleteDocumentHandlerCore));
 
 app.http('deleteDocument', {
-  route: 'documents/{id}',
+  route: 'documents/{vendorName}',
   methods: ['DELETE', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: deleteDocumentHandler,

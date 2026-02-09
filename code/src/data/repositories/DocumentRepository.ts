@@ -12,7 +12,11 @@
  */
 
 import sql from 'mssql';
-import type { Document, ExportStatus, ProcessingStatus } from '../../models/document.js';
+import type {
+  Document,
+  ExportStatus,
+  ProcessingStatus,
+} from '../../functions/http/common/models/document.js';
 
 /**
  * Input for creating a new document record
@@ -23,12 +27,8 @@ export interface CreateDocumentInput {
   document_size_bytes: number;
   document_type: string;
   vendor_name: string;
-  processing_status?: ProcessingStatus;
-  export_status?: ExportStatus;
-  reprocessing_count?: number;
-  parent_document_id?: string | null;
-  product_count?: number | null;
-  ai_mapping_result?: string | null;
+  processing_status: ProcessingStatus;
+  export_status: ExportStatus;
 }
 
 /**
@@ -36,11 +36,13 @@ export interface CreateDocumentInput {
  */
 export interface UpdateOcrResultsInput {
   result_id: string;
-  doc_intel_extracted_text: string | null;
-  doc_intel_structured_data: string | null;
+  // Large data stored in blob:
+  // doc_intel_extracted_text: string | null;
+  // doc_intel_structured_data: string | null;
+  // Small metadata stored in DB:
+  processing_started_at: number;
+  doc_intel_end_time: number;
   doc_intel_confidence_score: number | null;
-  doc_intel_page_count: number | null;
-  doc_intel_table_count: number | null;
   doc_intel_cost_usd: number | null;
   doc_intel_prompt_used: string | null;
 }
@@ -52,10 +54,13 @@ export interface UpdateAiMappingInput {
   result_id: string;
   ai_mapping_result: string;
   ai_model_used: string;
+  ai_prompt_used: string | null;
   ai_model_cost_usd: number | null;
   ai_confidence_score: number | null;
   ai_completeness_score: number | null;
-  product_count: number;
+  ai_prompt_tokens: number | null;
+  ai_completion_tokens: number | null;
+  vendor_name?: string;
 }
 
 /**
@@ -102,17 +107,13 @@ export class DocumentRepository {
       .input('fileSize', sql.BigInt, input.document_size_bytes)
       .input('fileType', sql.NVarChar, input.document_type)
       .input('status', sql.NVarChar, input.processing_status || 'pending')
-      .input('exportStatus', sql.NVarChar, input.export_status || 'not_exported')
-      .input('reprocessingCount', sql.Int, input.reprocessing_count ?? 0)
-      .input('parentDocId', sql.UniqueIdentifier, input.parent_document_id || null)
-      .input('productCount', sql.Int, input.product_count ?? null)
-      .input('aiMappingResult', sql.NVarChar, input.ai_mapping_result ?? null).query(`
+      .input('exportStatus', sql.NVarChar, input.export_status || 'not_exported').query(`
         INSERT INTO vvocr.document_processing_results 
         (document_name, document_path, document_size_bytes, document_type, processing_status, vendor_name,
-         export_status, reprocessing_count, parent_document_id, product_count, ai_mapping_result)
+         export_status)
         OUTPUT INSERTED.result_id
         VALUES (@documentName, @documentPath, @fileSize, @fileType, @status, @vendorName,
-                @exportStatus, @reprocessingCount, @parentDocId, @productCount, @aiMappingResult)
+                @exportStatus)
       `);
 
     return result.recordset[0].result_id;
@@ -136,13 +137,7 @@ export class DocumentRepository {
           vendor_name,
           processing_status,
           export_status,
-          reprocessing_count,
-          parent_document_id,
-          doc_intel_extracted_text,
-          doc_intel_structured_data,
           doc_intel_confidence_score,
-          doc_intel_page_count,
-          doc_intel_table_count,
           doc_intel_cost_usd,
           doc_intel_prompt_used,
           ai_mapping_result,
@@ -150,7 +145,6 @@ export class DocumentRepository {
           ai_model_cost_usd,
           ai_confidence_score,
           ai_completeness_score,
-          product_count,
           exported_at,
           created_at,
           updated_at
@@ -159,6 +153,72 @@ export class DocumentRepository {
       `);
 
     return result.recordset.length > 0 ? result.recordset[0] : null;
+  }
+
+  /**
+   * Get existing run by ID for processing (OCR/AI)
+   * Returns full document record including ai_mapping_result
+   * Throws error if run not found
+   *
+   * @param resultId - Document UUID
+   * @returns Complete document record including ai_mapping_result
+   * @throws Error if run not found
+   */
+  async getRunByID(resultId: string): Promise<Document> {
+    const result = await this.pool.request().input('resultId', sql.UniqueIdentifier, resultId)
+      .query(`
+        SELECT 
+          result_id,
+          ai_mapping_result,
+          document_name,
+          document_path,
+          document_size_bytes,
+          document_type,
+          vendor_name,
+          processing_status,
+          export_status,
+          doc_intel_confidence_score,
+          doc_intel_cost_usd,
+          doc_intel_prompt_used,
+          ai_model_used,
+          ai_prompt_used,
+          ai_model_cost_usd,
+          ai_confidence_score,
+          ai_completeness_score,
+          exported_at,
+          created_at,
+          updated_at
+        FROM vvocr.document_processing_results
+        WHERE result_id = @resultId
+      `);
+
+    if (result.recordset.length === 0) {
+      throw new Error(`Run not found: ${resultId}`);
+    }
+
+    return result.recordset[0];
+  }
+
+  /**
+   * Get processing status for a run (for polling/testing)
+   *
+   * @param resultId - Document UUID
+   * @returns Current processing status
+   * @throws Error if run not found
+   */
+  async getStatus(resultId: string): Promise<ProcessingStatus> {
+    const result = await this.pool.request().input('resultId', sql.UniqueIdentifier, resultId)
+      .query(`
+        SELECT processing_status
+        FROM vvocr.document_processing_results
+        WHERE result_id = @resultId
+      `);
+
+    if (result.recordset.length === 0) {
+      throw new Error(`Run not found: ${resultId}`);
+    }
+
+    return result.recordset[0].processing_status;
   }
 
   /**
@@ -178,10 +238,6 @@ export class DocumentRepository {
           vendor_name,
           processing_status,
           export_status,
-          reprocessing_count,
-          parent_document_id,
-          doc_intel_page_count,
-          doc_intel_table_count,
           doc_intel_cost_usd,
           doc_intel_confidence_score,
           ai_mapping_result,
@@ -189,7 +245,6 @@ export class DocumentRepository {
           ai_model_cost_usd,
           ai_confidence_score,
           ai_completeness_score,
-          product_count,
           exported_at,
           created_at,
           updated_at
@@ -202,10 +257,53 @@ export class DocumentRepository {
   }
 
   /**
+   * Get the latest processing run for a vendor
+   *
+   * @param vendorName - Vendor name (normalized)
+   * @returns Most recent document record or null if none exists
+   */
+  async findLatestByVendor(vendorName: string): Promise<Document | null> {
+    console.log(`🔍 DocumentRepository.findLatestByVendor searching for: "${vendorName}"`);
+    const result = await this.pool.request().input('vendorName', sql.NVarChar, vendorName).query(`
+        SELECT TOP 1
+          result_id,
+          document_name,
+          document_path,
+          document_size_bytes,
+          document_type,
+          vendor_name,
+          processing_status,
+          export_status,
+          doc_intel_cost_usd,
+          doc_intel_confidence_score,
+          doc_intel_prompt_used,
+          ai_mapping_result,
+          ai_model_used,
+          ai_prompt_used,
+          ai_model_cost_usd,
+          ai_confidence_score,
+          ai_completeness_score,
+          exported_at,
+          created_at,
+          updated_at
+        FROM vvocr.document_processing_results
+        WHERE vendor_name = @vendorName
+        ORDER BY created_at DESC
+      `);
+
+    console.log(`🔍 Query returned ${result.recordset.length} records`);
+    if (result.recordset.length > 0) {
+      console.log(`🔍 Found vendor_name: "${result.recordset[0].vendor_name}"`);
+    }
+
+    return result.recordset.length > 0 ? result.recordset[0] : null;
+  }
+
+  /**
    * Find all documents with the same document_path (original + reprocessed versions)
    *
    * @param documentPath - Blob storage path
-   * @returns Array of document records (ordered by reprocessing_count ASC)
+   * @returns Array of document records (ordered by created_at DESC)
    */
   async findByDocumentPath(documentPath: string): Promise<Document[]> {
     const result = await this.pool.request().input('documentPath', sql.NVarChar, documentPath)
@@ -219,10 +317,6 @@ export class DocumentRepository {
           vendor_name,
           processing_status,
           export_status,
-          reprocessing_count,
-          parent_document_id,
-          doc_intel_page_count,
-          doc_intel_table_count,
           doc_intel_cost_usd,
           doc_intel_confidence_score,
           ai_mapping_result,
@@ -230,13 +324,12 @@ export class DocumentRepository {
           ai_model_cost_usd,
           ai_confidence_score,
           ai_completeness_score,
-          product_count,
           exported_at,
           created_at,
           updated_at
         FROM vvocr.document_processing_results
         WHERE document_path = @documentPath
-        ORDER BY reprocessing_count ASC
+        ORDER BY created_at DESC
       `);
 
     return result.recordset;
@@ -257,14 +350,9 @@ export class DocumentRepository {
         vendor_name,
         processing_status,
         export_status,
-        reprocessing_count,
-        parent_document_id,
-        doc_intel_page_count,
-        doc_intel_table_count,
         doc_intel_cost_usd,
         ai_mapping_result,
         ai_model_used,
-        product_count,
         exported_at,
         created_at,
         updated_at
@@ -310,20 +398,12 @@ export class DocumentRepository {
     const result = await this.pool
       .request()
       .input('resultId', sql.UniqueIdentifier, input.result_id)
-      .input('extractedText', sql.NVarChar, input.doc_intel_extracted_text)
-      .input('structuredData', sql.NVarChar, input.doc_intel_structured_data)
       .input('confidenceScore', sql.Decimal(5, 4), input.doc_intel_confidence_score)
-      .input('pageCount', sql.Int, input.doc_intel_page_count)
-      .input('tableCount', sql.Int, input.doc_intel_table_count)
       .input('cost', sql.Decimal(10, 6), input.doc_intel_cost_usd)
       .input('promptUsed', sql.NVarChar, input.doc_intel_prompt_used).query(`
         UPDATE vvocr.document_processing_results
         SET 
-          doc_intel_extracted_text = @extractedText,
-          doc_intel_structured_data = @structuredData,
           doc_intel_confidence_score = @confidenceScore,
-          doc_intel_page_count = @pageCount,
-          doc_intel_table_count = @tableCount,
           doc_intel_cost_usd = @cost,
           doc_intel_prompt_used = @promptUsed,
           processing_status = 'ocr_complete',
@@ -341,28 +421,59 @@ export class DocumentRepository {
    * @returns Number of rows affected (should be 1)
    */
   async updateAiMapping(input: UpdateAiMappingInput): Promise<number> {
-    const result = await this.pool
+    const request = this.pool
       .request()
       .input('resultId', sql.UniqueIdentifier, input.result_id)
       .input('mappingResult', sql.NVarChar, input.ai_mapping_result)
       .input('modelUsed', sql.NVarChar, input.ai_model_used)
+      .input('promptUsed', sql.NVarChar, input.ai_prompt_used)
       .input('modelCost', sql.Decimal(10, 6), input.ai_model_cost_usd)
-      .input('confidenceScore', sql.Decimal(5, 4), input.ai_confidence_score)
-      .input('completenessScore', sql.Decimal(5, 4), input.ai_completeness_score)
-      .input('productCount', sql.Int, input.product_count).query(`
+      .input('confidenceScore', sql.Decimal(5, 2), input.ai_confidence_score)
+      .input('completenessScore', sql.Decimal(5, 2), input.ai_completeness_score)
+      .input('promptTokens', sql.Int, input.ai_prompt_tokens)
+      .input('completionTokens', sql.Int, input.ai_completion_tokens);
+
+    // Add optional vendor_name if provided
+    if (input.vendor_name) {
+      request.input('vendorName', sql.NVarChar, input.vendor_name);
+    }
+
+    const query = input.vendor_name
+      ? `
         UPDATE vvocr.document_processing_results
         SET 
           ai_mapping_result = @mappingResult,
           ai_model_used = @modelUsed,
+          ai_prompt_used = @promptUsed,
           ai_model_cost_usd = @modelCost,
           ai_confidence_score = @confidenceScore,
           ai_completeness_score = @completenessScore,
-          product_count = @productCount,
+          ai_prompt_tokens = @promptTokens,
+          ai_completion_tokens = @completionTokens,
+          vendor_name = @vendorName,
           processing_status = 'completed',
+          processing_completed_at = GETUTCDATE(),
           updated_at = GETUTCDATE()
         WHERE result_id = @resultId
-      `);
+      `
+      : `
+        UPDATE vvocr.document_processing_results
+        SET 
+          ai_mapping_result = @mappingResult,
+          ai_model_used = @modelUsed,
+          ai_prompt_used = @promptUsed,
+          ai_model_cost_usd = @modelCost,
+          ai_confidence_score = @confidenceScore,
+          ai_completeness_score = @completenessScore,
+          ai_prompt_tokens = @promptTokens,
+          ai_completion_tokens = @completionTokens,
+          processing_status = 'completed',
+          processing_completed_at = GETUTCDATE(),
+          updated_at = GETUTCDATE()
+        WHERE result_id = @resultId
+      `;
 
+    const result = await request.query(query);
     return result.rowsAffected[0] || 0;
   }
 
@@ -388,6 +499,10 @@ export class DocumentRepository {
         SET 
           processing_status = @status,
           error_message = @errorMessage,
+          processing_started_at = CASE 
+            WHEN processing_started_at IS NULL THEN GETUTCDATE() 
+            ELSE processing_started_at 
+          END,
           updated_at = GETUTCDATE()
         WHERE result_id = @resultId
       `);
@@ -466,109 +581,36 @@ export class DocumentRepository {
   }
 
   /**
-   * Create a new reprocessing version of an existing document
+   * Get all vendor products for a vendor
    *
-   * This creates a new immutable record with:
-   * - Same document_path, OCR results, and vendor_name
-   * - Incremented reprocessing_count
-   * - Reference to parent_document_id
-   * - Fresh AI mapping fields (null)
-   * - Status: 'ocr_complete' (ready for AI remapping)
+   * Used for testing and confirmation workflows to verify exported products.
    *
-   * @param originalId - Original document UUID to reprocess
-   * @param parentId - Root parent UUID (null for original documents)
-   * @returns The new document result_id (UUID)
-   * @throws Error if original document not found
+   * @param vendorName - Vendor name to query
+   * @returns Array of vendor product records
    */
-  async createReprocessingVersion(originalId: string, parentId: string | null): Promise<string> {
-    // Fetch existing record
-    const existingResult = await this.pool
-      .request()
-      .input('originalId', sql.UniqueIdentifier, originalId).query(`
-        SELECT 
-          document_name,
-          document_path,
-          document_size_bytes,
-          document_type,
-          vendor_name,
-          doc_intel_extracted_text,
-          doc_intel_structured_data,
-          doc_intel_confidence_score,
-          doc_intel_page_count,
-          doc_intel_table_count,
-          doc_intel_cost_usd,
-          doc_intel_prompt_used,
-          reprocessing_count,
-          parent_document_id
-        FROM vvocr.document_processing_results
-        WHERE result_id = @originalId
+  async getVendorProducts(vendorName: string): Promise<string[]> {
+    const result = await this.pool.request().input('vendorName', sql.NVarChar, vendorName).query(`
+        SELECT * FROM vvocr.vendor_products
+        WHERE vendor_name = @vendorName
       `);
 
-    if (existingResult.recordset.length === 0) {
-      throw new Error(`Document not found: ${originalId}`);
-    }
+    return result.recordset;
+  }
 
-    const existing = existingResult.recordset[0];
-    const rootParentId = parentId || originalId;
-    const newVersion = (existing.reprocessing_count || 0) + 1;
-
-    // Create new immutable record
-    const newRecordResult = await this.pool
-      .request()
-      .input('documentName', sql.NVarChar, existing.document_name)
-      .input('documentPath', sql.NVarChar, existing.document_path)
-      .input('documentSize', sql.BigInt, existing.document_size_bytes)
-      .input('documentType', sql.NVarChar, existing.document_type)
-      .input('vendorName', sql.NVarChar, existing.vendor_name)
-      .input('extractedText', sql.NVarChar, existing.doc_intel_extracted_text)
-      .input('structuredData', sql.NVarChar, existing.doc_intel_structured_data)
-      .input('confidenceScore', sql.Decimal(5, 4), existing.doc_intel_confidence_score)
-      .input('pageCount', sql.Int, existing.doc_intel_page_count)
-      .input('tableCount', sql.Int, existing.doc_intel_table_count)
-      .input('docIntelCost', sql.Decimal(10, 6), existing.doc_intel_cost_usd)
-      .input('docIntelPrompt', sql.NVarChar, existing.doc_intel_prompt_used)
-      .input('parentDocumentId', sql.UniqueIdentifier, rootParentId)
-      .input('reprocessingCount', sql.Int, newVersion).query(`
-        INSERT INTO vvocr.document_processing_results (
-          document_name,
-          document_path,
-          document_size_bytes,
-          document_type,
-          vendor_name,
-          doc_intel_extracted_text,
-          doc_intel_structured_data,
-          doc_intel_confidence_score,
-          doc_intel_page_count,
-          doc_intel_table_count,
-          doc_intel_cost_usd,
-          doc_intel_prompt_used,
-          parent_document_id,
-          reprocessing_count,
-          processing_status,
-          export_status
-        )
-        OUTPUT INSERTED.result_id
-        VALUES (
-          @documentName,
-          @documentPath,
-          @documentSize,
-          @documentType,
-          @vendorName,
-          @extractedText,
-          @structuredData,
-          @confidenceScore,
-          @pageCount,
-          @tableCount,
-          @docIntelCost,
-          @docIntelPrompt,
-          @parentDocumentId,
-          @reprocessingCount,
-          'ocr_complete',
-          'pending'
-        )
+  /**
+   * Delete all vendor products for a specific vendor
+   * Used before deleting runs to handle foreign key constraints
+   *
+   * @param vendorName - Vendor name to delete products for
+   * @returns Number of products deleted
+   */
+  async deleteVendorProducts(vendorName: string): Promise<number> {
+    const result = await this.pool.request().input('vendorName', sql.NVarChar, vendorName).query(`
+        DELETE FROM vvocr.vendor_products
+        WHERE vendor_name = @vendorName
       `);
 
-    return newRecordResult.recordset[0].result_id;
+    return result.rowsAffected[0] || 0;
   }
 
   /**
@@ -585,4 +627,15 @@ export class DocumentRepository {
 
     return result.rowsAffected[0] || 0;
   }
+}
+
+/**
+ * Factory function for DocumentRepository
+ * Creates a repository instance with database connection pool
+ * To be used in testing only!!!
+ */
+export async function createDocumentRepository(): Promise<DocumentRepository> {
+  const { getConnectionPool } = await import('../../utils/database.js');
+  const pool = await getConnectionPool();
+  return new DocumentRepository(pool);
 }

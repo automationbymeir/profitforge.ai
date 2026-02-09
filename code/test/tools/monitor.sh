@@ -18,11 +18,20 @@ while true; do
     
     echo "📦 BLOB STORAGE (${CONTAINER}):"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Documents:"
     az storage blob list \
         --connection-string "$CONNECTION_STRING" \
         --container-name "$CONTAINER" \
-        --query "[].{Name:name, Size:properties.contentLength, Modified:properties.lastModified}" \
+        --query "[?ends_with(name, '.pdf')].{Name:name, Size:properties.contentLength, Modified:properties.lastModified}" \
         --output table 2>/dev/null || echo "⚠️  Could not fetch blob storage data"
+    
+    echo ""
+    echo "OCR Results:"
+    az storage blob list \
+        --connection-string "$CONNECTION_STRING" \
+        --container-name "$CONTAINER" \
+        --query "[?ends_with(name, '.json')].{Name:name, Size:properties.contentLength, Modified:properties.lastModified}" \
+        --output table 2>/dev/null || echo "⚠️  No OCR results found"
     
     echo ""
     echo "📊 DATABASE (Recent 5 uploads):"

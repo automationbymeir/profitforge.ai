@@ -1,10 +1,13 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { withCors, withErrorHandler } from '../../../middleware/index.js';
-import { getVersionService } from '../../../services/index.js';
+import { createRunService } from '../../../services/run-service.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
+import { withCors, withErrorHandler } from '../common/middleware/index.js';
 
 /**
- * Delete Specific Run Handler - HTTP DELETE endpoint for single version
+ * Delete Run Handler - HTTP DELETE endpoint to delete a specific processing run
+ *
+ * Deletes the database record and associated blobs for a specific processing run.
+ * Other runs for the same vendor are unaffected.
  */
 async function deleteRunHandlerCore(
   req: HttpRequest,
@@ -12,26 +15,26 @@ async function deleteRunHandlerCore(
 ): Promise<HttpResponseInit> {
   context.log(`Delete run request received`);
 
-  const documentId = req.params.runId; // Note: This function deletes a specific run, so we use runId
+  const runId = req.params.runId;
 
-  if (!documentId) {
-    return errorResponse('Missing run ID in route', 400);
+  if (!runId) {
+    return errorResponse('Missing runId in route', 400);
   }
 
   try {
-    // Use VersionService for run deletion
-    const versionService = await getVersionService();
-    const result = await versionService.deleteRun(documentId);
+    // Get run service
+    const runService = await createRunService();
 
-    context.log(`✅ Deleted run version ${result.version}`);
+    // Delete the run (database record + blobs)
+    await runService.deleteRun(runId);
+
+    context.log(`✅ Deleted processing run ${runId}`);
 
     return successResponse({
-      message: `Run version ${result.version} deleted successfully`,
-      documentId: result.documentId,
-      version: result.version,
+      message: 'Processing run deleted successfully',
+      runId,
     });
   } catch (error: unknown) {
-    // Handle custom error codes from service
     if (error instanceof Error && 'statusCode' in error) {
       const customError = error as Error & { statusCode: number };
       return errorResponse(error.message, customError.statusCode);
@@ -43,7 +46,7 @@ async function deleteRunHandlerCore(
 export const deleteRunHandler = withErrorHandler(withCors(deleteRunHandlerCore));
 
 app.http('deleteRun', {
-  route: 'documents/{id}/versions/{runId}',
+  route: 'documents/runs/{runId}',
   methods: ['DELETE', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: deleteRunHandler,

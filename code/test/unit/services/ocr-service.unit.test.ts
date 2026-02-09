@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
-import type { Document } from '../../../src/models/document.js';
+import type { Document } from '../../../src/functions/http/common/models/document.js';
 import { OCRService } from '../../../src/services/ocr-service.js';
 import { mockStorageService } from '../setup/mocks.js';
 

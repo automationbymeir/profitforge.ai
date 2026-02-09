@@ -19,9 +19,6 @@ export * from './product.js';
 // Vendor models
 export * from './vendor.js';
 
-// Version models
-export * from './version.js';
-
 // OCR models
 export * from './ocr.js';
 

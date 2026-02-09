@@ -1,6 +1,7 @@
-import sql from 'mssql';
 import { OpenAI } from 'openai';
-import { withDatabase } from '../utils/database.js';
+import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
+import { StorageService } from '../data/storage.js';
+import { getStorageConnectionString } from '../utils/config.js';
 
 interface TableCell {
   kind: string;
@@ -58,8 +59,10 @@ export interface AIMappingResult {
  */
 export class AIService {
   private openai: OpenAI;
+  private documentRepo: DocumentRepository;
 
-  constructor(endpoint: string, apiKey: string) {
+  constructor(endpoint: string, apiKey: string, documentRepo: DocumentRepository) {
+    this.documentRepo = documentRepo;
     this.openai = new OpenAI({
       apiKey,
       baseURL: `${endpoint}/openai/deployments/gpt-4o`,
@@ -245,30 +248,14 @@ Context: ${fullText.substring(0, 2000)}`;
   async mapProducts(documentId: string): Promise<AIMappingResult> {
     const startTime = Date.now();
 
-    // Retrieve OCR results from database
-    const document = await withDatabase(async (pool) => {
-      const result = await pool.request().input('documentId', sql.UniqueIdentifier, documentId)
-        .query(`
-          SELECT 
-            result_id,
-            document_name,
-            vendor_name,
-            doc_intel_structured_data,
-            doc_intel_extracted_text,
-            processing_status,
-            reprocessing_count
-          FROM vvocr.document_processing_results 
-          WHERE result_id = @documentId
-        `);
+    // Retrieve document metadata from database
+    const document = await this.documentRepo.findById(documentId);
 
-      if (result.recordset.length === 0) {
-        const error = new Error('Document not found') as Error & { statusCode: number };
-        error.statusCode = 404;
-        throw error;
-      }
-
-      return result.recordset[0];
-    });
+    if (!document) {
+      const error = new Error('Document not found') as Error & { statusCode: number };
+      error.statusCode = 404;
+      throw error;
+    }
 
     if (
       document.processing_status !== 'ocr_complete' &&
@@ -281,9 +268,22 @@ Context: ${fullText.substring(0, 2000)}`;
       throw error;
     }
 
-    const ocrData = JSON.parse(document.doc_intel_structured_data);
+    // Retrieve OCR data from blob storage
+    const storageService = new StorageService(getStorageConnectionString());
+    const documentsContainer = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';
+
+    // OCR data is stored at <vendorName>/ocr-azure-doc-intelligence.json
+    const ocrBlobPath = `${document.vendor_name}/ocr-azure-doc-intelligence.json`;
+
+    const ocrBlob = await storageService.downloadBlob(documentsContainer, ocrBlobPath);
+    if (!ocrBlob) {
+      const error = new Error('OCR data not found in storage') as Error & { statusCode: number };
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const ocrData = JSON.parse(ocrBlob.toString('utf-8'));
     const tables = ocrData.tables || [];
-    const fullText = document.doc_intel_extracted_text || '';
 
     // Analyze ALL table headers
     const allHeaders: Array<{ tableIdx: number; colIdx: number; header: string }> = [];
@@ -298,8 +298,8 @@ Context: ${fullText.substring(0, 2000)}`;
       });
     });
 
-    // Build column mapping prompt
-    const headerMappingPrompt = this.buildColumnMappingPrompt(allHeaders, fullText);
+    // Build column mapping prompt (no fullText needed since we only use tables)
+    const headerMappingPrompt = this.buildColumnMappingPrompt(allHeaders, '');
 
     // Call OpenAI for column mapping
     const mappingResponse = await this.openai.chat.completions.create({
@@ -318,7 +318,7 @@ Context: ${fullText.substring(0, 2000)}`;
 
     // Calculate quality metrics
     const { completenessScore, confidenceScore, metrics } = this.calculateQualityMetrics(products);
-
+    console.log('Quality Metrics:', { completenessScore, confidenceScore, metrics });
     // Calculate costs
     const promptTokens = mappingResponse.usage?.prompt_tokens || 0;
     const completionTokens = mappingResponse.usage?.completion_tokens || 0;
@@ -353,38 +353,17 @@ Context: ${fullText.substring(0, 2000)}`;
     // This project no longer uses a bronze-layer; artifacts are persisted in the database only.
 
     // Update database with AI mapping results
-    await withDatabase(async (pool) => {
-      await pool
-        .request()
-        .input('documentId', sql.UniqueIdentifier, documentId)
-        .input('mappingResult', sql.NVarChar, JSON.stringify(mappingResultJson))
-        .input('promptUsed', sql.NVarChar, headerMappingPrompt)
-        .input('promptTokens', sql.Int, promptTokens)
-        .input('completionTokens', sql.Int, completionTokens)
-        .input('totalTokens', sql.Int, totalTokens)
-        .input('aiCost', sql.Decimal(10, 6), aiCost)
-        .input('productCount', sql.Int, products.length)
-        .input('vendorName', sql.NVarChar, document.vendor_name)
-        .input('completenessScore', sql.Decimal(5, 2), completenessScore)
-        .input('confidenceScore', sql.Decimal(5, 2), confidenceScore).query(`
-          UPDATE vvocr.document_processing_results 
-          SET 
-              ai_mapping_result = @mappingResult,
-              ai_model_used = 'gpt-4o',
-              ai_prompt_used = @promptUsed,
-              ai_prompt_tokens = @promptTokens,
-              ai_completion_tokens = @completionTokens,
-              ai_total_tokens = @totalTokens,
-              ai_model_cost_usd = @aiCost,
-              ai_completeness_score = @completenessScore,
-              ai_confidence_score = @confidenceScore,
-              product_count = @productCount,
-              vendor_name = @vendorName,
-              processing_status = 'completed',
-              processing_completed_at = GETUTCDATE(),
-              updated_at = GETUTCDATE()
-          WHERE result_id = @documentId
-        `);
+    await this.documentRepo.updateAiMapping({
+      result_id: documentId,
+      ai_mapping_result: JSON.stringify(mappingResultJson),
+      ai_model_used: 'gpt-4o',
+      ai_prompt_used: headerMappingPrompt,
+      ai_model_cost_usd: aiCost,
+      ai_confidence_score: confidenceScore,
+      ai_completeness_score: completenessScore,
+      ai_prompt_tokens: promptTokens,
+      ai_completion_tokens: completionTokens,
+      vendor_name: document.vendor_name,
     });
 
     return {
@@ -414,11 +393,15 @@ Context: ${fullText.substring(0, 2000)}`;
  * For testing: inject dependencies via constructor
  * For production: use this factory to create with real dependencies
  */
-export function createAIService(): AIService {
+export async function createAIService(): Promise<AIService> {
   const endpoint = process.env.AI_PROJECT_ENDPOINT;
   const apiKey = process.env.AI_PROJECT_KEY;
   if (!endpoint || !apiKey) {
     throw new Error('Missing AI project configuration (AI_PROJECT_ENDPOINT or AI_PROJECT_KEY)');
   }
-  return new AIService(endpoint, apiKey);
+
+  const { createDocumentRepository } = await import('../data/repositories/DocumentRepository.js');
+  const documentRepo = await createDocumentRepository();
+
+  return new AIService(endpoint, apiKey, documentRepo);
 }

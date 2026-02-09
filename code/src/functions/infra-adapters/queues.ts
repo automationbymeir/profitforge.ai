@@ -96,11 +96,9 @@ export async function ocrQueueHandler(
     }
 
     const ocrService = await createOCRService();
-    const result = await ocrService.processDocumentFromQueue(documentId, blobPath);
+    await ocrService.processDocumentFromQueue(documentId, blobPath);
 
-    context.log(
-      `✅ OCR complete for ${documentId}: ${result.pageCount} pages, ${result.tableCount} tables`
-    );
+    context.log(`✅ OCR complete for ${documentId}`);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     context.error(`❌ OCR failed: ${errorMessage}`);
@@ -157,7 +155,7 @@ export async function aiProductMapperQueueTrigger(
     }
 
     // Use AIService for mapping logic
-    const aiService = createAIService();
+    const aiService = await createAIService();
     const result = await aiService.mapProducts(documentId);
 
     context.log(`✅ Queue processing complete: ${result.productCount} products extracted`);

@@ -49,6 +49,80 @@ export async function waitForFunctions(
 }
 
 /**
+ * Kill process using port 7071 and wait for it to be free
+ */
+function killPortAndWait(maxAttempts: number = 10): void {
+  // If port is already free, return immediately
+  if (!isPortInUse()) {
+    return;
+  }
+
+  console.log('   (Port 7071 in use, attempting to free it...)');
+
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      // Get PIDs using the port
+      const pids = execSync('lsof -ti :7071 2>/dev/null || true', { encoding: 'utf-8' }).trim();
+
+      if (!pids) {
+        console.log('   ✓ Port 7071 is now free');
+        return;
+      }
+
+      if (i === 0) {
+        console.log(`   Found process(es) using port: ${pids.split('\n').join(', ')}`);
+      }
+
+      // Kill all processes using the port (escalating signals)
+      const signal = i < 3 ? 'TERM' : 'KILL';
+      execSync(`lsof -ti :7071 | xargs -r kill -${signal} 2>/dev/null || true`, {
+        stdio: 'ignore',
+      });
+
+      // Also try killing func processes
+      execSync(`pkill -${signal === 'TERM' ? '' : '9 '}-f "func start" 2>/dev/null || true`, {
+        stdio: 'ignore',
+      });
+
+      // Wait for processes to die
+      execSync('sleep 1');
+
+      // Check if port is now free
+      if (!isPortInUse()) {
+        console.log('   ✓ Port 7071 is now free');
+        return;
+      }
+    } catch (_error) {
+      // Continue trying
+    }
+
+    // Log progress
+    if (i > 2) {
+      console.log(`   Still trying to free port (attempt ${i + 1}/${maxAttempts})...`);
+    }
+
+    // Wait before retry
+    if (i < maxAttempts - 1) {
+      execSync('sleep 2');
+    }
+  }
+
+  // Last resort: show what's using the port and throw
+  console.error('\n❌ Unable to free port 7071. Processes still using it:');
+  try {
+    const details = execSync('lsof -i :7071', { encoding: 'utf-8' });
+    console.error(details);
+  } catch (_e) {
+    console.error('   (Could not determine which process is using the port)');
+  }
+
+  throw new Error(
+    'Failed to free port 7071 after multiple attempts. ' +
+      'Please manually kill the process: sudo lsof -ti :7071 | xargs kill -9'
+  );
+}
+
+/**
  * Start local Functions app
  */
 export function startFunctions(
@@ -59,17 +133,12 @@ export function startFunctions(
   return new Promise((resolve, reject) => {
     console.log('⚡ Starting Functions app...');
 
-    // Always check and kill any existing Functions process
-    if (isPortInUse()) {
-      console.log('   (Port 7071 in use, killing existing process...)');
-      try {
-        execSync('pkill -f "func start"', { stdio: 'ignore' });
-        // Wait a moment for process to die
-        execSync('sleep 1');
-        console.log('   ✓ Existing process killed');
-      } catch (_error) {
-        // Ignore errors - process might already be dead
-      }
+    // Kill any existing process and wait for port to be free
+    try {
+      killPortAndWait();
+    } catch (error) {
+      reject(error);
+      return;
     }
 
     console.log('   (Building TypeScript...)');

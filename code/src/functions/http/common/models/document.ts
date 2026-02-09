@@ -27,6 +27,7 @@ export type ExportStatus = 'not_exported' | 'pending' | 'confirmed' | 'exported'
 export interface Document {
   /** Unique identifier for this result */
   result_id: string;
+  document_size_bytes: number;
 
   /** Original filename */
   document_name: string;
@@ -45,30 +46,22 @@ export interface Document {
 
   /** Export/confirmation status */
   export_status: ExportStatus;
+  exported_at: Date | null;
 
-  /** Version number (0 for original, increments for reprocessing) */
-  reprocessing_count: number;
-
-  /** Parent document ID for reprocessed versions */
-  parent_document_id: string | null;
-
-  /** Azure Document Intelligence metrics */
-  doc_intel_page_count: number | null;
-  doc_intel_table_count: number | null;
+  processing_started_at: number;
+  doc_intel_end_time: number;
   doc_intel_cost_usd: number | null;
   doc_intel_confidence_score: number | null;
+  doc_intel_prompt_used: string | null;
 
   /** AI mapping results (JSON stringified) */
   ai_mapping_result: string | null;
-
+  ai_prompt_used: string | null;
   /** AI model used for mapping */
   ai_model_used: string | null;
   ai_model_cost_usd: number | null;
   ai_confidence_score: number | null;
   ai_completeness_score: number | null;
-
-  /** Number of products extracted */
-  product_count: number | null;
 
   /** Timestamps */
   created_at: Date;
@@ -115,23 +108,6 @@ export interface DeleteDocumentResult {
 
   /** Number of blobs deleted from storage */
   blobsDeleted: number;
-}
-
-/**
- * Reprocess mapping result
- */
-export interface ReprocessResult {
-  /** New version result ID */
-  newResultId: string;
-
-  /** Original document ID */
-  originalDocumentId: string;
-
-  /** Parent document ID (root of version chain) */
-  parentDocumentId: string;
-
-  /** Version number */
-  version: number;
 }
 
 /**

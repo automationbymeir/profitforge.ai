@@ -7,7 +7,7 @@ vi.mock('../../../src/services/index.js', () => ({
   createVersionService: vi.fn(),
 }));
 
-import { confirmMappingHandler } from '../../../src/functions/http/documents/confirm';
+import { confirmMappingHandler } from '../../../src/functions/http/runs/confirm.js';
 import { createDocumentService } from '../../../src/services/index.js';
 import { mockInvocationContext } from '../setup/mocks';
 

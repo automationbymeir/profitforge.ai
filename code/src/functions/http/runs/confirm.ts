@@ -1,7 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { withCors, withErrorHandler } from '../../../middleware/index.js';
-import { createDocumentService } from '../../../services/index.js';
+import { createRunService } from '../../../services/index.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
+import { withCors, withErrorHandler } from '../common/middleware/index.js';
 
 /**
  * Confirm Mapping Handler - HTTP POST endpoint to export products to production
@@ -12,16 +12,16 @@ async function confirmMappingHandlerCore(
 ): Promise<HttpResponseInit> {
   context.log(`Confirm mapping request received`);
 
-  const documentId = req.params.id;
+  const runId = req.params.runId;
 
-  if (!documentId) {
-    return errorResponse('Missing document ID in route', 400);
+  if (!runId) {
+    return errorResponse('Missing run ID in route', 400);
   }
 
   try {
-    // Use DocumentService for confirmation logic
-    const documentService = await createDocumentService();
-    const result = await documentService.confirmMapping(documentId);
+    // Use RunService for confirmation logic
+    const runService = await createRunService();
+    const result = await runService.confirmMapping(runId);
 
     context.log(
       `✅ Exported ${result.productsExported} products to production for vendor ${result.vendor}`
@@ -46,7 +46,7 @@ async function confirmMappingHandlerCore(
 export const confirmMappingHandler = withErrorHandler(withCors(confirmMappingHandlerCore));
 
 app.http('confirmMapping', {
-  route: 'documents/{id}/confirm',
+  route: 'documents/runs/{runId}/confirm',
   methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: confirmMappingHandler,

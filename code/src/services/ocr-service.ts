@@ -1,5 +1,4 @@
 import { AzureKeyCredential, DocumentAnalysisClient } from '@azure/ai-form-recognizer';
-import { BlobServiceClient } from '@azure/storage-blob';
 import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
 import { StorageService } from '../data/storage.js';
 import type { QueueService } from '../functions/infra-adapters/queues.js';
@@ -7,11 +6,6 @@ import { getStorageConnectionString } from '../utils/config.js';
 
 export interface OCRResult {
   documentId: string;
-  content: string;
-  tables: unknown[];
-  pageCount: number;
-  tableCount: number;
-  cost: number;
   processingDuration: number;
 }
 
@@ -29,161 +23,140 @@ export class OCRService {
   private client: DocumentAnalysisClient;
   private storageService: StorageService;
   private queueService: QueueService;
+  private documentRepo: DocumentRepository;
 
   constructor(
-    private documentRepo: DocumentRepository,
+    documentRepo: DocumentRepository,
     storageService: StorageService,
     queueService: QueueService,
     endpoint: string,
     apiKey: string
   ) {
+    this.documentRepo = documentRepo;
     this.storageService = storageService;
     this.queueService = queueService;
     this.client = new DocumentAnalysisClient(endpoint, new AzureKeyCredential(apiKey));
   }
 
   /**
-   * Process a document with OCR
-   */
-  async processDocument(
-    blob: Buffer,
-    blobPath: string,
-    startTime: number = Date.now()
-  ): Promise<OCRResult> {
-    // Start analysis (using prebuilt-layout for tables and structure)
-    const poller = await this.client.beginAnalyzeDocument('prebuilt-layout', blob);
-    const { content, tables, pages } = await poller.pollUntilDone();
-
-    const pageCount = pages?.length || 0;
-    const tableCount = tables?.length || 0;
-
-    // Calculate cost: $1.50 per 1,000 pages
-    const docIntelCost = (pageCount / 1000) * 1.5;
-
-    // blobPath is the document path within the container (e.g., "VENDOR_NAME/file.pdf")
-    const documentPath = blobPath;
-
-    // Get document from database
-    const documents = await this.documentRepo.findByDocumentPath(documentPath);
-
-    if (documents.length === 0) {
-      throw new Error(`Document not found in database: ${documentPath}`);
-    }
-
-    // Get the latest document (should be at index 0 due to ORDER BY reprocessing_count ASC)
-    const document = documents[0];
-    const documentId = document.result_id;
-
-    // Store OCR output as `ocr.json` in the same folder as the original PDF
-    const pathParts = blobPath.split('/');
-    const folderParts = pathParts.length > 1 ? pathParts.slice(0, pathParts.length - 1) : [];
-    const ocrBlobPath = folderParts.length > 0 ? `${folderParts.join('/')}/ocr.json` : 'ocr.json';
-
-    const ocrResult = {
-      documentId,
-      timestamp: new Date().toISOString(),
-      content,
-      tables,
-      pageCount,
-      tableCount,
-      cost: docIntelCost,
-    };
-
-    const documentsContainer = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';
-    const jsonBuffer = Buffer.from(JSON.stringify(ocrResult, null, 2));
-    await this.storageService.uploadBlob(
-      documentsContainer,
-      ocrBlobPath,
-      jsonBuffer,
-      'application/json'
-    );
-
-    // Update database with OCR results
-    const processingDuration = Date.now() - startTime;
-
-    await this.documentRepo.updateOcrResults({
-      result_id: documentId,
-      doc_intel_extracted_text: content,
-      doc_intel_structured_data: JSON.stringify({ tables }),
-      doc_intel_confidence_score: null,
-      doc_intel_page_count: pageCount,
-      doc_intel_table_count: tableCount,
-      doc_intel_cost_usd: docIntelCost,
-      doc_intel_prompt_used: null,
-    });
-
-    // Note: processing_status update to 'ocr_complete' happens inside updateOcrResults
-    // TODO: Add processing_started_at and processing_duration_ms to UpdateOcrResultsInput
-
-    return {
-      documentId,
-      content,
-      tables: tables || [],
-      pageCount,
-      tableCount,
-      cost: docIntelCost,
-      processingDuration,
-    };
-  }
-
-  /**
-   * Queue AI mapping for a document
-   */
-  async queueAIMapping(documentId: string): Promise<void> {
-    await this.queueService.queueAIMapping(documentId);
-  }
-
-  /**
    * Process document from queue message (downloads blob, runs OCR, queues AI)
    */
   async processDocumentFromQueue(documentId: string, blobPath: string): Promise<OCRResult> {
-    const startTime = Date.now();
-
-    // Download blob from storage
     const documentsContainer = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';
-    const blobServiceClient = BlobServiceClient.fromConnectionString(getStorageConnectionString());
-    const containerClient = blobServiceClient.getContainerClient(documentsContainer);
-    const blobClient = containerClient.getBlobClient(blobPath);
 
-    const downloadResponse = await blobClient.download();
-    if (!downloadResponse.readableStreamBody) {
-      throw new Error(`Failed to download blob: ${blobPath}`);
-    }
-    const blob = await this.streamToBuffer(downloadResponse.readableStreamBody);
+    console.log(`🔄 Processing OCR for document ${documentId} at ${blobPath}`);
 
-    // Process with existing logic
-    const result = await this.processDocument(blob, blobPath, startTime);
-
-    // Queue AI mapping
     try {
-      await this.queueAIMapping(result.documentId);
-    } catch (queueError: unknown) {
-      const errorMessage = queueError instanceof Error ? queueError.message : String(queueError);
-      console.warn(`⚠️ Failed to queue AI mapping: ${errorMessage}`);
-    }
+      // Get existing run details
+      const run = await this.documentRepo.getRunByID(documentId);
+      const ocrCachePath = `${run.vendor_name}/ocr-azure-doc-intelligence.json`;
 
-    return result;
-  }
+      let ocrMetadata: {
+        cost: number;
+        confidenceScore?: number;
+        ocrStartTime: number;
+        ocrEndTime: number;
+      };
 
-  /**
-   * Helper to convert stream to buffer
-   */
-  private async streamToBuffer(readableStream: NodeJS.ReadableStream): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      readableStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
-      readableStream.on('end', () => resolve(Buffer.concat(chunks)));
-      readableStream.on('error', reject);
-    });
-  }
+      // Check if OCR results already cached in blob storage
+      const cachedOCR = await this.storageService.checkOCRCache(documentsContainer, ocrCachePath);
+      console.log('Cached OCR:', cachedOCR);
+      if (cachedOCR) {
+        console.log(`✅ Using cached OCR results from: ${ocrCachePath}`);
+        ocrMetadata = {
+          cost: cachedOCR.cost,
+          confidenceScore: cachedOCR.confidenceScore,
+          ocrStartTime: cachedOCR.ocrStartTime,
+          ocrEndTime: cachedOCR.ocrEndTime,
+        };
+      } else {
+        console.log(`🔄 No cache found - running OCR processing for: ${blobPath}`);
 
-  /**
-   * Mark document as failed in database
-   */
-  async markAsFailed(blobPath: string, errorMessage: string): Promise<void> {
-    const documents = await this.documentRepo.findByDocumentPath(blobPath);
-    if (documents.length > 0) {
-      await this.documentRepo.updateStatus(documents[0].result_id, 'failed', errorMessage);
+        // Download PDF from blob storage
+        const pdfBuffer = await this.storageService.downloadPdfForOCR(documentsContainer, blobPath);
+
+        // Run OCR analysis
+        const ocrStartTime = Date.now();
+        const poller = await this.client.beginAnalyzeDocument('prebuilt-layout', pdfBuffer);
+        const ocrResponse = await poller.pollUntilDone();
+        const ocrEndTime = Date.now();
+
+        // Calculate metrics
+        const pageCount = ocrResponse?.pages?.length || 0;
+        const docIntelCost = (pageCount / 1000) * 1.5; // $1.50 per 1,000 pages
+
+        // Calculate average confidence score from pages
+        let avgConfidence: number | undefined;
+        if (ocrResponse?.pages && ocrResponse.pages.length > 0) {
+          const confidenceScores = ocrResponse.pages
+            .map((page) => (page as { confidence?: number }).confidence)
+            .filter((conf): conf is number => conf !== undefined);
+          if (confidenceScores.length > 0) {
+            avgConfidence =
+              confidenceScores.reduce((sum, conf) => sum + conf, 0) / confidenceScores.length;
+          }
+        }
+
+        console.log(
+          `📊 OCR completed: started at ${ocrStartTime}, ended at ${ocrEndTime}, $${docIntelCost.toFixed(4)}`
+        );
+
+        // Upload OCR results to blob cache
+        await this.storageService.uploadOCRResults(documentsContainer, ocrCachePath, ocrResponse, {
+          ocrStartTime,
+          ocrEndTime,
+          processingCost: docIntelCost,
+          confidenceScore: avgConfidence,
+        });
+
+        console.log(`💾 Saved OCR results to cache: ${ocrCachePath}`);
+
+        ocrMetadata = {
+          cost: docIntelCost,
+          confidenceScore: avgConfidence,
+          ocrStartTime,
+          ocrEndTime,
+        };
+      }
+
+      // Update database with OCR metadata and set status to ocr_complete
+      await this.documentRepo.updateOcrResults({
+        result_id: documentId,
+        doc_intel_confidence_score: ocrMetadata.confidenceScore || null,
+        doc_intel_cost_usd: ocrMetadata.cost,
+        doc_intel_prompt_used: 'prebuilt-layout',
+        processing_started_at: ocrMetadata.ocrStartTime,
+        doc_intel_end_time: ocrMetadata.ocrEndTime,
+      });
+
+      console.log(`✅ Updated database with OCR results for ${documentId}`);
+
+      // Queue AI mapping
+      try {
+        await this.queueService.queueAIMapping(documentId);
+        console.log(`📤 Queued AI mapping for ${documentId}`);
+      } catch (queueError: unknown) {
+        const errorMessage = queueError instanceof Error ? queueError.message : String(queueError);
+        console.error(`❌ Failed to queue AI mapping: ${errorMessage}`);
+        throw new Error(`Failed to queue AI mapping: ${errorMessage}`);
+      }
+
+      return {
+        documentId,
+        processingDuration: ocrMetadata.ocrEndTime - ocrMetadata.ocrStartTime,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`❌ OCR processing failed for ${documentId}: ${errorMessage}`);
+
+      // Update document status to failed
+      try {
+        await this.documentRepo.updateStatus(documentId, 'failed', errorMessage);
+      } catch (updateError) {
+        console.error(`❌ Failed to update error status: ${updateError}`);
+      }
+
+      throw error;
     }
   }
 }

@@ -1,7 +1,7 @@
 -- =============================================
 -- VVOCR SCHEMA - Document Processing POC
 -- Matches client's expected schema for isolated POC work
--- Last updated: 2026-01-18 (added queue-based processing support)
+-- Last updated: 2026-02-07 (removed calculated fields and moved large data to blob)
 -- =============================================
 
 -- Create schema if it doesn't exist
@@ -14,6 +14,7 @@ GO
 -- =============================================
 -- 1. Document Processing Results
 -- Main table for storing OCR/AI processing outputs
+-- Note: Large data (extracted text, structured data) stored in blob storage
 -- =============================================
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'document_processing_results' AND schema_id = SCHEMA_ID('vvocr'))
 BEGIN
@@ -28,65 +29,50 @@ BEGIN
         uploaded_at DATETIME2 DEFAULT GETUTCDATE(),
         
         -- Processing status
-        processing_status NVARCHAR(50) DEFAULT 'pending', -- pending, processing, completed, failed, manual_review
-        processing_started_at DATETIME2,
-        processing_completed_at DATETIME2,
-        processing_duration_ms INT,
+        processing_status NVARCHAR(50) DEFAULT 'pending', -- pending, ocr_complete, completed, failed
+        processing_started_at DATETIME2 NULL,
+        processing_completed_at DATETIME2 NULL,
         
         -- Document Intelligence (Azure Form Recognizer) results
-        doc_intel_extracted_text NVARCHAR(MAX),
-        doc_intel_structured_data NVARCHAR(MAX), -- JSON
-        doc_intel_confidence_score DECIMAL(5,4),
-        doc_intel_page_count INT,
-        doc_intel_table_count INT,
-        doc_intel_prompt_used NVARCHAR(MAX), -- Prompt used for schema inspection
+        -- Note: Large OCR data (extracted_text, structured_data) stored in blob at <vendor_name>/ocr.json
+        doc_intel_confidence_score DECIMAL(5,4) NULL,
+        doc_intel_prompt_used NVARCHAR(MAX) NULL, -- Prompt used for schema inspection (future use)
+        doc_intel_cost_usd DECIMAL(10,6) NULL,
         
         -- AI Model results (GPT-4o, Llama, Mistral, etc.)
-        ai_model_used NVARCHAR(100), -- e.g., 'gpt-4o', 'llama-3-1-405b'
-        ai_mapping_result NVARCHAR(MAX), -- Product mapping JSON result
-        ai_prompt_used NVARCHAR(MAX), -- Exact prompt sent to LLM
-        ai_confidence_score DECIMAL(5,2), -- Overall confidence score (0-100)
-        ai_completeness_score DECIMAL(5,2), -- Data completeness score (0-100)
-        ai_prompt_tokens INT,
-        ai_completion_tokens INT,
-        ai_total_tokens INT,
-        
-        -- Cost tracking
-        doc_intel_cost_usd DECIMAL(10,6),
-        ai_model_cost_usd DECIMAL(10,6),
-        total_cost_usd DECIMAL(10,6),
+        ai_model_used NVARCHAR(100) NULL, -- e.g., 'gpt-4o', 'llama-3-1-405b'
+        ai_mapping_result NVARCHAR(MAX) NULL, -- Product mapping JSON result
+        ai_prompt_used NVARCHAR(MAX) NULL, -- Exact prompt sent to LLM
+        ai_confidence_score DECIMAL(5,2) NULL, -- Overall confidence score (0-100)
+        ai_completeness_score DECIMAL(5,2) NULL, -- Data completeness score (0-100)
+        ai_prompt_tokens INT NULL,
+        ai_completion_tokens INT NULL,
+        ai_model_cost_usd DECIMAL(10,6) NULL,
         
         -- Validation
         requires_manual_review BIT DEFAULT 0,
-        manual_review_reason NVARCHAR(500),
-        reviewed_by NVARCHAR(100),
-        reviewed_at DATETIME2,
-        validation_results NVARCHAR(MAX), -- JSON: golden dataset comparison
-        product_count INT, -- Number of products extracted
+        manual_review_reason NVARCHAR(500) NULL,
+        reviewed_by NVARCHAR(100) NULL,
+        reviewed_at DATETIME2 NULL,
         
         -- Vendor information
-        vendor_name NVARCHAR(200),
-        
-        -- Reprocessing tracking
-        parent_document_id UNIQUEIDENTIFIER, -- Original document if this is a reprocess
-        reprocessing_count INT DEFAULT 0,
+        vendor_name NVARCHAR(200) NOT NULL,
         
         -- Export status
         export_status NVARCHAR(50) DEFAULT 'not_exported', -- not_exported, confirmed, exported, rejected
-        exported_at DATETIME2,
+        exported_at DATETIME2 NULL,
         
         -- Metadata
-        batch_id UNIQUEIDENTIFIER,
-        error_message NVARCHAR(MAX),
+        error_message NVARCHAR(MAX) NULL,
         created_at DATETIME2 DEFAULT GETUTCDATE(),
         updated_at DATETIME2 DEFAULT GETUTCDATE(),
         
         -- Indexes
         INDEX IX_document_processing_status (processing_status),
-        INDEX IX_document_batch_id (batch_id),
         INDEX IX_document_uploaded_at (uploaded_at),
         INDEX IX_document_requires_review (requires_manual_review),
-        INDEX IX_document_parent_id (parent_document_id)
+        INDEX IX_document_vendor_name (vendor_name),
+        INDEX IX_document_path (document_path)
     );
 END
 GO
