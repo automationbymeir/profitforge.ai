@@ -3,3 +3,12 @@ node_modules/
 dist/
 *.log
 .pulumi/
+
+# Ignore everything inside .github
+.github/*
+
+# Except workflows directory
+!.github/workflows/
+
+# And everything inside workflows
+!.github/workflows/**

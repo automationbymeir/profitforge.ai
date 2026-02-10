@@ -1,6 +1,6 @@
 import * as azurenative from '@pulumi/azure-native';
 import * as pulumi from '@pulumi/pulumi';
-import { azureConfig } from './config';
+import { getResourceGroup } from './config';
 
 // Use SST's global azurenative provider
 
@@ -82,7 +82,7 @@ export function createStorageResources(
 
   // Pack the built target functions with flat structure for Azure Functions
   const codeBlob = new azurenative.storage.Blob(`${stack}-functions-zip-v2`, {
-    resourceGroupName: azureConfig.resourceGroup,
+    resourceGroupName: getResourceGroup(),
     accountName: blobStorage.name,
     containerName: codeContainer.name,
     source: new pulumi.asset.FileArchive('./code'),
@@ -96,7 +96,7 @@ export function createStorageResources(
     protocols: azurenative.storage.HttpProtocol.Https,
     sharedAccessStartTime: '2023-01-01',
     sharedAccessExpiryTime: '2030-01-01',
-    resourceGroupName: azureConfig.resourceGroup,
+    resourceGroupName: getResourceGroup(),
     resource: azurenative.storage.SignedResource.C,
     permissions: azurenative.storage.Permissions.R,
     canonicalizedResource: pulumi.interpolate`/blob/${blobStorage.name}/${codeContainer.name}`,

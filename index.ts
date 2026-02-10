@@ -2,7 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import { createAIFoundryResources } from './infra/aiFoundry';
 import { createApplicationInsightsResources } from './infra/applicationInsights';
 import { createCognitiveServices } from './infra/cognitiveServices';
-import { azureConfig } from './infra/config';
+import { getAIHubName, getAIProjectName, getLocation, getResourceGroup } from './infra/config';
 import { createDatabaseResources } from './infra/database';
 import { createFunctionAppResources } from './infra/functions';
 import { createStorageResources } from './infra/storage';
@@ -14,16 +14,17 @@ const config = new pulumi.Config();
 const stack = pulumi.getStack();
 
 // Get secrets from Pulumi config
-const _documentIntelligenceKey = config.requireSecret('documentIntelligenceKey');
 const adminPassword = config.requireSecret('sqlAdminPassword');
 const adminUsername = 'sqladmin';
 
 // Use existing resource group
+const resourceGroup = getResourceGroup();
+const location = getLocation();
 
 // --- SQL Infrastructure ---
 const databaseResources = createDatabaseResources(
-  azureConfig.resourceGroup,
-  azureConfig.location,
+  resourceGroup,
+  location,
   stack,
   adminUsername,
   adminPassword
@@ -35,22 +36,18 @@ const {
   uploadsContainer: _uploadsContainer,
   storageConnectionString,
   functionBlobUrl,
-} = createStorageResources(azureConfig.resourceGroup, azureConfig.location, stack);
+} = createStorageResources(resourceGroup, location, stack);
 
 // --- Application Insights (Monitoring) ---
-const appInsightsResources = createApplicationInsightsResources(
-  azureConfig.resourceGroup,
-  azureConfig.location,
-  stack
-);
+const appInsightsResources = createApplicationInsightsResources(resourceGroup, location, stack);
 
 // --- AI Services (Document Intelligence + OpenAI) ---
-const cognitiveServices = createCognitiveServices(azureConfig.resourceGroup, azureConfig.location);
+const cognitiveServices = createCognitiveServices(resourceGroup, location);
 
 // --- AI Foundry (Hub + Project + GPT-4o Deployment) ---
 const _aiFoundry = createAIFoundryResources(
-  azureConfig.resourceGroup,
-  azureConfig.location,
+  resourceGroup,
+  location,
   cognitiveServices.openAiAccountName
 );
 
@@ -70,7 +67,7 @@ const functionAppResources = createFunctionAppResources(
 
 // Export outputs
 export const stage = stack;
-export const outputLocation = azureConfig.location;
+export const outputLocation = location;
 export const storageAccountName = blobStorage.name;
 export const sqlServerName = databaseResources.sqlServer.name;
 export const sqlServerFqdn = databaseResources.sqlServer.fullyQualifiedDomainName;
@@ -84,8 +81,8 @@ export const functionAppEndpoint = pulumi.interpolate`https://${functionAppResou
 export const docIntelAccountName = cognitiveServices.docIntelAccountName;
 export const docIntelEndpoint = cognitiveServices.docIntelEndpoint;
 export const openAiAccountName = cognitiveServices.openAiAccountName;
-export const aiHubName = pulumi.output(azureConfig.aiHubName);
-export const aiProjectName = pulumi.output(azureConfig.aiProjectName);
+export const aiHubName = pulumi.output(getAIHubName());
+export const aiProjectName = pulumi.output(getAIProjectName());
 
 // --- Monitoring Outputs ---
 export const appInsightsName = appInsightsResources.appInsights.name;

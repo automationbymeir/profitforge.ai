@@ -1,6 +1,6 @@
 import * as azurenative from '@pulumi/azure-native';
 import * as pulumi from '@pulumi/pulumi';
-import { azureConfig } from './config';
+import { getCognitiveServicesName } from './config';
 
 export interface CognitiveServicesResources {
   docIntelAccountName: pulumi.Output<string>;
@@ -17,12 +17,12 @@ export function createCognitiveServices(
   // 1. Reference existing Document Intelligence (FormRecognizer) account
   const docIntel = azurenative.cognitiveservices.getAccountOutput({
     resourceGroupName,
-    accountName: azureConfig.cognitiveServicesName,
+    accountName: getCognitiveServicesName(),
   });
 
   const docIntelKeys = azurenative.cognitiveservices.listAccountKeysOutput({
     resourceGroupName,
-    accountName: azureConfig.cognitiveServicesName,
+    accountName: getCognitiveServicesName(),
   });
 
   // 2. Create a new AIServices account for OpenAI (since existing is FormRecognizer)
@@ -45,7 +45,7 @@ export function createCognitiveServices(
   });
 
   return {
-    docIntelAccountName: pulumi.output(azureConfig.cognitiveServicesName),
+    docIntelAccountName: pulumi.output(getCognitiveServicesName()),
     docIntelEndpoint: docIntel.apply((a) => a.properties?.endpoint ?? ''),
     docIntelPrimaryKey: docIntelKeys.apply((k) => k.key1 ?? ''),
     openAiAccountName: openAiAccount.name,

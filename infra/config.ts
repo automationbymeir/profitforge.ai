@@ -1,59 +1,57 @@
 import * as pulumi from '@pulumi/pulumi';
 
 /**
- * Azure resource configuration
- * Uses client's existing Azure resources (dragonfruit - Meir's credentials)
- * Non-sensitive values only - secrets should use SST Secret
+ * Pulumi configuration helper
+ * All values come from Pulumi.<stack>.yaml config files
+ * No hardcoded values - everything is stack-specific
  */
 
+const config = new pulumi.Config('profitforge-ai');
+const azureConfig = new pulumi.Config('azure-native');
+
 // Demo mode configuration
-// Set via: pulumi config set demoMode true
-// Default: false (client mode - no rate limiting, no API keys)
-const config = new pulumi.Config();
 export const isDemoMode = config.getBoolean('demoMode') || false;
 
-export interface AzureConfig {
-  // Azure Region
-  location: string;
-
-  // Resource naming
-  resourceGroup: string;
-
-  // Storage (now managed by Pulumi)
-  storageAccountName: string;
-  storageContainerDocuments: string;
-
-  // Key Vault (currently unused - to be added later if needed)
-  keyVaultName: string;
-
-  // SQL Database (managed by Pulumi)
-  sqlServer: string;
-  sqlDatabase: string;
-
-  // AI Services (currently unused - commented out in index.ts)
-  aiHubName: string;
-  aiProjectName: string;
-  cognitiveServicesName: string;
-  documentIntelligenceEndpoint: string;
-
-  // Existing Function App Resources (Created by Client)
-  functionAppName: string;
-  functionAppPlanName: string;
+// Get resource group from Pulumi config
+export function getResourceGroup(): string {
+  return config.require('resourceGroup');
 }
 
-// All stages use client's existing resources
-export const azureConfig: AzureConfig = {
-  location: 'israelcentral', // Deploy resources closer to Israel
-  resourceGroup: 'dragonfruit-dev-3P-Meir-rg',
-  storageAccountName: 'dragonfrstorage593005773',
-  storageContainerDocuments: 'df-documents',
-  keyVaultName: 'dragonfrkeyvaulte9dc603b',
-  sqlServer: 'df-dev-pfsql.database.windows.net',
-  sqlDatabase: 'df-dev-main',
-  aiHubName: 'dragonfruit-dev-3P-Meir-aihub',
-  aiProjectName: 'dragonfruit-dev-3P-Meir-project',
-  cognitiveServicesName: 'dragonfruit-dev-3P-Meir-docintel',
-  documentIntelligenceEndpoint: 'https://eastus.api.cognitive.microsoft.com/',
-  functionAppName: 'dev-meir-vvocr-functions',
-  functionAppPlanName: 'EastUSLinuxDynamicPlan',
-};
+// Get Azure location from provider config (defaults to provider's location)
+export function getLocation(): string {
+  return azureConfig.get('location') || 'eastus';
+}
+
+// Get Azure location from provider config (defaults to provider's location)
+export function getAppLocation(): string {
+  return azureConfig.get('appLocation') || 'israelcentral';
+}
+
+// Get existing resource names from Pulumi config
+export function getCognitiveServicesName(): string {
+  return config.require('cognitiveServicesName');
+}
+
+export function getAIHubName(): string {
+  return config.require('aiHubName');
+}
+
+export function getAIProjectName(): string {
+  return config.require('aiProjectName');
+}
+
+export function getSqlServerHost(): string {
+  return config.require('sqlServerHost');
+}
+
+export function getSqlDatabaseName(): string {
+  return config.require('sqlDatabaseName');
+}
+
+export function getStorageAccountName(): string {
+  return config.require('storageAccountName');
+}
+
+export function getStorageContainerDocuments(): string {
+  return config.require('storageContainerDocuments');
+}

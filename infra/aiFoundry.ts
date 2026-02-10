@@ -1,6 +1,6 @@
 import * as azurenative from '@pulumi/azure-native';
 import * as pulumi from '@pulumi/pulumi';
-import { azureConfig } from './config';
+import { getAIHubName, getAIProjectName } from './config';
 
 export interface AIFoundryResources {
   aiHub: pulumi.Output<azurenative.machinelearningservices.GetWorkspaceResult>;
@@ -15,13 +15,13 @@ export function createAIFoundryResources(
   // Reference existing AI Hub
   const aiHub = azurenative.machinelearningservices.getWorkspaceOutput({
     resourceGroupName,
-    workspaceName: azureConfig.aiHubName,
+    workspaceName: getAIHubName(),
   });
 
   // Reference existing AI Project
   const aiProject = azurenative.machinelearningservices.getWorkspaceOutput({
     resourceGroupName,
-    workspaceName: azureConfig.aiProjectName,
+    workspaceName: getAIProjectName(),
   });
 
   // GPT-4o Deployment in the Project (OpenAI Account sub-resource)

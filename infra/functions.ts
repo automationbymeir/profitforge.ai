@@ -1,6 +1,6 @@
 import * as azurenative from '@pulumi/azure-native';
 import * as pulumi from '@pulumi/pulumi';
-import { azureConfig, isDemoMode } from './config';
+import { getAppLocation, getResourceGroup, isDemoMode } from './config';
 
 export interface FunctionAppResources {
   functionApp: azurenative.web.WebApp;
@@ -21,25 +21,40 @@ export function createFunctionAppResources(
 ): FunctionAppResources {
   // --- Create Function App Infrastructure ---
 
-  // Create App Service Plan (Consumption/Dynamic)
+  // Stack-specific plan configuration
+  // dev: Consumption Y1 (serverless, low cost for dev)
+  // staging: Basic B1 (dedicated, no quota issues, production-ready)
+  // const isStaging = stack === 'staging';
+  // const planConfig = isStaging
+  //   ? {
+  //       kind: 'app' as const,
+  //       sku: { name: 'B1', tier: 'Basic' },
+  //       reserved: false, // Windows
+  //     }
+  //   : {
+  //       kind: 'functionapp' as const,
+  //       sku: { name: 'Y1', tier: 'Dynamic' },
+  //       reserved: true, // Linux for dev
+  //     };
+
+  // Create App Service Plan with stack-specific configuration
   const appServicePlan = new azurenative.web.AppServicePlan(`${stack}-function-plan`, {
-    resourceGroupName: azureConfig.resourceGroup,
-    location: azureConfig.location,
+    resourceGroupName: getResourceGroup(),
+    location: getAppLocation(),
     name: `${stack}-function-plan`,
     kind: 'functionapp',
     sku: {
       name: 'Y1',
       tier: 'Dynamic',
     },
-    // reserved: true, // Required for Linux
   });
 
   // --- Azure Functions Deployment ---
 
   // Create/manage the Function App with proper plan linkage (matching working example)
   const functionApp = new azurenative.web.WebApp(`${stack}-function-app`, {
-    resourceGroupName: azureConfig.resourceGroup,
-    location: azureConfig.location,
+    resourceGroupName: getResourceGroup(),
+    location: getAppLocation(), // MUST match App Service Plan location
     name: `${stack}-vvocr-functions`,
     serverFarmId: appServicePlan.id, // Link to the App Service Plan
     kind: 'functionapp',

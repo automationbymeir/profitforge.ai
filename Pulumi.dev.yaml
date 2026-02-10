@@ -5,4 +5,9 @@ config:
   profitforge-ai:sqlAdminPassword:
     secure: v1:fD3HFJPWVQW+AbJF:n7e2oJE0Nm1bu+3Z9Ac6SyObAjfRG/WxOSd4U1u4En8djG/w
   azure-native:location: israelcentral
+  azure-native:appLocation: israelcentral
   azure-native:subscriptionId: 211fc1c2-ed86-429b-bc55-552964347a8d
+  profitforge-ai:resourceGroup: dragonfruit-dev-3P-Meir-rg
+  profitforge-ai:cognitiveServicesName: dragonfruit-dev-3P-Meir-docintel
+  profitforge-ai:aiHubName: dragonfruit-dev-3P-Meir-aihub
+  profitforge-ai:aiProjectName: dragonfruit-dev-3P-Meir-project
