@@ -1,0 +1,500 @@
+{
+  "documentId": "9ECE8F08-2FB0-4958-8CE5-E7792FE19DDF",
+  "timestamp": "2026-02-09T12:57:43.137Z",
+  "vendor": "detected vendor name",
+  "products": [
+    {
+      "name": "CLEVER Soap Dispenser White",
+      "sku": "77154",
+      "price": 29.99,
+      "unit": "6"
+    },
+    {
+      "name": "CLEVER Soap Dispenser Black",
+      "sku": "77184",
+      "price": 29.99,
+      "unit": "6"
+    },
+    {
+      "name": "CLEVER Double Dispenser White",
+      "sku": "77254",
+      "price": 49.99,
+      "unit": "6"
+    },
+    {
+      "name": "CLEVER Double Dispenser Black",
+      "sku": "77284",
+      "price": 49.99,
+      "unit": "6"
+    },
+    {
+      "name": "CLEVER Triple Dispenser White",
+      "sku": "77354",
+      "price": 69.99,
+      "unit": "6"
+    },
+    {
+      "name": "CLEVER Triple Dispenser Black",
+      "sku": "77384",
+      "price": 69.99,
+      "unit": "6"
+    },
+    {
+      "name": "CLEVER Flip Shower Shelf White",
+      "sku": "15354",
+      "price": 39.99,
+      "unit": "6"
+    },
+    {
+      "name": "CLEVER Flip Shower Shelf Black",
+      "sku": "15384",
+      "price": 39.99,
+      "unit": "6"
+    },
+    {
+      "name": "AVIVA Dispenser 1 Chrome",
+      "sku": "76140-1",
+      "price": 24.99,
+      "unit": "6"
+    },
+    {
+      "name": "AVIVA Dispenser 1 Satin Silver",
+      "sku": "76130-1",
+      "price": 24.99,
+      "unit": "6"
+    },
+    {
+      "name": "AVIVA Dispenser 2 Chrome",
+      "sku": "76245-1",
+      "price": 44.99,
+      "unit": "6"
+    },
+    {
+      "name": "AVIVA Dispenser 2 Satin Silver",
+      "sku": "76235-1",
+      "price": 44.99,
+      "unit": "6"
+    },
+    {
+      "name": "AVIVA Dispenser 3 Chrome",
+      "sku": "76345-1",
+      "price": 64.99,
+      "unit": "6"
+    },
+    {
+      "name": "AVIVA Dispenser 3 Satin Silver",
+      "sku": "76335-1",
+      "price": 64.99,
+      "unit": "6"
+    },
+    {
+      "name": "UNO Dispenser White",
+      "sku": "76154-1",
+      "price": 19.99,
+      "unit": "2"
+    },
+    {
+      "name": "UNO Dispenser Satin Silver",
+      "sku": "76134-1",
+      "price": 22.99,
+      "unit": "2"
+    },
+    {
+      "name": "DUO Dispenser White",
+      "sku": "76254-1",
+      "price": 24.99,
+      "unit": "2"
+    },
+    {
+      "name": "DUO Dispenser Chrome",
+      "sku": "76244-1",
+      "price": 29.99,
+      "unit": "6"
+    },
+    {
+      "name": "DUO Dispenser Satin Silver",
+      "sku": "76234-1",
+      "price": 29.99,
+      "unit": "2"
+    },
+    {
+      "name": "TRIO Dispenser White",
+      "sku": "76354-1",
+      "price": 36.99,
+      "unit": "2"
+    },
+    {
+      "name": "TRIO Dispenser Chrome",
+      "sku": "76344-1",
+      "price": 42.99,
+      "unit": "6"
+    },
+    {
+      "name": "TRIO Dispenser Satin Silver",
+      "sku": "76334-1",
+      "price": 42.99,
+      "unit": "2"
+    },
+    {
+      "name": "CLEAR CHOICE Dispenser 1 White",
+      "sku": "72150",
+      "price": 16.99,
+      "unit": "2"
+    },
+    {
+      "name": "CLEAR CHOICE Dispenser 2 White",
+      "sku": "72250",
+      "price": 24.99,
+      "unit": "2"
+    },
+    {
+      "name": "CLEAR CHOICE Dispenser 3 White",
+      "sku": "72350",
+      "price": 29.99,
+      "unit": "6"
+    },
+    {
+      "name": "CLEAR CHOICE Dispenser 3 Chrome",
+      "sku": "72344",
+      "price": 39.99,
+      "unit": "2"
+    },
+    {
+      "name": "CLASSIC Dispenser 4 White",
+      "sku": "71450",
+      "price": 39.99,
+      "unit": "6"
+    },
+    {
+      "name": "ULTI-MATE Dispenser 3 White with Mirror",
+      "sku": "73350",
+      "price": 54.99,
+      "unit": "6"
+    },
+    {
+      "name": "ULTI-MATE Dispenser 4 White Shower Caddy",
+      "sku": "75453",
+      "price": 54.99,
+      "unit": "6"
+    },
+    {
+      "name": "FOAMA Touchless Dispenser Graphite 10 oz (295 ml)",
+      "sku": "70126",
+      "price": 44.99,
+      "unit": "6"
+    },
+    {
+      "name": "TOUCHLESS Dispenser Stainless Steel 7.6 oz (225 ml)",
+      "sku": "70190",
+      "price": 29.99,
+      "unit": "2"
+    },
+    {
+      "name": "TOUCHLESS XL Dispenser Black & Chrome 18 oz (530 ml)",
+      "sku": "70181",
+      "price": 49.99,
+      "unit": "6"
+    },
+    {
+      "name": "FOAMING Soap Dispenser Grey *Discontinued",
+      "sku": "70230",
+      "price": 14.99,
+      "unit": "6"
+    },
+    {
+      "name": "FOAMING Soap Dispenser White",
+      "sku": "70250",
+      "price": 14.99,
+      "unit": "6"
+    },
+    {
+      "name": "ASTRA 2 Tier Shower Caddy Chrome",
+      "sku": "13214",
+      "price": 34.99,
+      "unit": "6"
+    },
+    {
+      "name": "ECLIPSE 2 Tier Shower Caddy White *DROP SHIP ONLY",
+      "sku": "13220",
+      "price": 24.99,
+      "unit": "6"
+    },
+    {
+      "name": "ECLIPSE Hose Keeper Shower Caddy Chrome",
+      "sku": "13228",
+      "price": 44.99,
+      "unit": "6"
+    },
+    {
+      "name": "VENUS 2 Tier Shower Caddy Aluminum",
+      "sku": "13631",
+      "price": 49.99,
+      "unit": "4"
+    },
+    {
+      "name": "VENUS 3 Tier Shower Caddy Aluminum *DROP SHIP ONLY",
+      "sku": "13632",
+      "price": 59.99,
+      "unit": "4"
+    },
+    {
+      "name": "VENUS 3 Tier OTD Caddy Aluminum",
+      "sku": "13634",
+      "price": 69.99,
+      "unit": "4"
+    },
+    {
+      "name": "VENUS 2 Tier Shower Caddy Black Aluminum",
+      "sku": "13635",
+      "price": 49.99,
+      "unit": "4"
+    },
+    {
+      "name": "VENUS 3 Tier Shower Caddy Black Aluminum *DROP SHIP ONLY",
+      "sku": "13636",
+      "price": 59.99,
+      "unit": "4"
+    },
+    {
+      "name": "VENUS 3 Tier OTD Caddy Black Aluminum *DROP SHIP ONLY",
+      "sku": "13638",
+      "price": 69.99,
+      "unit": "4"
+    },
+    {
+      "name": "FINELINE 4 Tension Pole Caddy with Mirror Stainless Steel *DROP SHIP ONLY",
+      "sku": "13406",
+      "price": 149.99,
+      "unit": "4"
+    },
+    {
+      "name": "FINELINE 3 Tension Pole Caddy with Mirror Stainless Steel *DROP SHIP ONLY",
+      "sku": "13416",
+      "price": 134.99,
+      "unit": "4"
+    },
+    {
+      "name": "HiRISE 4 Tension Shower Caddy with Mirror White with Aluminum",
+      "sku": "70054",
+      "price": 84.99,
+      "unit": "4"
+    },
+    {
+      "name": "HiRISE 4 Tension Shower Caddy with Mirror Black *DROP SHIP ONLY",
+      "sku": "70058",
+      "price": 89.99,
+      "unit": "4"
+    },
+    {
+      "name": "HiRISE 3 Standing Shower Caddy White with Aluminum *DROP SHIP ONLY",
+      "sku": "70053",
+      "price": 69.99,
+      "unit": "4"
+    },
+    {
+      "name": "ULTI-MATE Shower Pole White",
+      "sku": "70040",
+      "price": 39.99,
+      "unit": "10"
+    },
+    {
+      "name": "SMART 4 Shower Bench White",
+      "sku": "70095",
+      "price": 59.99,
+      "unit": "4"
+    },
+    {
+      "name": "SPA Shower Seat White",
+      "sku": "70060",
+      "price": 39.99,
+      "unit": "4"
+    },
+    {
+      "name": "SMART Foot Seat White",
+      "sku": "70070",
+      "price": 34.99,
+      "unit": "6"
+    },
+    {
+      "name": "ONDA Vanity Seat Matte Black / Grey *DROP SHIP ONLY",
+      "sku": "53583",
+      "price": 119.99,
+      "unit": "2"
+    },
+    {
+      "name": "TWIST Vanity Seat Matte Black / Grey *DROP SHIP ONLY",
+      "sku": "53783",
+      "price": 139.99,
+      "unit": "2"
+    },
+    {
+      "name": "MODERNA Extra Wide Vanity Seat Chrome / White",
+      "sku": "53845",
+      "price": 109.99,
+      "unit": "1"
+    },
+    {
+      "name": "MODERNA Extra Wide Vanity Seat Chrome / Grey",
+      "sku": "53843",
+      "price": 109.99,
+      "unit": "1"
+    },
+    {
+      "name": "DOPPIO Double Sided Magnifying Shower Mirror Black/Stainless Steel",
+      "sku": "13546",
+      "price": 39.99,
+      "unit": "6"
+    },
+    {
+      "name": "VISO Frameless Shower Mirror Chrome",
+      "sku": "13545",
+      "price": 19.99,
+      "unit": "4"
+    },
+    {
+      "name": "TWIST Toilet Caddy Matte Black *DROP SHIP ONLY",
+      "sku": "54680",
+      "price": 29.99,
+      "unit": "4"
+    },
+    {
+      "name": "ROLLO HEXACUBE Toilet Tissue Reserve Matte White *DROP SHIP ONLY",
+      "sku": "53650",
+      "price": 39.99,
+      "unit": "4"
+    },
+    {
+      "name": "ROLLO HEXACUBE Toilet Tissue Reserve Matte Black",
+      "sku": "53688",
+      "price": 39.99,
+      "unit": "4"
+    },
+    {
+      "name": "STREAM Toilet Tissue Reserve Chrome",
+      "sku": "53564",
+      "price": 19.99,
+      "unit": "6"
+    },
+    {
+      "name": "STREAM Toilet Tissue Reserve Black *DROP SHIP ONLY",
+      "sku": "53568",
+      "price": 19.99,
+      "unit": "6"
+    },
+    {
+      "name": "B.SMART Squeegee with Holder White",
+      "sku": "13901",
+      "price": 9.99,
+      "unit": "3"
+    },
+    {
+      "name": "DELUXE 10\\\" Squeegee Chrome",
+      "sku": "17600",
+      "price": 29.99,
+      "unit": "3"
+    },
+    {
+      "name": "DELUXE XL 12\\\" Squeegee Brushed Nickel",
+      "sku": "17620",
+      "price": 34.99,
+      "unit": "6"
+    },
+    {
+      "name": "SOFT GRIP Squeegee Grey/Nickel",
+      "sku": "17500",
+      "price": 22.99,
+      "unit": "6"
+    },
+    {
+      "name": "CRYSTAL Squeegee Acrylic",
+      "sku": "17800",
+      "price": 16.99,
+      "unit": "6"
+    },
+    {
+      "name": "ALTO Extendable Squeegee Silver Chrome",
+      "sku": "17900",
+      "price": 29.99,
+      "unit": "6"
+    },
+    {
+      "name": "ALTO Extendable Squeegee Black/Chrome *DROP SHIP ONLY",
+      "sku": "17908",
+      "price": 29.99,
+      "unit": "6"
+    },
+    {
+      "name": "JAY 2 Hook Set Polished Stainless Steel *DROP SHIP ONLY",
+      "sku": "13853",
+      "price": 19.99,
+      "unit": "6"
+    },
+    {
+      "name": "FACET 2 Hook Set Polished Stainless Steel *DROP SHIP ONLY",
+      "sku": "13863",
+      "price": 19.99,
+      "unit": "6"
+    },
+    {
+      "name": "FACET 2 Hook Set Matte Black",
+      "sku": "13866",
+      "price": 19.99,
+      "unit": "6"
+    },
+    {
+      "name": "IMPRESS Large Suction Basket Smoke Grey",
+      "sku": "13871",
+      "price": 19.99,
+      "unit": "4"
+    },
+    {
+      "name": "IMPRESS Suction Shower Mirror Smoke Grey",
+      "sku": "13872",
+      "price": 19.99,
+      "unit": "4"
+    },
+    {
+      "name": "IMPRESS Suction Hook Set Smoke Grey",
+      "sku": "13873",
+      "price": 10.99,
+      "unit": "6"
+    },
+    {
+      "name": "IMPRESS Suction Double Hook Smoke Grey",
+      "sku": "13874",
+      "price": 8.99,
+      "unit": "6"
+    },
+    {
+      "name": "IMPRESS Suction Shower Squeegee White/Smoke Grey",
+      "sku": "13875",
+      "price": 14.99,
+      "unit": "6"
+    }
+  ],
+  "productCount": 78,
+  "columnMapping": {
+    "sku": 0,
+    "name": 2,
+    "price": 4,
+    "unit": 3,
+    "description": null
+  },
+  "qualityMetrics": {
+    "completenessScore": 100,
+    "confidenceScore": 100,
+    "productsWithSKU": 78,
+    "productsWithPrice": 78,
+    "productsWithValidPrice": 78,
+    "productsWithName": 78,
+    "productsWithUnit": 78,
+    "productsWithDescription": 0,
+    "emptyFields": 0
+  },
+  "usage": {
+    "promptTokens": 1995,
+    "completionTokens": 55,
+    "totalTokens": 2050,
+    "cost": 0.0055375
+  }
+}

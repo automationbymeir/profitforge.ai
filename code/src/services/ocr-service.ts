@@ -60,7 +60,7 @@ export class OCRService {
 
       // Check if OCR results already cached in blob storage
       const cachedOCR = await this.storageService.checkOCRCache(documentsContainer, ocrCachePath);
-      console.log('Cached OCR:', cachedOCR);
+
       if (cachedOCR) {
         console.log(`✅ Using cached OCR results from: ${ocrCachePath}`);
         ocrMetadata = {
@@ -80,7 +80,7 @@ export class OCRService {
         const poller = await this.client.beginAnalyzeDocument('prebuilt-layout', pdfBuffer);
         const ocrResponse = await poller.pollUntilDone();
         const ocrEndTime = Date.now();
-
+        console.log('ocrResponse: ', ocrResponse);
         // Calculate metrics
         const pageCount = ocrResponse?.pages?.length || 0;
         const docIntelCost = (pageCount / 1000) * 1.5; // $1.50 per 1,000 pages

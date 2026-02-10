@@ -53,6 +53,10 @@ export interface Document {
   doc_intel_confidence_score: number | null;
   doc_intel_prompt_used: string | null;
 
+  /** User-requested AI parameters (stored at run creation) */
+  ai_model_requested: string | null;
+  ai_prompt_requested: string | null;
+
   /** AI mapping results (JSON stringified) */
   ai_mapping_result: string | null;
   ai_prompt_used: string | null;

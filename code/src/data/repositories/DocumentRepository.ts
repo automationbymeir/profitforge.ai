@@ -47,6 +47,15 @@ export interface UpdateOcrResultsInput {
 }
 
 /**
+ * Input for storing requested AI parameters
+ */
+export interface UpdateAiParametersInput {
+  result_id: string;
+  ai_model_requested: string | null;
+  ai_prompt_requested: string | null;
+}
+
+/**
  * Input for updating AI mapping results
  */
 export interface UpdateAiMappingInput {
@@ -179,6 +188,8 @@ export class DocumentRepository {
           doc_intel_confidence_score,
           doc_intel_cost_usd,
           doc_intel_prompt_used,
+          ai_model_requested,
+          ai_prompt_requested,
           ai_model_used,
           ai_prompt_used,
           ai_model_cost_usd,
@@ -206,13 +217,16 @@ export class DocumentRepository {
    * @throws Error if run not found
    */
   async getStatus(resultId: string): Promise<ProcessingStatus> {
-    const result = await this.pool.request().input('resultId', sql.UniqueIdentifier, resultId)
-      .query(`
+    let result;
+    try {
+      result = await this.pool.request().input('resultId', sql.UniqueIdentifier, resultId).query(`
         SELECT processing_status
         FROM vvocr.document_processing_results
         WHERE result_id = @resultId
       `);
-
+    } catch (err) {
+      throw new Error(`Failed to get status for run: ${resultId}, Error: ${err}`);
+    }
     if (result.recordset.length === 0) {
       throw new Error(`Run not found: ${resultId}`);
     }
@@ -406,6 +420,29 @@ export class DocumentRepository {
           doc_intel_cost_usd = @cost,
           doc_intel_prompt_used = @promptUsed,
           processing_status = 'ocr_complete',
+          updated_at = GETUTCDATE()
+        WHERE result_id = @resultId
+      `);
+
+    return result.rowsAffected[0] || 0;
+  }
+
+  /**
+   * Store requested AI parameters (model and prompt) for a run
+   *
+   * @param input - Requested AI parameters
+   * @returns Number of rows affected (should be 1)
+   */
+  async updateAiParameters(input: UpdateAiParametersInput): Promise<number> {
+    const result = await this.pool
+      .request()
+      .input('resultId', sql.UniqueIdentifier, input.result_id)
+      .input('modelRequested', sql.NVarChar(100), input.ai_model_requested)
+      .input('promptRequested', sql.NVarChar, input.ai_prompt_requested).query(`
+        UPDATE vvocr.document_processing_results
+        SET 
+          ai_model_requested = @modelRequested,
+          ai_prompt_requested = @promptRequested,
           updated_at = GETUTCDATE()
         WHERE result_id = @resultId
       `);

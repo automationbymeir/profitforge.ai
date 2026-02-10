@@ -196,6 +196,7 @@ async function main() {
 }
 
 // Only run main if called directly (not imported)
-if (require.main === module) {
+import { fileURLToPath } from 'url';
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main();
 }

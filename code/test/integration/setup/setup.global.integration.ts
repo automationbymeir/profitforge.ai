@@ -28,8 +28,8 @@ import {
 } from '../../tools/setup-utils';
 import { setupAzuriteContainers, startDocker, stopDocker } from './utils';
 
-const FUNC_LOG_PATH = 'test/functions-integration-output.log';
-const FUNC_ERROR_LOG_PATH = 'test/functions-integration-error.log';
+const FUNC_LOG_PATH = 'test/integration/functions-integration-output.log';
+const FUNC_ERROR_LOG_PATH = 'test/integration/functions-integration-error.log';
 
 let functionsProcess: ChildProcess | null = null;
 let isCleaningUp = false;

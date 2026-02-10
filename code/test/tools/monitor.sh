@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Live monitoring of uploads - refreshes every 3 seconds
+# Live monitoring of uploads - refreshes every 15 seconds
 # Usage: ./monitor.sh
 
-STORAGE_ACCOUNT="deveitanpvstorage"
-CONTAINER="uploads"
-CONNECTION_STRING="${STORAGE_CONNECTION_STRING:-$(cat ../../local.settings.json | grep STORAGE_CONNECTION_STRING | cut -d'"' -f4)}"
+CONTAINER="${STORAGE_CONTAINER_DOCUMENTS}"
+CONNECTION_STRING="${STORAGE_CONNECTION_STRING}"
 
 echo "🔍 Monitoring Uploads - Press Ctrl+C to stop"
 echo "Refreshing every 15 seconds..."
@@ -18,27 +17,32 @@ while true; do
     
     echo "📦 BLOB STORAGE (${CONTAINER}):"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "Documents:"
-    az storage blob list \
-        --connection-string "$CONNECTION_STRING" \
-        --container-name "$CONTAINER" \
-        --query "[?ends_with(name, '.pdf')].{Name:name, Size:properties.contentLength, Modified:properties.lastModified}" \
-        --output table 2>/dev/null || echo "⚠️  Could not fetch blob storage data"
-    
+    echo "Structure: uploads/<vendorName>/<fileName>.pdf | uploads/<vendorName>/ocr-azure-doc-intelligence.json"
     echo ""
-    echo "OCR Results:"
-    az storage blob list \
+    
+    BLOB_COUNT=$(az storage blob list \
         --connection-string "$CONNECTION_STRING" \
         --container-name "$CONTAINER" \
-        --query "[?ends_with(name, '.json')].{Name:name, Size:properties.contentLength, Modified:properties.lastModified}" \
-        --output table 2>/dev/null || echo "⚠️  No OCR results found"
+        --query "length(@)" \
+        --output tsv 2>/dev/null || echo "0")
+    
+    if [ "$BLOB_COUNT" -eq "0" ]; then
+        echo "📭 No files in blob storage"
+    else
+        echo "All Files ($BLOB_COUNT total):"
+        az storage blob list \
+            --connection-string "$CONNECTION_STRING" \
+            --container-name "$CONTAINER" \
+            --query "[].{Path:name, Size:properties.contentLength, Modified:properties.lastModified}" \
+            --output table 2>/dev/null || echo "⚠️  Could not fetch blob storage data"
+    fi
     
     echo ""
     echo "📊 DATABASE (Recent 5 uploads):"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    node -e "
+    SQL_CONNECTION_STRING="${SQL_CONNECTION_STRING}" node -e "
         const sql = require('mssql');
-        const config = 'Server=tcp:dev-eitan-vvocr-sql0d3c18e3.database.windows.net,1433;Database=dev-eitan-vvocr-db;User ID=sqladmin;Password=MySecurePassword123!;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;';
+        const config = process.env.SQL_CONNECTION_STRING;
         
         (async () => {
             try {
@@ -49,33 +53,37 @@ while true; do
                         document_name,
                         processing_status,
                         FORMAT(uploaded_at, 'yyyy-MM-dd HH:mm:ss') as uploaded,
-                        ISNULL(CAST(total_cost_usd AS VARCHAR), 'N/A') as cost
+                        ISNULL(CAST((ISNULL(doc_intel_cost_usd, 0) + ISNULL(ai_model_cost_usd, 0)) AS VARCHAR), 'N/A') as cost
                     FROM vvocr.document_processing_results
                     ORDER BY uploaded_at DESC
                 \`);
                 
-                console.log('Document Name                                  Status        Uploaded             Cost');
-                console.log('─────────────────────────────────────────────  ───────────   ──────────────────   ────');
-                result.recordset.forEach(row => {
-                    const name = row.document_name.padEnd(45).substring(0, 45);
-                    const status = row.processing_status.padEnd(12);
-                    const uploaded = row.uploaded.padEnd(19);
-                    const cost = (row.cost || 'N/A').padStart(4);
-                    console.log(\`\${name}  \${status}  \${uploaded}  \${cost}\`);
-                });
+                if (result.recordset.length === 0) {
+                    console.log('📭 No documents in database');
+                } else {
+                    console.log('Document Name                                  Status        Uploaded             Cost');
+                    console.log('─────────────────────────────────────────────  ───────────   ──────────────────   ────');
+                    result.recordset.forEach(row => {
+                        const name = row.document_name.padEnd(45).substring(0, 45);
+                        const status = row.processing_status.padEnd(12);
+                        const uploaded = row.uploaded.padEnd(19);
+                        const cost = (row.cost || 'N/A').padStart(4);
+                        console.log(\`\${name}  \${status}  \${uploaded}  \${cost}\`);
+                    });
+                }
                 await pool.close();
             } catch (err) {
-                console.log('⚠️  Database connection failed');
+                console.error('⚠️  Database connection failed:', err.message);
             }
         })();
-    " 2>/dev/null
+    " 2>&1
     
     echo ""
     echo "📦 VENDOR PRODUCTS (Total count):"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    node -e "
+    SQL_CONNECTION_STRING="${SQL_CONNECTION_STRING}" node -e "
         const sql = require('mssql');
-        const config = 'Server=tcp:dev-eitan-vvocr-sql0d3c18e3.database.windows.net,1433;Database=dev-eitan-vvocr-db;User ID=sqladmin;Password=MySecurePassword123!;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;';
+        const config = process.env.SQL_CONNECTION_STRING;
         
         (async () => {
             try {
@@ -90,13 +98,17 @@ while true; do
                 \`);
                 
                 const row = result.recordset[0];
-                console.log(\`Total Products: \${row.total_products} | Unique Vendors: \${row.unique_vendors} | Source Documents: \${row.source_documents}\`);
+                if (row.total_products === 0) {
+                    console.log('📭 No vendor products exported');
+                } else {
+                    console.log(\`Total Products: \${row.total_products} | Unique Vendors: \${row.unique_vendors} | Source Documents: \${row.source_documents}\`);
+                }
                 await pool.close();
             } catch (err) {
-                console.log('⚠️  Could not fetch vendor products data');
+                console.error('⚠️  Could not fetch vendor products data:', err.message);
             }
         })();
-    " 2>/dev/null
+    " 2>&1
     
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

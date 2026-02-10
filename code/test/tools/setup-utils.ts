@@ -22,10 +22,10 @@ export function isPortInUse(): boolean {
  * Wait for Functions app to be ready
  */
 export async function waitForFunctions(
-  entryPoint: string = 'http://localhost:7071/',
+  entryPoint: string = 'http://localhost:7071',
   maxAttempts: number = 30
 ): Promise<void> {
-  const url = `${entryPoint}api/health`;
+  const url = `${entryPoint}/api/health`;
   for (let i = 0; i < maxAttempts; i++) {
     try {
       const response = await fetch(url);

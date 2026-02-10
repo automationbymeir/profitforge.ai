@@ -263,6 +263,50 @@ export class StorageService {
   }
 
   /**
+   * Download and parse JSON blob from storage
+   * Generic method for downloading any JSON file from blob storage
+   *
+   * @param containerName - Container name (e.g., 'uploads')
+   * @param blobPath - Path to blob (e.g., 'VENDOR/ocr.json', 'VENDOR/benchmark.json')
+   * @returns Parsed JSON object
+   * @throws Error if blob not found or invalid JSON
+   */
+  async downloadJsonBlob(containerName: string, blobPath: string): Promise<unknown> {
+    const containerClient = this.blobServiceClient.getContainerClient(containerName);
+    const blobClient = containerClient.getBlobClient(blobPath);
+
+    const exists = await blobClient.exists();
+    if (!exists) {
+      throw new Error(`Blob not found: ${containerName}/${blobPath}`);
+    }
+
+    const downloadResponse = await blobClient.download();
+    if (!downloadResponse.readableStreamBody) {
+      throw new Error(`Failed to download blob: ${containerName}/${blobPath}`);
+    }
+
+    const chunks: Buffer[] = [];
+    for await (const chunk of downloadResponse.readableStreamBody) {
+      chunks.push(Buffer.from(chunk));
+    }
+
+    const buffer = Buffer.concat(chunks);
+    try {
+      return JSON.parse(buffer.toString('utf-8'));
+    } catch (error) {
+      throw new Error(
+        `Invalid JSON in blob ${containerName}/${blobPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  async doesBlobExist(containerName: string, blobPath: string): Promise<boolean> {
+    const containerClient = this.blobServiceClient.getContainerClient(containerName);
+    const blobClient = containerClient.getBlobClient(blobPath);
+
+    return await blobClient.exists();
+  }
+  /**
    * Upload OCR structured data (Document Intelligence JSON) to bronze layer
    *
    * Stores the OCR result as: <vendorName>/ocr-azure.json

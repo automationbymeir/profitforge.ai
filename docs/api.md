@@ -12,20 +12,22 @@ Base URL: `https://your-app.azurewebsites.net/api` or `http://localhost:7071/api
 
 **Recent endpoint updates (Feb 2026):**
 
-| Old Endpoint | New Endpoint | Status | Breaking Change | Notes |
-|-------------|--------------|--------|-----------------|-------|
-| `POST /documents/{vendorName}/reprocess-ocr` | `POST /documents/{vendorName}/process-ocr` | ✅ Updated | Yes - rename | Now uses RunService, creates new runs |
-| `POST /documents/{vendorName}/reprocess-ai-mapping` | `POST /documents/{vendorName}/process-ai-mapping` | ✅ Updated | Yes - rename | Accepts custom aiModel/aiPrompt params |
-| Upload creates DB record | Upload only saves blob | ✅ Updated | Yes - behavior | Blob trigger now creates run record |
-| OCR always processes | OCR checks cache first | ✅ Updated | No - enhancement | Reuses `ocr-azure-doc-intelligence.json` |
+| Old Endpoint                                        | New Endpoint                                      | Status     | Breaking Change  | Notes                                    |
+| --------------------------------------------------- | ------------------------------------------------- | ---------- | ---------------- | ---------------------------------------- |
+| `POST /documents/{vendorName}/reprocess-ocr`        | `POST /documents/{vendorName}/process-ocr`        | ✅ Updated | Yes - rename     | Now uses RunService, creates new runs    |
+| `POST /documents/{vendorName}/reprocess-ai-mapping` | `POST /documents/{vendorName}/process-ai-mapping` | ✅ Updated | Yes - rename     | Accepts custom aiModel/aiPrompt params   |
+| Upload creates DB record                            | Upload only saves blob                            | ✅ Updated | Yes - behavior   | Blob trigger now creates run record      |
+| OCR always processes                                | OCR checks cache first                            | ✅ Updated | No - enhancement | Reuses `ocr-azure-doc-intelligence.json` |
 
 **Service layer refactoring:**
+
 - **NEW**: `run-service.ts` - Run creation and queue management
 - **NEW**: Blob upload trigger - Automatic run creation on PDF upload
 - **UPDATED**: `document-service.ts` - Simplified to vendor/document management only
 - **UPDATED**: `ocr-service.ts` - Added caching logic for OCR results
 
 **Blob storage updates:**
+
 - OCR results now saved as: `<vendorName>/ocr-azure-doc-intelligence.json` (was: `<vendorName>/ocr.json`)
 - Only structured data (tables) saved to blob, not extracted text
 
@@ -208,9 +210,11 @@ POST /api/documents/{vendorName}/process-ocr
 ```
 
 **Path Parameters:**
+
 - `vendorName` - Vendor identifier (e.g., "ACME_01_26")
 
 **Request Body (optional):**
+
 ```json
 {
   "ocrOptions": {
@@ -221,10 +225,12 @@ POST /api/documents/{vendorName}/process-ocr
 ```
 
 **Requirements:**
+
 - Vendor must have existing processing run
 - Original file must be in blob storage
 
 **Response:**
+
 ```json
 {
   "message": "New OCR processing run created",
@@ -237,6 +243,7 @@ POST /api/documents/{vendorName}/process-ocr
 ```
 
 **Side effects:**
+
 - Creates NEW processing run (new result_id)
 - Queues OCR processing
 - Triggers AI mapping after OCR completes
@@ -248,53 +255,128 @@ POST /api/documents/{vendorName}/process-ocr
 
 Creates a new processing run with fresh AI mapping. Reuses existing OCR results from latest run. Original processing run preserved for history.
 
-Allows testing different AI models or prompts without re-running expensive OCR.
+**NEW (Feb 2026)**: Now supports custom AI model and prompt selection for testing different extraction configurations.
 
 ```http
 POST /api/documents/{vendorName}/process-ai-mapping
 ```
 
 **Path Parameters:**
+
 - `vendorName` - Vendor identifier (e.g., "ACME_01_26")
 
 **Request Body (optional):**
+
 ```json
 {
-  "aiModel": "gpt-4",
+  "aiModel": "gpt-4o-mini",
   "aiPrompt": "Extract all products with prices. Include SKU if available."
 }
 ```
 
 **Parameters:**
-- `aiModel` (optional) - Custom AI model to use (e.g., 'gpt-4', 'gpt-4o-mini')
-- `aiPrompt` (optional) - Custom extraction prompt
+
+- `aiModel` (optional) - Custom AI model to use. Must be one of: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`. Defaults to `gpt-4o`.
+- `aiPrompt` (optional) - Custom extraction prompt (max 10,000 characters). Defaults to built-in template. Completely replaces the default prompt.
 
 **Requirements:**
+
 - Vendor must have existing run with status `ocr_complete` or `completed`
 - OCR results must exist in blob storage (will be copied to new run)
+- Custom model must be in the supported models list
+- Custom prompt must not exceed 10,000 characters
 
 **Response:**
+
 ```json
 {
-  "message": "New AI mapping run created",
-  "newRunId": "uuid",
+  "message": "New AI mapping run created with copied OCR results",
   "vendorName": "ACME_01_26",
-  "productCount": 234,
-  "processingDuration": 8500,
-  "usage": {
-    "promptTokens": 12500,
-    "completionTokens": 8900,
-    "totalTokens": 21400
-  },
-  "cost": 0.045
+  "runId": "12345678-1234-1234-1234-123456789abc",
+  "status": "ocr_complete",
+  "nextStep": "AI mapping will begin shortly. New run created.",
+  "aiModel": "gpt-4o-mini",
+  "aiPrompt": "Extract all products with..."
+}
+```
+
+**Error Responses:**
+
+_Invalid Model (400):_
+
+```json
+{
+  "error": "Invalid AI model",
+  "details": {
+    "message": "AI model 'gpt-5' is not supported. Supported models: gpt-4o, gpt-4o-mini, gpt-4-turbo",
+    "supportedModels": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"]
+  }
+}
+```
+
+_Prompt Too Long (400):_
+
+```json
+{
+  "error": "AI prompt too long",
+  "details": {
+    "message": "AI prompt exceeds maximum length of 10000 characters (provided: 12500)",
+    "maxLength": 10000
+  }
+}
+```
+
+_No Existing Run (404):_
+
+```json
+{
+  "error": "No existing runs found for vendor",
+  "details": {
+    "message": "No processing runs found for vendor ACME_01_26. Upload a document first."
+  }
 }
 ```
 
 **Side effects:**
+
 - Creates NEW processing run (new result_id)
 - Copies OCR results from latest run
-- Runs AI mapping with new options
+- Stores requested AI parameters in database (`ai_model_requested`, `ai_prompt_requested`)
+- Queues AI mapping with custom configuration
 - Old runs remain accessible
+
+**Notes:**
+
+- Custom parameters are stored when creating the run
+- Queue trigger retrieves parameters from database during processing
+- If model deployment unavailable, processing fails gracefully with 503 error
+- Use GET `/api/ai-config/defaults` to retrieve default model and prompt for UI display
+
+---
+
+### Get AI Configuration Defaults
+
+**NEW (Feb 2026)**: Retrieve default AI model, prompt template, and supported models for UI reference.
+
+```http
+GET /api/ai-config/defaults
+```
+
+**Response:**
+
+```json
+{
+  "defaultModel": "gpt-4o",
+  "defaultPrompt": "You are analyzing product catalog tables. Extract products with the following MINIMAL REQUIRED SCHEMA:\n- name (product name/description) - REQUIRED\n- SKU (item code/product code) - REQUIRED...",
+  "supportedModels": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"]
+}
+```
+
+**Use Cases:**
+
+- Display default prompt as reference in UI
+- Populate model dropdown with supported options
+- Show users what the default configuration looks like before customizing
 
 ---
 
@@ -307,9 +389,11 @@ DELETE /api/documents/runs/{runId}
 ```
 
 **Path Parameters:**
+
 - `runId` - Processing run UUID (result_id)
 
 **Response:**
+
 ```json
 {
   "message": "Processing run deleted successfully",
@@ -319,6 +403,7 @@ DELETE /api/documents/runs/{runId}
 ```
 
 **Side effects:**
+
 - Deletes database record for this run ONLY
 - Does NOT delete blobs (OCR cache is shared across runs)
 - Other runs for same vendor unaffected

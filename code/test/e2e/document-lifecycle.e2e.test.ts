@@ -19,274 +19,57 @@
  * validating database state, blob storage, and response contracts.
  */
 
-import { readFileSync, statSync } from 'fs';
+// Import service instances
+import {
+  clean,
+  documentRepository,
+  documentService,
+  getBlobProperties,
+  getVendorProducts,
+  pollDocumentStatus,
+  waitForDocumentCreation,
+} from './common/utils.js';
+
+// Import API helpers
+import {
+  confirmMapping,
+  deleteRun,
+  getAIDefaults,
+  getBenchmark,
+  getDocuments,
+  gradeRun,
+  reprocessAIMapping,
+  reprocessOCR,
+  uploadBenchmark,
+  uploadDocument,
+} from './common/helpers.js';
+
 import { join } from 'path';
 import { beforeAll, describe, expect, it } from 'vitest';
-import {
-  createDocumentRepository,
-  DocumentRepository,
-} from '../../src/data/repositories/DocumentRepository.js';
-import { StorageService } from '../../src/data/storage.js';
 import type { Document } from '../../src/functions/http/common/models/document.js';
-import type { DocumentService } from '../../src/services/index.js';
-import { createDocumentService } from '../../src/services/index.js';
-import { getStorageConnectionString } from '../../src/utils/config.js';
-
-const FUNCTION_BASE_URL = process.env.FUNCTION_APP_URL || 'http://localhost:7071';
-
-// Global service instances (created once in beforeAll)
-const documentRepository: DocumentRepository = await createDocumentRepository();
-const documentService: DocumentService = await createDocumentService();
-const storageService: StorageService = new StorageService(getStorageConnectionString());
 
 const now = new Date();
 const month = String(now.getMonth() + 1).padStart(2, '0');
 const year = String(now.getFullYear()).slice(-2);
 const pdfFileName = 'vendor-light.pdf';
-const pdfPath = '../fixtures/' + pdfFileName;
+const pdfPath = './common/docs/' + pdfFileName;
 
-// const testNames: string[] = ['UPLOAD'];
-// const testVendorNames: string[] = testNames.map(
-//   (name) => `${testType}_TEST_${name}_${month}_${year}`
-// );
 const vendorName: string = 'E2E_TEST_' + month + '_' + year; // Shared vendor name for all tests (built on each other)
 
 // // Shared state across tests (E2E tests build on each other)
 let completeRecordT1: Document; // Original processing run record after first upload
 let completeRecordT2: Document; // OCR reprocessing run record
 let completeRecordT4: Document; // OCR reprocessing run record
+let productsExported: number; // Number of products exported to vendor_products (for cleanup verification)
 let aiRunId: string; // AI reprocessing run ID (third run)
 let sharedResultId: string = '';
 let ocrRunId: string = '';
 let filePath: string = '';
-/**
- * Helper: Upload a document via HTTP POST
- * Tracks vendor name for cleanup
- */
-async function uploadDocument() {
-  // const vendorName = `${testType}_TEST_${testName}_${month}_${year}`;
-  const pdfFullPath = join(__dirname, pdfPath);
-  const stats = statSync(pdfFullPath);
-  const pdfBuffer = readFileSync(pdfFullPath);
-  const pdfFileName = pdfPath.split('/').pop() || 'document.pdf';
 
-  const formData = new FormData();
-  formData.append('file', new Blob([pdfBuffer], { type: 'application/pdf' }), pdfFileName);
-  formData.append('vendorName', vendorName);
-
-  const response = await fetch(`${FUNCTION_BASE_URL}api/documents/upload`, {
-    method: 'POST',
-    body: formData,
-  });
-  // Use text() + JSON.parse() instead of json() to handle empty responses
-  // (e.g., 204 No Content, 404 errors) without throwing "Unexpected end of JSON input"
-  const text = await response.text();
-  const res = text ? JSON.parse(text) : null;
-  // console.log('res:', res);
-  return {
-    status: response.status,
-    data: res,
-    stats,
-    vendorName,
-  };
-}
-
-/**
- * Helper: Reprocess OCR - creates new processing run
- */
-async function reprocessOCR(vendorName: string) {
-  const response = await fetch(`${FUNCTION_BASE_URL}api/documents/${vendorName}/process-ocr`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-
-  const text = await response.text();
-  return {
-    status: response.status,
-    data: text ? JSON.parse(text) : null,
-  };
-}
-
-/**
- * Helper: Reprocess AI mapping - creates new processing run with fresh AI mapping
- */
-async function reprocessAIMapping(vendorName: string) {
-  const response = await fetch(
-    `${FUNCTION_BASE_URL}api/documents/${vendorName}/process-ai-mapping`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    }
-  );
-
-  const text = await response.text();
-  return {
-    status: response.status,
-    data: text ? JSON.parse(text) : null,
-  };
-}
-
-/**
- * Helper: Confirm mapping (export to vendor_products)
- */
-async function confirmMapping(runId: string) {
-  const response = await fetch(`${FUNCTION_BASE_URL}api/documents/runs/${runId}/confirm`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-
-  const text = await response.text();
-  return {
-    status: response.status,
-    data: text ? JSON.parse(text) : null,
-  };
-}
-
-/**
- * Helper: Delete a specific processing run
- */
-async function deleteRun(runId: string) {
-  const response = await fetch(`${FUNCTION_BASE_URL}api/documents/runs/${runId}`, {
-    method: 'DELETE',
-  });
-
-  const text = await response.text();
-  return {
-    status: response.status,
-    data: text ? JSON.parse(text) : null,
-  };
-}
-
-/**
- * Helper: Get documents (query results)
- */
-async function getDocuments(queryParams: Record<string, string> = {}) {
-  const params = new URLSearchParams(queryParams);
-  const response = await fetch(`${FUNCTION_BASE_URL}api/documents?${params}`);
-
-  const text = await response.text();
-  return {
-    status: response.status,
-    data: text ? JSON.parse(text) : null,
-  };
-}
-
-/**
- * Helper: Wait for processing run to reach expected status
- *
- * Polls DocumentService.getProcessStatus() every 2 seconds until:
- * - Expected status is reached (returns void - success!)
- * - Processing run fails (throws error - test should fail)
- * - Timeout is reached (throws error - test should fail)
- *
- * Error Handling Philosophy:
- * Throwing errors is correct for E2E tests because:
- * - Vitest/Jest fail the current test but continue to next test
- * - Failed processing or timeouts ARE test failures
- * - Tests should fail fast and report the issue
- *
- * @param runId - Processing run ID (result_id) to poll
- * @param expectedStatus - Status to wait for (default: 'completed')
- * @param maxWaitMs - Maximum wait time in milliseconds (default: 180s)
- * @throws Error if processing fails or times out
- */
-async function pollDocumentStatus(
-  runId: string,
-  expectedStatus: 'completed' | 'failed' = 'completed',
-  maxWaitMs: number = 180000
-): Promise<void> {
-  const startTime = Date.now();
-
-  while (Date.now() - startTime < maxWaitMs) {
-    const status = await documentRepository.getStatus(runId);
-
-    // Success - reached expected status
-    if (status === expectedStatus) {
-      return;
-    }
-
-    // Fail fast - processing failed
-    if (status === 'failed' && expectedStatus !== 'failed') {
-      throw new Error(`Processing run failed (runId: ${runId}). Check logs for details.`);
-    }
-
-    // Wait 2 seconds before next poll
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-
-  // Timeout - polling took too long
-  throw new Error(
-    `Timeout: Processing run did not reach status '${expectedStatus}' after ${maxWaitMs}ms (runId: ${runId})`
-  );
-}
-
-async function waitForDocumentCreation(vendorName: string) {
-  let attempts = 0;
-  const maxAttempts = 20; // 20 * 500ms = 10 seconds
-  let recordCreated = false;
-  let recordId = '';
-  while (attempts < maxAttempts && !recordCreated) {
-    const dbResult = await getDocuments({ vendor: vendorName });
-    if (dbResult.data.length > 0) {
-      recordId = dbResult.data[0].result_id;
-      recordCreated = true;
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      attempts++;
-    }
-  }
-  return recordId;
-}
-
-// /**
-//  * Helper: Get full processing run record from DocumentService
-//  *
-//  * Fetches the complete processing run record after processing completes.
-//  * Includes ai_mapping_result for validation.
-//  *
-//  * @param runId - Processing run ID (result_id) to fetch
-//  * @returns Full Document record with all fields for this specific run
-//  */
-// async function getProcessingRun(runId: string): Promise<Document> {
-//   return await documentService.getDocument(runId);
-// }
-
-/**
- * Helper: Get blob properties using StorageService
- */
-async function getBlobProperties(containerName: string, blobPath: string) {
-  return await storageService.getBlobProperties(containerName, blobPath);
-}
-
-/**
- * Helper: Get vendor products from database
- */
-async function getVendorProducts(vendorName: string) {
-  return await documentService.getVendorProducts(vendorName);
-}
-
-/**
- * Helper: Clean test data using VendorService
- *
- * Uses VendorService (tested by integration tests) to ensure proper cleanup
- * of both database records and blob storage. Only deletes tracked test vendors,
- * leaving other data intact.
- */
-
-describe('E2E: Document Lifecycle Management', () => {
+describe('Document Lifecycle Management', () => {
   beforeAll(async () => {
-    // Initialize global service instances (already done at module level)
-
     // Clean up test data from previous runs
-    try {
-      const result = await documentService.deleteByVendorName(vendorName);
-      console.log(
-        `✅ Cleaned up previous test data for ${vendorName}: ${result.documentsDeleted} records, ${result.blobsDeleted} blobs`
-      );
-    } catch (_error) {
-      // Vendor doesn't exist yet, that's fine
-      console.log(`ℹ️  No previous test data to clean for ${vendorName}`);
-    }
+    await clean(vendorName);
   });
 
   /**
@@ -327,8 +110,8 @@ describe('E2E: Document Lifecycle Management', () => {
    */
   it('should complete full upload-to-processing workflow successfully', async () => {
     // Act: Upload document
-    const result = await uploadDocument();
-    const { status, data, stats, vendorName } = result;
+    const result = await uploadDocument(vendorName, pdfPath);
+    const { status, data, stats } = result;
     // console.log('stats: ', stats);
     const pdfFileSize = stats.size;
     // Assert HTTP response (immediate)
@@ -600,6 +383,7 @@ describe('E2E: Document Lifecycle Management', () => {
     const confirmedRun = dbResult.data.find((r: Document) => r.result_id === aiRunId);
     expect(confirmedRun.export_status).toBe('confirmed');
 
+    productsExported = confirmResult.data.productsExported;
     // Assert vendor_products table - products inserted
     const products = await getVendorProducts(vendorName);
     expect(products.length).toBe(confirmResult.data.productsExported);
@@ -624,7 +408,263 @@ describe('E2E: Document Lifecycle Management', () => {
   }, 300000);
 
   /**
-   * SCENARIO 6: Delete All Runs for Vendor (Cascade)
+   * SCENARIO 6: Benchmark Upload and Grading
+   * Setup: AI mapping run from SCENARIO 4 with completed processing
+   * Action: Upload benchmark Excel, retrieve it, and grade the run
+   * Assertions:
+   * - POST /documents/benchmark uploads and parses Excel
+   * - Returns vendorName, productCount, path
+   * - Benchmark stored at <vendorName>/benchmark.json
+   * - GET /documents/benchmark/{vendorName} retrieves benchmark data
+   * - GET /documents/runs/{runId}/grade returns scores
+   * - Scores include precision, recall, F1, field accuracy
+   * - Returns missingSkus and extraSkus arrays
+   * - 404 error when grading without benchmark
+   * - 404 error when getting non-existent benchmark
+   *
+   * Note: Benchmark scoring is transitory and not stored in run records.
+   * Multiple runs can be graded against the same benchmark.
+   */
+  it('should upload benchmark, retrieve it, and grade runs', async () => {
+    // First, verify we can't grade without benchmark (should be 404)
+    const gradeWithoutBenchmark = await gradeRun(aiRunId);
+    expect(gradeWithoutBenchmark.status).toBe(404);
+    expect(gradeWithoutBenchmark.data.message).toContain('No benchmark found');
+
+    // Create a simple benchmark Excel file programmatically
+    const XLSX = await import('xlsx');
+    const benchmarkData = [
+      {
+        product_name: 'Test Product 1',
+        sku: 'TEST-001',
+        price: 29.99,
+        unit: 'EA',
+        description: 'Test description 1',
+      },
+      {
+        product_name: 'Test Product 2',
+        sku: 'TEST-002',
+        price: 49.99,
+        unit: 'BOX',
+        description: 'Test description 2',
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(benchmarkData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+    const xlsxBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Save temporarily for upload
+    const { writeFileSync } = await import('fs');
+    const tmpPath = join(__dirname, '../fixtures/test-benchmark.xlsx');
+    writeFileSync(tmpPath, xlsxBuffer);
+
+    // Act: Upload benchmark
+    const uploadResult = await uploadBenchmark(vendorName, '../fixtures/test-benchmark.xlsx');
+
+    // Assert HTTP response
+    expect(uploadResult.status).toBe(201);
+    expect(uploadResult.data).toHaveProperty('message');
+    expect(uploadResult.data.vendorName).toBe(vendorName);
+    expect(uploadResult.data.productCount).toBe(2);
+    expect(uploadResult.data.path).toBe(`${vendorName}/benchmark.json`);
+
+    // Verify benchmark stored in blob storage
+    const blobPath = `${vendorName}/benchmark.json`;
+    const blobProps = await getBlobProperties('uploads', blobPath);
+    expect(blobProps).toBeDefined();
+    expect(blobProps.contentType).toContain('json');
+
+    // Act: Retrieve benchmark via GET endpoint
+    const getBenchmarkResult = await getBenchmark(vendorName);
+
+    // Assert benchmark retrieval
+    expect(getBenchmarkResult.status).toBe(200);
+    expect(getBenchmarkResult.data).toHaveProperty('vendorName', vendorName);
+    expect(getBenchmarkResult.data).toHaveProperty('uploadedAt');
+    expect(getBenchmarkResult.data).toHaveProperty('products');
+    expect(getBenchmarkResult.data.products).toHaveLength(2);
+    expect(getBenchmarkResult.data.products[0]).toHaveProperty('product_name', 'Test Product 1');
+    expect(getBenchmarkResult.data.products[0]).toHaveProperty('sku', 'TEST-001');
+    expect(getBenchmarkResult.data.products[0]).toHaveProperty('price', 29.99);
+
+    // Act: Grade the run against benchmark
+    const gradeResult = await gradeRun(aiRunId);
+
+    // Assert grading response structure
+    expect(gradeResult.status).toBe(200);
+    expect(gradeResult.data).toHaveProperty('runId', aiRunId);
+    expect(gradeResult.data).toHaveProperty('vendorName', vendorName);
+    expect(gradeResult.data).toHaveProperty('benchmarkProductCount', 2);
+    expect(gradeResult.data).toHaveProperty('extractedProductCount');
+    expect(gradeResult.data).toHaveProperty('matchedProductCount');
+
+    // Assert scoring metrics exist and are in valid ranges
+    expect(typeof gradeResult.data.precision).toBe('number');
+    expect(gradeResult.data.precision).toBeGreaterThanOrEqual(0);
+    expect(gradeResult.data.precision).toBeLessThanOrEqual(100);
+
+    expect(typeof gradeResult.data.recall).toBe('number');
+    expect(gradeResult.data.recall).toBeGreaterThanOrEqual(0);
+    expect(gradeResult.data.recall).toBeLessThanOrEqual(100);
+
+    expect(typeof gradeResult.data.f1Score).toBe('number');
+    expect(gradeResult.data.f1Score).toBeGreaterThanOrEqual(0);
+    expect(gradeResult.data.f1Score).toBeLessThanOrEqual(100);
+
+    // Assert field accuracy exists
+    expect(gradeResult.data).toHaveProperty('fieldAccuracy');
+    expect(gradeResult.data.fieldAccuracy).toHaveProperty('sku');
+    expect(gradeResult.data.fieldAccuracy).toHaveProperty('name');
+    expect(gradeResult.data.fieldAccuracy).toHaveProperty('price');
+    expect(gradeResult.data.fieldAccuracy).toHaveProperty('unit');
+    expect(gradeResult.data.fieldAccuracy).toHaveProperty('description');
+
+    // Assert missing/extra SKU arrays exist
+    expect(Array.isArray(gradeResult.data.missingSkus)).toBe(true);
+    expect(Array.isArray(gradeResult.data.extraSkus)).toBe(true);
+
+    // Test grading other runs (OCR run) - should work with same benchmark
+    const gradeOcrRun = await gradeRun(ocrRunId);
+    expect(gradeOcrRun.status).toBe(200);
+    expect(gradeOcrRun.data.runId).toBe(ocrRunId);
+    expect(gradeOcrRun.data.benchmarkProductCount).toBe(2);
+
+    // Test error: Grade non-existent run
+    const fakeRunId = '00000000-0000-0000-0000-000000000000';
+    const gradeNonExistent = await gradeRun(fakeRunId);
+    expect(gradeNonExistent.status).toBe(404);
+
+    // Test error: Get non-existent benchmark
+    const getNonExistentBenchmark = await getBenchmark('NONEXISTENT_VENDOR');
+    expect(getNonExistentBenchmark.status).toBe(404);
+    expect(getNonExistentBenchmark.data.message).toContain('No benchmark found');
+
+    // Clean up temporary file
+    const { unlinkSync } = await import('fs');
+    try {
+      unlinkSync(tmpPath);
+    } catch {
+      // Ignore if already deleted
+    }
+  }, 300000);
+
+  /**
+   * SCENARIO 7: Dynamic AI Model and Prompt Selection
+   * Setup: Uses existing document from previous tests
+   * Action: Test various AI model and prompt configurations
+   * Assertions:
+   * - GET /ai-config/defaults returns defaults and supported models
+   * - Default configuration uses gpt-4o and default prompt
+   * - Both custom model and prompt work together
+   * - Invalid model returns 400 error with supported models list
+   * - Prompt exceeding 10,000 chars returns 400 error
+   * - Database stores requested vs used parameters correctly
+   * - ai_model_requested and ai_prompt_requested track user input
+   * - ai_model_used and ai_prompt_used track actual execution
+   *
+   * Tests cover key scenarios from testing-dynamic-ai-parameters.md:
+   * 1. Default configuration
+   * 2. Both custom model and prompt
+   * 3. Invalid model (error)
+   * 4. Prompt too long (error)
+   */
+  it.skip('should support dynamic AI model and prompt selection', async () => {
+    // === PART 1: Verify existing document from previous tests ===
+    expect(vendorName).toBeTruthy();
+    const { data: existingRuns } = await getDocuments({ vendor: vendorName });
+    expect(existingRuns.length).toBeGreaterThan(0);
+    const initialRunCount = existingRuns.length;
+
+    // === PART 2: Get AI Defaults ===
+    const defaultsResult = await getAIDefaults();
+    expect(defaultsResult.status).toBe(200);
+    expect(defaultsResult.data).toHaveProperty('defaultModel');
+    expect(defaultsResult.data).toHaveProperty('defaultPrompt');
+    expect(defaultsResult.data).toHaveProperty('supportedModels');
+    expect(Array.isArray(defaultsResult.data.supportedModels)).toBe(true);
+    expect(defaultsResult.data.supportedModels.length).toBeGreaterThan(0);
+    expect(defaultsResult.data.defaultModel).toBe('gpt-4o');
+
+    // const defaultPrompt = defaultsResult.data.defaultPrompt;
+    // const supportedModels = defaultsResult.data.supportedModels;
+
+    // === PART 3: Test Default Configuration ===
+    const defaultRun = await reprocessAIMapping(vendorName);
+    expect(defaultRun.status).toBe(200);
+    expect(defaultRun.data).toHaveProperty('runId');
+
+    const defaultRunId = defaultRun.data.runId;
+    await pollDocumentStatus(defaultRunId, 'completed');
+
+    // Verify database - default run
+    const defaultRecord = await documentRepository.getRunByID(defaultRunId);
+    expect(defaultRecord.ai_model_requested).toBeNull();
+    expect(defaultRecord.ai_prompt_requested).toBeNull();
+    expect(defaultRecord.ai_model_used).toBe('gpt-4o');
+    expect(defaultRecord.ai_prompt_used).toBeTruthy();
+    expect(defaultRecord.processing_status).toBe('completed');
+
+    // === PART 4: Test Both Custom Model and Prompt ===
+    // Use gpt-4o (which is deployed) instead of gpt-4o-mini to avoid deployment issues
+    const bothCustomPrompt = 'Custom extraction prompt for testing both parameters together.';
+    const bothCustomRun = await reprocessAIMapping(vendorName, {
+      aiModel: 'gpt-4o',
+      aiPrompt: bothCustomPrompt,
+    });
+    expect(bothCustomRun.status).toBe(200);
+    expect(bothCustomRun.data.aiModel).toBe('gpt-4o');
+    expect(bothCustomRun.data.aiPrompt).toBeTruthy();
+
+    const bothCustomRunId = bothCustomRun.data.runId;
+    await pollDocumentStatus(bothCustomRunId, 'completed');
+
+    // Verify database - both custom run
+    const bothCustomRecord = await documentRepository.getRunByID(bothCustomRunId);
+    expect(bothCustomRecord.ai_model_requested).toBe('gpt-4o');
+    expect(bothCustomRecord.ai_prompt_requested).toBe(bothCustomPrompt);
+    expect(bothCustomRecord.ai_model_used).toBe('gpt-4o');
+    expect(bothCustomRecord.ai_prompt_used).toBe(bothCustomPrompt);
+    expect(bothCustomRecord.processing_status).toBe('completed');
+
+    // === PART 5: Test Invalid Model (Error) ===
+    const invalidModelRun = await reprocessAIMapping(vendorName, {
+      aiModel: 'gpt-5-nonexistent',
+    });
+    expect(invalidModelRun.status).toBe(400);
+    expect(invalidModelRun.data.error).toContain('Invalid AI model');
+    expect(invalidModelRun.data.details).toHaveProperty('supportedModels');
+    expect(Array.isArray(invalidModelRun.data.details.supportedModels)).toBe(true);
+
+    // === PART 6: Test Prompt Too Long (Error) ===
+    const longPrompt = 'A'.repeat(10001); // Exceeds 10,000 char limit
+    const longPromptRun = await reprocessAIMapping(vendorName, {
+      aiPrompt: longPrompt,
+    });
+    expect(longPromptRun.status).toBe(400);
+    expect(longPromptRun.data.error).toContain('AI prompt too long');
+    expect(longPromptRun.data.details).toHaveProperty('maxLength', 10000);
+
+    // === PART 7: Verify All Runs in Database ===
+    const { data: allRuns } = await getDocuments({ vendor: vendorName });
+    // Should have: initial runs + default + both custom = initialRunCount + 2 (errors don't create runs)
+    expect(allRuns.length).toBe(initialRunCount + 2);
+
+    // Verify we can distinguish between requested and used parameters
+    const defaultRuns = allRuns.filter(
+      (r: Document) => r.ai_model_requested === null && r.ai_prompt_requested === null
+    );
+    expect(defaultRuns.length).toBeGreaterThanOrEqual(1);
+
+    const runsWithBothCustom = allRuns.filter(
+      (r: Document) => r.ai_model_requested !== null && r.ai_prompt_requested !== null
+    );
+    expect(runsWithBothCustom.length).toBe(1); // The one we just created
+  }, 400000); // 6.5 minutes for processing runs
+
+  /**
+   * SCENARIO 8: Delete All Runs for Vendor (Cascade)
    * Setup: Multiple runs from previous scenarios
    * Action: DELETE all processing runs for vendor via deleteByVendorName()
    * Assertions:
@@ -634,7 +674,7 @@ describe('E2E: Document Lifecycle Management', () => {
    * - Blob storage files remain (not deleted automatically)
    *
    */
-  it.skip('should cascade delete all runs when deleting vendor', async () => {
+  it('should cascade delete all runs when deleting vendor', async () => {
     expect(sharedResultId).toBeTruthy();
 
     // Verify runs exist for vendor
@@ -674,17 +714,15 @@ describe('E2E: Document Lifecycle Management', () => {
       });
     }
 
-    // Due to connection pool differences between HTTP endpoint and repository,
-    // there might be slight discrepancies. Check that most runs are deleted.
-    expect(dbRecords.length).toBeLessThanOrEqual(1); // At most 1 straggler
+    expect(dbRecords.length).toBe(0);
 
-    // Verify vendor_products are deleted - this is critical
+    // Verify vendor_products are NOT deleted - deleteByVendorName no longer deletes exported products
     const products = await getVendorProducts(vendorName);
-    expect(products).toHaveLength(0);
+    expect(products.length).toBe(productsExported);
   }, 300000);
 
   //   /**
-  //    * SCENARIO 7: Error Scenarios
+  //    * SCENARIO 9: Error Scenarios
   //    * Tests various error conditions:
   //    * - 409: Duplicate vendor upload
   //    * - 404: Delete non-existent vendor

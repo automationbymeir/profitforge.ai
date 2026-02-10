@@ -40,6 +40,8 @@ BEGIN
         doc_intel_cost_usd DECIMAL(10,6) NULL,
         
         -- AI Model results (GPT-4o, Llama, Mistral, etc.)
+        ai_model_requested NVARCHAR(100) NULL, -- User-requested model for this run
+        ai_prompt_requested NVARCHAR(MAX) NULL, -- User-requested custom prompt (max 10k chars enforced by app)
         ai_model_used NVARCHAR(100) NULL, -- e.g., 'gpt-4o', 'llama-3-1-405b'
         ai_mapping_result NVARCHAR(MAX) NULL, -- Product mapping JSON result
         ai_prompt_used NVARCHAR(MAX) NULL, -- Exact prompt sent to LLM
@@ -109,6 +111,44 @@ BEGIN
     );
 END
 GO
+
+
+-- Add ai_model_requested column (stores user's requested model)
+IF NOT EXISTS (
+    SELECT * FROM sys.columns 
+    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
+    AND name = 'ai_model_requested'
+)
+BEGIN
+    ALTER TABLE vvocr.document_processing_results
+    ADD ai_model_requested NVARCHAR(100) NULL;
+    
+    PRINT 'Added column: ai_model_requested';
+END
+ELSE
+BEGIN
+    PRINT 'Column ai_model_requested already exists';
+END
+GO
+
+-- Add ai_prompt_requested column (stores user's custom prompt, max enforced by app at 10k chars)
+IF NOT EXISTS (
+    SELECT * FROM sys.columns 
+    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
+    AND name = 'ai_prompt_requested'
+)
+BEGIN
+    ALTER TABLE vvocr.document_processing_results
+    ADD ai_prompt_requested NVARCHAR(MAX) NULL;
+    
+    PRINT 'Added column: ai_prompt_requested';
+END
+ELSE
+BEGIN
+    PRINT 'Column ai_prompt_requested already exists';
+END
+GO
+
 
 PRINT 'VVOCR tables created successfully!';
 

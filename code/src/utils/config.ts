@@ -27,6 +27,7 @@ interface AppConfig {
   maxDailyUploads: number;
   maxUploadsPerIpPerHour: number;
   maxFileSizeMB: number;
+  functionAppURL: string;
 }
 
 let cachedConfig: AppConfig | null = null;
@@ -40,6 +41,8 @@ export function getConfig(): AppConfig {
     return cachedConfig;
   }
 
+  // Required variables
+  assertDefined(process.env.FUNCTION_APP_URL, 'FUNCTION_APP_URL environment variable is required');
   // Required variables
   assertDefined(
     process.env.STORAGE_CONNECTION_STRING,
@@ -97,6 +100,7 @@ export function getConfig(): AppConfig {
       process.env.MAX_FILE_SIZE_MB || String(DEFAULT_RATE_LIMITS.MAX_FILE_SIZE_MB),
       10
     ),
+    functionAppURL: process.env.FUNCTION_APP_URL,
   };
 
   return cachedConfig;
@@ -128,4 +132,11 @@ export function getStorageConnectionString(): string {
  */
 export function getSqlConnectionString(): string {
   return getConfig().sqlConnectionString;
+}
+
+/**
+ * Get Function App URL
+ */
+export function getFunctionAppURL(): string {
+  return getConfig().functionAppURL;
 }
