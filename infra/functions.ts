@@ -95,6 +95,12 @@ export function createFunctionAppResources(
         { name: 'MAX_UPLOADS_PER_IP_PER_HOUR', value: isDemoMode ? '10' : '0' },
         { name: 'DEMO_API_KEY', value: isDemoMode ? 'demo-key-change-me' : '' },
         { name: 'USAGE_RETENTION_DAYS', value: '30' },
+
+        // Function App URL (required for config validation and client links)
+        {
+          name: 'FUNCTION_APP_URL',
+          value: pulumi.interpolate`https://${stack}-vvocr-functions.azurewebsites.net`,
+        },
       ],
       http20Enabled: true,
       nodeVersion: '~20',

@@ -32,12 +32,18 @@ export function withErrorHandler(handler: Handler): Handler {
       return await handler(req, context);
     } catch (error) {
       // Log error with context
-      context.error('Unhandled error in handler:', {
+      context.log('❌ Unhandled error in handler:', {
         url: req.url,
         method: req.method,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });
+
+      // Also log to console for debugging
+      console.error('❌ ERROR:', error instanceof Error ? error.message : String(error));
+      if (error instanceof Error && error.stack) {
+        console.error('Stack trace:', error.stack);
+      }
 
       // Check if error has a custom statusCode property
       const statusCode = (error as { statusCode?: number })?.statusCode || 500;
