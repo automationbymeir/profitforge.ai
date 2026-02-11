@@ -58,10 +58,10 @@ async function getResultsCore(
   } catch (err: unknown) {
     // Log full error details before letting middleware handle the response
     if (err instanceof Error) {
-      context.log.error('getResults error', err.message, err.stack);
+      context.log('getResults error', err.message, err.stack);
       console.error('getResults error', err);
     } else {
-      context.log.error('getResults error (non-Error)', String(err));
+      context.log('getResults error (non-Error)', String(err));
       console.error('getResults error (non-Error)', err);
     }
     throw err;
