@@ -74,6 +74,7 @@ export interface UpdateAiMappingInput {
  * Query filters for flexible document search
  */
 export interface DocumentQueryFilters {
+  result_id?: string;
   vendor_name?: string;
   processing_status?: ProcessingStatus;
   export_status?: ExportStatus;

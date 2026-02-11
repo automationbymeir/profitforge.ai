@@ -69,7 +69,7 @@ export function createFunctionAppResources(
 
         // Application Insights (Monitoring)
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString },
-        { name: 'APPINSIGHTS_SAMPLING_PERCENTAGE', value: '20' }, // Sample 20% to reduce costs
+        { name: 'APPINSIGHTS_SAMPLING_PERCENTAGE', value: stack === 'staging' ? '100' : '20' }, // Sample 20% to reduce costs
 
         // Storage settings for blob trigger and upload
         { name: 'STORAGE_CONNECTION_STRING', value: storageConnectionString },

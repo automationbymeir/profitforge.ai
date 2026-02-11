@@ -3,7 +3,6 @@ export {
   createDocumentService,
   DocumentService,
   type DeleteResult,
-  type DocumentInfo,
   type UploadResult,
 } from './document-service.js';
 

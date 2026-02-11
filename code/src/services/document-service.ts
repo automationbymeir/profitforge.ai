@@ -1,6 +1,6 @@
 import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
 import { StorageService } from '../data/storage.js';
-import { ProcessingStatus } from '../functions/http/common/models/document.js';
+import { Document, ProcessingStatus } from '../functions/http/common/models/document.js';
 import { QueueService } from '../functions/infra-adapters/queues.js';
 import { getStorageConnectionString } from '../utils/config.js';
 
@@ -9,17 +9,6 @@ export interface UploadResult {
   vendorName: string;
   filePath: string;
   status: string;
-}
-
-export interface DocumentInfo {
-  resultId: string;
-  documentName: string;
-  documentPath: string;
-  vendorName: string;
-  processingStatus: string;
-  exportStatus?: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface DeleteResult {
@@ -98,18 +87,6 @@ export class DocumentService {
    * This is a complete vendor deletion - use with caution
    */
   async deleteDocument(vendorName: string): Promise<DeleteResult> {
-    // Get all runs for this vendor before deletion
-    // const documents = await this.documentRepo.findByVendor(vendorName);
-
-    // if (documents.length === 0) {
-    //   throw Object.assign(new Error('Vendor not found'), {
-    //     statusCode: 404,
-    //     details: {
-    //       message: `No documents found for vendor ${vendorName}`,
-    //     },
-    //   });
-    // }
-
     // Delete all blobs for this vendor (PDFs and OCR cache)
     let blobsDeleted = 0;
     const vendorPrefix = `${vendorName}/`;
@@ -171,37 +148,20 @@ export class DocumentService {
    * Get results with optional filtering
    */
   async getResults(filters?: {
+    resultId?: string;
     vendorName?: string;
-    documentPath?: string;
     status?: string;
     limit?: number;
     offset?: number;
-  }): Promise<DocumentInfo[]> {
-    let documents;
-
-    if (filters?.documentPath) {
-      // Get all runs for this document path
-      documents = await this.documentRepo.findByDocumentPath(filters.documentPath);
-    } else {
-      // Use standard query filters
-      documents = await this.documentRepo.query({
-        vendor_name: filters?.vendorName,
-        processing_status: filters?.status as ProcessingStatus,
-        limit: filters?.limit,
-        offset: filters?.offset,
-      });
-    }
-
-    return documents.map((doc) => ({
-      resultId: doc.result_id,
-      documentName: doc.document_name,
-      documentPath: doc.document_path,
-      vendorName: doc.vendor_name,
-      processingStatus: doc.processing_status,
-      exportStatus: doc.export_status,
-      createdAt: doc.created_at,
-      updatedAt: doc.updated_at,
-    }));
+  }): Promise<Document[]> {
+    // Use standard query filters
+    return await this.documentRepo.query({
+      result_id: filters?.resultId,
+      vendor_name: filters?.vendorName,
+      processing_status: filters?.status as ProcessingStatus,
+      limit: filters?.limit,
+      offset: filters?.offset,
+    });
   }
 
   /**
