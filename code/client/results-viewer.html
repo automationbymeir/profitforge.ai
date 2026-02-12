@@ -1118,8 +1118,6 @@ Loading default prompt...</pre
 
           // Display default prompt
           document.getElementById('defaultPromptDisplay').textContent = data.defaultPrompt;
-
-          console.log(`Loaded ${data.totalDeployments} AI deployments dynamically`);
         } catch (error) {
           console.error('Error loading AI deployments:', error);
           document.getElementById('aiModelSelect').innerHTML =
