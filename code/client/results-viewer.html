@@ -19,7 +19,7 @@
         background: #0078d4;
         padding: 15px 20px;
         margin-bottom: 30px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
       .nav-links {
         display: flex;
@@ -36,10 +36,10 @@
         transition: background 0.2s;
       }
       .nav-links a:hover {
-        background: rgba(255,255,255,0.2);
+        background: rgba(255, 255, 255, 0.2);
       }
       .nav-links a.active {
-        background: rgba(255,255,255,0.3);
+        background: rgba(255, 255, 255, 0.3);
         font-weight: 600;
       }
       .content {
@@ -711,123 +711,120 @@
     </style>
   </head>
   <body>
-    <div>
-      <h1>ProfitForge.ai - Results Viewer</h1>
-      <p class="subtitle">Product Catalog Extraction Results with Version History</p>
+    <div class="nav">
+      <div class="nav-links">
+        <a href="index.html">🏠 Home</a>
+        <a href="test-client.html">📤 Upload</a>
+        <a href="results-viewer.html" class="active">📊 Results</a>
+      </div>
+      <div>
+        <h1>ProfitForge.ai - Results Viewer</h1>
+        <p class="subtitle">Product Catalog Extraction Results with Version History</p>
 
-      <div class="controls">
-        <div class="form-group">
-          <label for="functionUrl">Function App URL</label>
-          <input
-            type="text"
-            id="functionUrl"
-            value="http://localhost:7071"
-            placeholder="https://..."
-          />
+        <div class="controls">
+          <div class="form-group">
+            <label for="resultId">Result ID (optional)</label>
+            <input type="text" id="resultId" placeholder="Enter UUID" />
+          </div>
+          <div class="form-group">
+            <label for="vendor">Vendor Name (optional)</label>
+            <input type="text" id="vendor" placeholder="e.g., Hatteras" />
+          </div>
+          <button onclick="loadResults()">Load Results</button>
         </div>
-        <div class="form-group">
-          <label for="resultId">Result ID (optional)</label>
-          <input type="text" id="resultId" placeholder="Enter UUID" />
+
+        <div id="content">
+          <div class="empty-state">
+            <h3>👆 Enter parameters and click "Load Results"</h3>
+            <p>View processed documents and extracted product catalogs</p>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="vendor">Vendor Name (optional)</label>
-          <input type="text" id="vendor" placeholder="e.g., Hatteras" />
-        </div>
-        <button onclick="loadResults()">Load Results</button>
       </div>
 
-      <div id="content">
-        <div class="empty-state">
-          <h3>👆 Enter parameters and click "Load Results"</h3>
-          <p>View processed documents and extracted product catalogs</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- AI Configuration Modal -->
-    <div id="aiConfigModal" class="modal-overlay">
-      <div class="modal">
-        <div class="modal-header">
-          <h3>🔄 Configure AI Reprocessing</h3>
-          <button class="modal-close" onclick="closeAiConfigModal()">×</button>
-        </div>
-        <div class="modal-body">
-          <!-- OCR Model Section (Disabled) -->
-          <div class="form-section disabled-section">
-            <div class="form-section-title">
-              📄 OCR Model
-              <span class="badge-disabled">Coming Soon</span>
-            </div>
-            <div class="form-section-description">
-              OCR model selection - currently using Azure Document Intelligence
-            </div>
-            <select disabled>
-              <option>Azure Document Intelligence (prebuilt-layout)</option>
-            </select>
-            <div class="info-box">
-              <strong>Note:</strong> OCR model selection will be available in a future update.
-              Currently, all documents use Azure Document Intelligence's prebuilt-layout model.
-            </div>
+      <!-- AI Configuration Modal -->
+      <div id="aiConfigModal" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>🔄 Configure AI Reprocessing</h3>
+            <button class="modal-close" onclick="closeAiConfigModal()">×</button>
           </div>
+          <div class="modal-body">
+            <!-- OCR Model Section (Disabled) -->
+            <div class="form-section disabled-section">
+              <div class="form-section-title">
+                📄 OCR Model
+                <span class="badge-disabled">Coming Soon</span>
+              </div>
+              <div class="form-section-description">
+                OCR model selection - currently using Azure Document Intelligence
+              </div>
+              <select disabled>
+                <option>Azure Document Intelligence (prebuilt-layout)</option>
+              </select>
+              <div class="info-box">
+                <strong>Note:</strong> OCR model selection will be available in a future update.
+                Currently, all documents use Azure Document Intelligence's prebuilt-layout model.
+              </div>
+            </div>
 
-          <!-- AI Model Section -->
-          <div class="form-section">
-            <div class="form-section-title">🤖 AI Model</div>
-            <div class="form-section-description">
-              Select the AI model for product extraction. Different models offer varying quality and
-              cost trade-offs.
+            <!-- AI Model Section -->
+            <div class="form-section">
+              <div class="form-section-title">🤖 AI Model</div>
+              <div class="form-section-description">
+                Select the AI model for product extraction. Different models offer varying quality
+                and cost trade-offs.
+              </div>
+              <label for="aiModelSelect">Model</label>
+              <select id="aiModelSelect">
+                <option value="">Loading models...</option>
+              </select>
+              <div class="info-box">
+                <strong>Tip:</strong> gpt-4o (default) offers best quality. gpt-4o-mini is faster
+                and cheaper for simpler catalogs.
+              </div>
             </div>
-            <label for="aiModelSelect">Model</label>
-            <select id="aiModelSelect">
-              <option value="">Loading models...</option>
-            </select>
-            <div class="info-box">
-              <strong>Tip:</strong> gpt-4o (default) offers best quality. gpt-4o-mini is faster and
-              cheaper for simpler catalogs.
-            </div>
-          </div>
 
-          <!-- AI Prompt Section -->
-          <div class="form-section">
-            <div class="form-section-title">✍️ Custom Prompt (Optional)</div>
-            <div class="form-section-description">
-              Customize the extraction prompt or leave blank to use the default. The prompt tells
-              the AI what to extract and how.
-            </div>
-            <label for="aiPromptTextarea">Prompt (max 10,000 characters)</label>
-            <textarea
-              id="aiPromptTextarea"
-              placeholder="Leave blank to use default prompt..."
-            ></textarea>
-            <div class="char-counter" id="charCounter">0 / 10,000 characters</div>
-            <details style="margin-top: 15px">
-              <summary style="cursor: pointer; color: #0078d4; font-weight: 600">
-                📖 View Default Prompt
-              </summary>
-              <pre
-                id="defaultPromptDisplay"
-                style="
-                  background: #f5f5f5;
-                  padding: 15px;
-                  border-radius: 4px;
-                  margin-top: 10px;
-                  font-size: 0.85em;
-                  overflow-x: auto;
-                  white-space: pre-wrap;
-                "
-              >
+            <!-- AI Prompt Section -->
+            <div class="form-section">
+              <div class="form-section-title">✍️ Custom Prompt (Optional)</div>
+              <div class="form-section-description">
+                Customize the extraction prompt or leave blank to use the default. The prompt tells
+                the AI what to extract and how.
+              </div>
+              <label for="aiPromptTextarea">Prompt (max 10,000 characters)</label>
+              <textarea
+                id="aiPromptTextarea"
+                placeholder="Leave blank to use default prompt..."
+              ></textarea>
+              <div class="char-counter" id="charCounter">0 / 10,000 characters</div>
+              <details style="margin-top: 15px">
+                <summary style="cursor: pointer; color: #0078d4; font-weight: 600">
+                  📖 View Default Prompt
+                </summary>
+                <pre
+                  id="defaultPromptDisplay"
+                  style="
+                    background: #f5f5f5;
+                    padding: 15px;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                    font-size: 0.85em;
+                    overflow-x: auto;
+                    white-space: pre-wrap;
+                  "
+                >
 Loading default prompt...</pre
-              >
-            </details>
+                >
+              </details>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="secondary" onclick="closeAiConfigModal()">Cancel</button>
+            <button class="secondary" onclick="useDefaults()">Use Defaults</button>
+            <button onclick="submitAiReprocessing()">🔄 Reprocess</button>
           </div>
         </div>
-        <div class="modal-footer">
-          <button class="secondary" onclick="closeAiConfigModal()">Cancel</button>
-          <button class="secondary" onclick="useDefaults()">Use Defaults</button>
-          <button onclick="submitAiReprocessing()">🔄 Reprocess</button>
-        </div>
       </div>
-    </div>
     </div>
 
     <script>
@@ -835,9 +832,24 @@ Loading default prompt...</pre
       let currentReprocessingVendor = null;
       let aiDefaults = null;
 
+      // Auto-detect function app URL from current hostname
+      function getFunctionAppUrl() {
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const port = window.location.port;
+
+        // If localhost, use local function app with port 7071
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          return 'http://localhost:7071';
+        }
+
+        // Otherwise, use same host as current page (function app serves the HTML)
+        return port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`;
+      }
+
       async function loadResults() {
         const content = document.getElementById('content');
-        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+        const baseUrl = getFunctionAppUrl();
         const resultId = document.getElementById('resultId').value.trim();
         const vendor = document.getElementById('vendor').value.trim();
 
@@ -1067,7 +1079,7 @@ Loading default prompt...</pre
       });
 
       async function loadAiDefaults() {
-        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+        const baseUrl = getFunctionAppUrl();
         try {
           const response = await fetch(`${baseUrl}/api/ai-config/deployments`);
           if (!response.ok) throw new Error('Failed to load AI deployments');
@@ -1166,7 +1178,7 @@ Loading default prompt...</pre
 
         closeAiConfigModal();
 
-        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+        const baseUrl = getFunctionAppUrl();
 
         try {
           const requestBody = {};
@@ -1201,7 +1213,7 @@ Loading default prompt...</pre
       async function confirmMapping(documentId) {
         if (!confirm('Export products to production catalog? This action cannot be undone.'))
           return;
-        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+        const baseUrl = getFunctionAppUrl();
         try {
           const response = await fetch(`${baseUrl}/api/documents/runs/${documentId}/confirm`, {
             method: 'POST',
@@ -1223,7 +1235,7 @@ Loading default prompt...</pre
 
       async function deleteRun(runId) {
         if (!confirm('Delete this specific run version? This cannot be undone.')) return;
-        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+        const baseUrl = getFunctionAppUrl();
         try {
           const response = await fetch(
             `${baseUrl}/api/documents/runs/${encodeURIComponent(runId)}`,
@@ -1248,7 +1260,7 @@ Loading default prompt...</pre
           )
         )
           return;
-        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+        const baseUrl = getFunctionAppUrl();
 
         // First, get the vendor name for this result
         try {
@@ -1285,7 +1297,7 @@ Loading default prompt...</pre
           const file = e.target.files[0];
           if (!file) return;
 
-          const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+          const baseUrl = getFunctionAppUrl();
           const formData = new FormData();
           formData.append('file', file);
           formData.append('vendorName', vendorName);
@@ -1312,7 +1324,7 @@ Loading default prompt...</pre
       }
 
       async function viewBenchmark(vendorName) {
-        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+        const baseUrl = getFunctionAppUrl();
         try {
           const response = await fetch(
             `${baseUrl}/api/documents/benchmark/${encodeURIComponent(vendorName)}`
@@ -1344,7 +1356,7 @@ Loading default prompt...</pre
       }
 
       async function gradeRun(runId, vendorName) {
-        const baseUrl = document.getElementById('functionUrl').value.replace(/\/$/, '');
+        const baseUrl = getFunctionAppUrl();
         const gradeContainer = document.getElementById(`grade-results-${runId}`);
         gradeContainer.innerHTML = '<div class="loading">Grading run against benchmark</div>';
 

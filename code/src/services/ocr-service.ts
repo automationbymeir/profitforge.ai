@@ -44,8 +44,6 @@ export class OCRService {
   async processDocumentFromQueue(documentId: string, blobPath: string): Promise<OCRResult> {
     const documentsContainer = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';
 
-    console.log(`🔄 Processing OCR for document ${documentId} at ${blobPath}`);
-
     try {
       // Get existing run details
       const run = await this.documentRepo.getRunByID(documentId);
@@ -70,8 +68,6 @@ export class OCRService {
           ocrEndTime: cachedOCR.ocrEndTime,
         };
       } else {
-        console.log(`🔄 No cache found - running OCR processing for: ${blobPath}`);
-
         // Download PDF from blob storage
         const pdfBuffer = await this.storageService.downloadPdfForOCR(documentsContainer, blobPath);
 
@@ -80,7 +76,6 @@ export class OCRService {
         const poller = await this.client.beginAnalyzeDocument('prebuilt-layout', pdfBuffer);
         const ocrResponse = await poller.pollUntilDone();
         const ocrEndTime = Date.now();
-        console.log('ocrResponse: ', ocrResponse);
         // Calculate metrics
         const pageCount = ocrResponse?.pages?.length || 0;
         const docIntelCost = (pageCount / 1000) * 1.5; // $1.50 per 1,000 pages
@@ -97,10 +92,6 @@ export class OCRService {
           }
         }
 
-        console.log(
-          `📊 OCR completed: started at ${ocrStartTime}, ended at ${ocrEndTime}, $${docIntelCost.toFixed(4)}`
-        );
-
         // Upload OCR results to blob cache
         await this.storageService.uploadOCRResults(documentsContainer, ocrCachePath, ocrResponse, {
           ocrStartTime,
@@ -108,8 +99,6 @@ export class OCRService {
           processingCost: docIntelCost,
           confidenceScore: avgConfidence,
         });
-
-        console.log(`💾 Saved OCR results to cache: ${ocrCachePath}`);
 
         ocrMetadata = {
           cost: docIntelCost,
@@ -127,12 +116,9 @@ export class OCRService {
         doc_intel_prompt_used: 'prebuilt-layout',
       });
 
-      console.log(`✅ Updated database with OCR results for ${documentId}`);
-
       // Queue AI mapping
       try {
         await this.queueService.queueAIMapping(documentId);
-        console.log(`📤 Queued AI mapping for ${documentId}`);
       } catch (queueError: unknown) {
         const errorMessage = queueError instanceof Error ? queueError.message : String(queueError);
         console.error(`❌ Failed to queue AI mapping: ${errorMessage}`);

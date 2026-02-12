@@ -25,7 +25,7 @@ pulumi stack
 # or
 pulumi stack ls
 
-# 3. Configure
+# 3. Configure - see pulumi.staging.yaml for reference
 pulumi config set azure-native:location eastus
 pulumi config set azure-native:subscriptionId "your-sub-id"
 
@@ -33,7 +33,7 @@ pulumi config set azure-native:subscriptionId "your-sub-id"
 SQLPWD=$(openssl rand -base64 24)
 pulumi config set --secret profitforge-ai:sqlAdminPassword "$SQLPWD"
 
-# 5. Create Document Intelligence resource
+# 5. Create Document Intelligence resource - or use existing one
 az group create --name profitforge-staging-rg --location eastus
 az cognitiveservices account create \
   --name profitforge-staging-docintel \
@@ -51,7 +51,10 @@ DOCINTEL_KEY=$(az cognitiveservices account keys list \
 
 pulumi config set --secret profitforge-ai:documentIntelligenceKey "$DOCINTEL_KEY"
 
-# 7. Deploy
+# 7. build project
+cd code && npm run build
+
+# 8. Deploy
 pulumi up --stack staging
 ```
 
@@ -120,7 +123,7 @@ infra/
 pulumi stack output functionAppUrl
 
 # Test health endpoint
-curl https://your-app.azurewebsites.net/api/sanity
+curl https://your-app.azurewebsites.net/api/health
 ```
 
 ### 2. Configure CORS (if needed)
@@ -160,6 +163,7 @@ DOCUMENT_INTELLIGENCE_ENDPOINT=<doc-intel-endpoint>
 DOCUMENT_INTELLIGENCE_KEY=<doc-intel-key>
 AI_PROJECT_ENDPOINT=<ai-foundry-endpoint>
 AI_PROJECT_KEY=<ai-foundry-key>
+FUNCTION_APP_URL=<function-app-url>
 ```
 
 ## Monitoring
@@ -196,6 +200,7 @@ az consumption usage list \
 
 - Check deployment status: `az functionapp show --name <app> --resource-group <rg>`
 - View logs: `az functionapp log tail --name <app> --resource-group <rg>`
+  or: ` func azure functionapp logstream staging-vvocr-functions --resource-group dragonfruit-dev-3P-Meir-rg` - you need to have Azure Functions Core Tools installed and authenticated with Azure CLI for this to work.
 
 **SQL connection failures:**
 

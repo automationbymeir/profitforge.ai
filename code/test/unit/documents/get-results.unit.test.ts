@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock mssql before importing the handler
-vi.mock('mssql');
-vi.mock('../../../src/utils/database');
-
 import { getResults } from '../../../src/functions/http/documents/get-results';
-import { withDatabase } from '../../../src/utils/database';
+import * as servicesModule from '../../../src/services/index';
 import { mockInvocationContext } from '../setup/mocks';
 
 describe('Get Results API - HTTP Handler - Unit Tests', () => {
@@ -16,37 +12,25 @@ describe('Get Results API - HTTP Handler - Unit Tests', () => {
   it('should retrieve results without filters (default behavior)', async () => {
     const mockResults = [
       {
-        result_id: 'uuid-1',
-        document_name: 'catalog1.pdf',
-        vendor_name: 'ACME',
-        processing_status: 'completed',
-        reprocessing_count: 0,
-        parent_document_id: null,
-        ai_mapping_result: null,
-        created_at: new Date(),
+        resultId: 'uuid-1',
+        documentName: 'catalog1.pdf',
+        vendorName: 'ACME',
+        processingStatus: 'completed',
+        createdAt: new Date(),
       },
       {
-        result_id: 'uuid-2',
-        document_name: 'catalog2.pdf',
-        vendor_name: 'TEST',
-        processing_status: 'completed',
-        reprocessing_count: 0,
-        parent_document_id: null,
-        ai_mapping_result: null,
-        created_at: new Date(),
+        resultId: 'uuid-2',
+        documentName: 'catalog2.pdf',
+        vendorName: 'TEST',
+        processingStatus: 'completed',
+        createdAt: new Date(),
       },
     ];
 
-    vi.mocked(withDatabase).mockImplementation(async (callback) => {
-      return callback({
-        request: () => ({
-          input: vi.fn().mockReturnThis(),
-          query: vi.fn().mockResolvedValue({
-            recordset: mockResults,
-          }),
-        }),
-      } as any);
-    });
+    // Mock createDocumentService to return an object with getResults
+    vi.mocked(servicesModule.createDocumentService).mockResolvedValue({
+      getResults: vi.fn().mockResolvedValue(mockResults),
+    } as any);
 
     const request = {
       query: {
@@ -65,27 +49,15 @@ describe('Get Results API - HTTP Handler - Unit Tests', () => {
   it('should filter by resultId', async () => {
     const validUuid = '550e8400-e29b-41d4-a716-446655440000';
     const mockResult = {
-      result_id: validUuid,
-      document_name: 'specific.pdf',
-      vendor_name: 'ACME',
-      processing_status: 'completed',
-      ai_mapping_result: null,
+      resultId: validUuid,
+      documentName: 'specific.pdf',
+      vendorName: 'ACME',
+      processingStatus: 'completed',
     };
 
-    vi.mocked(withDatabase).mockImplementation(async (callback) => {
-      const mockPool = {
-        request: () => {
-          const mockRequest = {
-            input: vi.fn().mockReturnThis(),
-            query: vi.fn().mockResolvedValue({
-              recordset: [mockResult],
-            }),
-          };
-          return mockRequest;
-        },
-      };
-      return callback(mockPool as any);
-    });
+    vi.mocked(servicesModule.createDocumentService).mockResolvedValue({
+      getDocument: vi.fn().mockResolvedValue(mockResult),
+    } as any);
 
     const request = {
       query: {
@@ -104,22 +76,15 @@ describe('Get Results API - HTTP Handler - Unit Tests', () => {
   it('should filter by vendor', async () => {
     const mockResults = [
       {
-        result_id: 'uuid-1',
-        vendor_name: 'ACME',
-        processing_status: 'completed',
+        resultId: 'uuid-1',
+        vendorName: 'ACME',
+        processingStatus: 'completed',
       },
     ];
 
-    vi.mocked(withDatabase).mockImplementation(async (callback) => {
-      return callback({
-        request: () => ({
-          input: vi.fn().mockReturnThis(),
-          query: vi.fn().mockResolvedValue({
-            recordset: mockResults,
-          }),
-        }),
-      } as any);
-    });
+    vi.mocked(servicesModule.createDocumentService).mockResolvedValue({
+      getResults: vi.fn().mockResolvedValue(mockResults),
+    } as any);
 
     const request = {
       query: {
@@ -138,21 +103,14 @@ describe('Get Results API - HTTP Handler - Unit Tests', () => {
   it('should filter by status', async () => {
     const mockResults = [
       {
-        result_id: 'uuid-1',
-        processing_status: 'completed',
+        resultId: 'uuid-1',
+        processingStatus: 'completed',
       },
     ];
 
-    vi.mocked(withDatabase).mockImplementation(async (callback) => {
-      return callback({
-        request: () => ({
-          input: vi.fn().mockReturnThis(),
-          query: vi.fn().mockResolvedValue({
-            recordset: mockResults,
-          }),
-        }),
-      } as any);
-    });
+    vi.mocked(servicesModule.createDocumentService).mockResolvedValue({
+      getResults: vi.fn().mockResolvedValue(mockResults),
+    } as any);
 
     const request = {
       query: {
@@ -183,7 +141,9 @@ describe('Get Results API - HTTP Handler - Unit Tests', () => {
   });
 
   it('should handle database errors gracefully', async () => {
-    vi.mocked(withDatabase).mockRejectedValue(new Error('Database connection failed'));
+    vi.mocked(servicesModule.createDocumentService).mockRejectedValue(
+      new Error('Database connection failed')
+    );
 
     const request = {
       query: {

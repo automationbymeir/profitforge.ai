@@ -63,14 +63,10 @@ export async function withDatabase<T>(
           RETRY_CONFIG.BASE_DELAY_MS * Math.pow(2, attempt - 1),
           RETRY_CONFIG.MAX_DELAY_MS
         );
-        console.log(
-          `[DB] Transient error on attempt ${attempt}/${retries}, retrying in ${delay}ms...`
-        );
         await new Promise((resolve) => setTimeout(resolve, delay));
 
         // Reset pool on connection errors
         if (globalPool && !globalPool.connected) {
-          console.log('[DB] Resetting disconnected pool...');
           try {
             await globalPool.close();
           } catch {
@@ -97,7 +93,6 @@ export async function closeConnectionPool(): Promise<void> {
   if (globalPool) {
     try {
       await globalPool.close();
-      console.log('[DB] Connection pool closed');
     } catch (error) {
       console.error('[DB] Error closing pool:', error);
     } finally {

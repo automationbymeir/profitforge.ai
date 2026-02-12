@@ -277,7 +277,6 @@ export class DocumentRepository {
    * @returns Most recent document record or null if none exists
    */
   async findLatestByVendor(vendorName: string): Promise<Document | null> {
-    console.log(`🔍 DocumentRepository.findLatestByVendor searching for: "${vendorName}"`);
     const result = await this.pool.request().input('vendorName', sql.NVarChar, vendorName).query(`
         SELECT TOP 1
           result_id,
@@ -304,11 +303,6 @@ export class DocumentRepository {
         WHERE vendor_name = @vendorName
         ORDER BY created_at DESC
       `);
-
-    console.log(`🔍 Query returned ${result.recordset.length} records`);
-    if (result.recordset.length > 0) {
-      console.log(`🔍 Found vendor_name: "${result.recordset[0].vendor_name}"`);
-    }
 
     return result.recordset.length > 0 ? result.recordset[0] : null;
   }

@@ -13,4 +13,4 @@ dist/
 # And everything inside workflows
 !.github/workflows/**
 
-LogFiles/
+docs/*/
