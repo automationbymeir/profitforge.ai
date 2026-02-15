@@ -2,14 +2,7 @@ import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
 import { VendorProductRepository } from '../data/repositories/VendorProductRepository.js';
 import { Product } from '../functions/http/common/models/product.js';
 import { QueueService } from '../functions/infra-adapters/queues.js';
-import { AI_PROMPT_MAX_LENGTH, SUPPORTED_AI_MODELS } from '../utils/constants.js';
-import { AIService } from './ai-service.js';
 import { StorageService } from './index.js';
-
-// Cache for deployed models (refreshed periodically)
-let deployedModelsCache: string[] | null = null;
-let deployedModelsCacheTime = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export interface CreateOCRRunResult {
   runId: string;
@@ -58,51 +51,17 @@ export class RunService {
   private vendorProductRepo: VendorProductRepository;
   private queueService: QueueService;
   private storageService: StorageService;
-  private aiService?: AIService;
 
   constructor(
     documentRepo: DocumentRepository,
     vendorProductRepo: VendorProductRepository,
     queueService: QueueService,
-    storageService: StorageService,
-    aiService?: AIService
+    storageService: StorageService
   ) {
     this.documentRepo = documentRepo;
     this.vendorProductRepo = vendorProductRepo;
     this.queueService = queueService;
     this.storageService = storageService;
-    this.aiService = aiService;
-  }
-
-  /**
-   * Get list of deployed AI models (with caching)
-   * Falls back to hardcoded SUPPORTED_AI_MODELS if dynamic fetch fails
-   */
-  private async getDeployedModels(): Promise<string[]> {
-    const now = Date.now();
-
-    // Return cached value if fresh
-    if (deployedModelsCache && now - deployedModelsCacheTime < CACHE_TTL) {
-      return deployedModelsCache;
-    }
-
-    // Try to fetch from Azure OpenAI if aiService available
-    if (this.aiService) {
-      try {
-        const deployments = await this.aiService.listAvailableModels();
-        deployedModelsCache = deployments.map((d) => d.deployment);
-        deployedModelsCacheTime = now;
-        return deployedModelsCache;
-      } catch (error) {
-        console.warn(
-          'Failed to fetch deployed models dynamically, falling back to constants:',
-          error
-        );
-      }
-    }
-
-    // Fallback to hardcoded list
-    return [...SUPPORTED_AI_MODELS];
   }
 
   /**
@@ -141,39 +100,14 @@ export class RunService {
    * Allows testing different AI models/prompts without re-running OCR
    *
    * @param vendorName - Vendor to reprocess
-   * @param aiModel - Optional custom AI model (validated against deployed models)
-   * @param aiPrompt - Optional custom AI prompt (max 10,000 chars)
+   * @param _aiModel - Optional custom AI model (reserved for future use)
+   * @param _aiPrompt - Optional custom AI prompt (reserved for future use)
    */
   async createAIRun(
     vendorName: string,
-    aiModel?: string,
-    aiPrompt?: string
+    _aiModel?: string,
+    _aiPrompt?: string
   ): Promise<CreateAIRunResult> {
-    // Validate custom AI model if provided
-    if (aiModel) {
-      const deployedModels = await this.getDeployedModels();
-      if (!deployedModels.includes(aiModel)) {
-        throw Object.assign(new Error('Invalid AI model'), {
-          statusCode: 400,
-          details: {
-            message: `AI model '${aiModel}' is not available. Available models: ${deployedModels.join(', ')}`,
-            supportedModels: deployedModels,
-          },
-        });
-      }
-    }
-
-    // Validate custom AI prompt length if provided
-    if (aiPrompt && aiPrompt.length > AI_PROMPT_MAX_LENGTH) {
-      throw Object.assign(new Error('AI prompt too long'), {
-        statusCode: 400,
-        details: {
-          message: `AI prompt exceeds maximum length of ${AI_PROMPT_MAX_LENGTH} characters (provided: ${aiPrompt.length})`,
-          maxLength: AI_PROMPT_MAX_LENGTH,
-        },
-      });
-    }
-
     // Get latest run for this vendor to copy OCR metadata
     const latestRun = await this.documentRepo.findLatestByVendor(vendorName);
 
@@ -211,7 +145,6 @@ export class RunService {
       export_status: 'not_exported',
       processing_started_at: new Date(),
     });
-
     // Copy OCR metadata to new run
     await this.documentRepo.updateOcrResults({
       result_id: newRunId,
@@ -220,14 +153,9 @@ export class RunService {
       doc_intel_prompt_used: latestRun.doc_intel_prompt_used || null,
     });
 
-    // Store requested AI parameters (or null to use defaults)
-    await this.documentRepo.updateAiParameters({
-      result_id: newRunId,
-      ai_model_requested: aiModel || null,
-      ai_prompt_requested: aiPrompt || null,
-    });
-
-    // Queue AI mapping - handler will retrieve parameters from database
+    // Queue AI mapping (queue expects just the resultId string)
+    // Note: custom aiModel/aiPrompt parameters would be handled by queue handler
+    // For now, we queue with just the resultId - custom params can be added later
     await this.queueService.queueAIMapping(newRunId);
 
     return {

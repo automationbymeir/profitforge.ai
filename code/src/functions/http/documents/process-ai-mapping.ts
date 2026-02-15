@@ -7,11 +7,9 @@ import { withCors, withErrorHandler } from '../common/middleware/index.js';
  * Process AI Mapping Handler - HTTP POST endpoint for AI-based product extraction
  *
  * Creates a NEW processing run with copied OCR metadata and queues AI mapping.
- * This allows testing different AI models/prompts without re-running expensive OCR.
+ * This allows reprocessing with AI without re-running expensive OCR.
  *
- * Optional parameters:
- * - aiModel: Custom AI model to use (e.g., 'gpt-4', 'gpt-4o-mini')
- * - aiPrompt: Custom AI prompt for extraction
+ * Uses the default gpt-4o model and prompt configured in ai-service.ts.
  */
 async function processAIMappingHandlerCore(
   req: HttpRequest,
@@ -26,21 +24,9 @@ async function processAIMappingHandlerCore(
   }
 
   try {
-    // Parse optional custom parameters from request body
-    let aiModel: string | undefined;
-    let aiPrompt: string | undefined;
-
-    try {
-      const body = (await req.json()) as { aiModel?: string; aiPrompt?: string };
-      aiModel = body?.aiModel;
-      aiPrompt = body?.aiPrompt;
-    } catch {
-      // No body or invalid JSON - use defaults
-    }
-
     // Use RunService to create new run with copied OCR metadata and queue AI mapping
     const runService = await createRunService();
-    const result = await runService.createAIRun(vendorName, aiModel, aiPrompt);
+    const result = await runService.createAIRun(vendorName);
 
     context.log(`✅ Created new AI mapping run ${result.runId} for vendor ${vendorName}`);
 
@@ -49,15 +35,8 @@ async function processAIMappingHandlerCore(
       vendorName,
       runId: result.runId,
       status: result.status,
-      nextStep: 'AI mapping will begin shortly. New run created.',
+      nextStep: 'AI mapping will begin shortly using gpt-4o.',
     };
-
-    if (aiModel) {
-      response.aiModel = aiModel;
-    }
-    if (aiPrompt) {
-      response.aiPrompt = aiPrompt;
-    }
 
     return successResponse(response);
   } catch (error: unknown) {

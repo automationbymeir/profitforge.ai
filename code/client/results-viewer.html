@@ -717,120 +717,33 @@
         <a href="test-client.html">📤 Upload</a>
         <a href="results-viewer.html" class="active">📊 Results</a>
       </div>
-      <div>
-        <h1>ProfitForge.ai - Results Viewer</h1>
-        <p class="subtitle">Product Catalog Extraction Results with Version History</p>
+    </div>
+    <div>
+      <h1>ProfitForge.ai - Results Viewer</h1>
+      <p class="subtitle">Product Catalog Extraction Results with Version History</p>
 
-        <div class="controls">
-          <div class="form-group">
-            <label for="resultId">Result ID (optional)</label>
-            <input type="text" id="resultId" placeholder="Enter UUID" />
-          </div>
-          <div class="form-group">
-            <label for="vendor">Vendor Name (optional)</label>
-            <input type="text" id="vendor" placeholder="e.g., Hatteras" />
-          </div>
-          <button onclick="loadResults()">Load Results</button>
+      <div class="controls">
+        <div class="form-group">
+          <label for="resultId">Result ID (optional)</label>
+          <input type="text" id="resultId" placeholder="Enter UUID" />
         </div>
-
-        <div id="content">
-          <div class="empty-state">
-            <h3>👆 Enter parameters and click "Load Results"</h3>
-            <p>View processed documents and extracted product catalogs</p>
-          </div>
+        <div class="form-group">
+          <label for="vendor">Vendor Name (optional)</label>
+          <input type="text" id="vendor" placeholder="e.g., Hatteras" />
         </div>
+        <button onclick="loadResults()">Load Results</button>
       </div>
 
-      <!-- AI Configuration Modal -->
-      <div id="aiConfigModal" class="modal-overlay">
-        <div class="modal">
-          <div class="modal-header">
-            <h3>🔄 Configure AI Reprocessing</h3>
-            <button class="modal-close" onclick="closeAiConfigModal()">×</button>
-          </div>
-          <div class="modal-body">
-            <!-- OCR Model Section (Disabled) -->
-            <div class="form-section disabled-section">
-              <div class="form-section-title">
-                📄 OCR Model
-                <span class="badge-disabled">Coming Soon</span>
-              </div>
-              <div class="form-section-description">
-                OCR model selection - currently using Azure Document Intelligence
-              </div>
-              <select disabled>
-                <option>Azure Document Intelligence (prebuilt-layout)</option>
-              </select>
-              <div class="info-box">
-                <strong>Note:</strong> OCR model selection will be available in a future update.
-                Currently, all documents use Azure Document Intelligence's prebuilt-layout model.
-              </div>
-            </div>
-
-            <!-- AI Model Section -->
-            <div class="form-section">
-              <div class="form-section-title">🤖 AI Model</div>
-              <div class="form-section-description">
-                Select the AI model for product extraction. Different models offer varying quality
-                and cost trade-offs.
-              </div>
-              <label for="aiModelSelect">Model</label>
-              <select id="aiModelSelect">
-                <option value="">Loading models...</option>
-              </select>
-              <div class="info-box">
-                <strong>Tip:</strong> gpt-4o (default) offers best quality. gpt-4o-mini is faster
-                and cheaper for simpler catalogs.
-              </div>
-            </div>
-
-            <!-- AI Prompt Section -->
-            <div class="form-section">
-              <div class="form-section-title">✍️ Custom Prompt (Optional)</div>
-              <div class="form-section-description">
-                Customize the extraction prompt or leave blank to use the default. The prompt tells
-                the AI what to extract and how.
-              </div>
-              <label for="aiPromptTextarea">Prompt (max 10,000 characters)</label>
-              <textarea
-                id="aiPromptTextarea"
-                placeholder="Leave blank to use default prompt..."
-              ></textarea>
-              <div class="char-counter" id="charCounter">0 / 10,000 characters</div>
-              <details style="margin-top: 15px">
-                <summary style="cursor: pointer; color: #0078d4; font-weight: 600">
-                  📖 View Default Prompt
-                </summary>
-                <pre
-                  id="defaultPromptDisplay"
-                  style="
-                    background: #f5f5f5;
-                    padding: 15px;
-                    border-radius: 4px;
-                    margin-top: 10px;
-                    font-size: 0.85em;
-                    overflow-x: auto;
-                    white-space: pre-wrap;
-                  "
-                >
-Loading default prompt...</pre
-                >
-              </details>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="secondary" onclick="closeAiConfigModal()">Cancel</button>
-            <button class="secondary" onclick="useDefaults()">Use Defaults</button>
-            <button onclick="submitAiReprocessing()">🔄 Reprocess</button>
-          </div>
+      <div id="content">
+        <div class="empty-state">
+          <h3>👆 Enter parameters and click "Load Results"</h3>
+          <p>View processed documents and extracted product catalogs</p>
         </div>
       </div>
     </div>
 
     <script>
       let activeRuns = {}; // Track active run per vendor
-      let currentReprocessingVendor = null;
-      let aiDefaults = null;
 
       // Auto-detect function app URL from current hostname
       function getFunctionAppUrl() {
@@ -911,7 +824,8 @@ Loading default prompt...</pre
               <div class="action-buttons-vendor">
                 <button class="secondary small" onclick="uploadBenchmark('${vendor}')">📊 Upload Benchmark</button>
                 <button class="secondary small" onclick="viewBenchmark('${vendor}')">👁️ View Benchmark</button>
-                ${activeRun.processing_status === 'completed' || activeRun.processing_status === 'ocr_complete' ? `<button class="secondary" onclick="openAiConfigModal('${vendor}')">🔄 Rerun AI</button>` : ''}
+                ${activeRun.processing_status === 'completed' ? `<button class="secondary small" onclick="gradeRun('${activeRun.result_id}', '${activeRun.vendor_name}')">🎯 Grade vs Benchmark</button>` : ''}
+                ${activeRun.processing_status === 'completed' || activeRun.processing_status === 'ocr_complete' ? `<button class="secondary" onclick="rerunAI('${vendor}')">🔄 Rerun AI</button>` : ''}
                 <button class="danger" onclick="deleteDocument('${activeRun.result_id}')">🗑️ Delete All</button>
               </div>
             </div>
@@ -1025,7 +939,6 @@ Loading default prompt...</pre
               <div class="action-buttons">
                 ${result.processing_status === 'completed' && result.export_status !== 'confirmed' && result.export_status !== 'exported' ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export</button>` : ''}
                 ${result.export_status === 'confirmed' || result.export_status === 'exported' ? `<span class="status confirmed" style="padding: 10px 20px;">✓ Exported</span>` : ''}
-                ${result.processing_status === 'completed' ? `<button class="secondary small" onclick="gradeRun('${result.result_id}', '${result.vendor_name}')">🎯 Grade vs Benchmark</button>` : ''}
                 <button class="danger small" onclick="deleteRun('${result.result_id}')">🗑️ Delete This Run</button>
               </div>
 
@@ -1069,136 +982,31 @@ Loading default prompt...</pre
         if (resultId) document.getElementById('resultId').value = resultId;
         if (vendor) document.getElementById('vendor').value = vendor;
         if (resultId || vendor) loadResults();
-
-        // Load AI defaults on page load
-        loadAiDefaults();
-
-        // Setup character counter
-        const textarea = document.getElementById('aiPromptTextarea');
-        textarea.addEventListener('input', updateCharCounter);
       });
 
-      async function loadAiDefaults() {
-        const baseUrl = getFunctionAppUrl();
-        try {
-          const response = await fetch(`${baseUrl}/api/ai-config/deployments`);
-          if (!response.ok) throw new Error('Failed to load AI deployments');
-
-          const data = await response.json();
-          aiDefaults = {
-            defaultModel: data.defaultModel,
-            defaultPrompt: data.defaultPrompt,
-            supportedModels: data.deployments.map((d) => d.deployment),
-          };
-
-          // Populate model dropdown with deployment info
-          const modelSelect = document.getElementById('aiModelSelect');
-          const options = [`<option value="">Use Default (${data.defaultModel})</option>`];
-
-          // Sort: recommended first, then alphabetically
-          const sortedDeployments = data.deployments.sort((a, b) => {
-            if (a.recommended && !b.recommended) return -1;
-            if (!a.recommended && b.recommended) return 1;
-            return a.displayName.localeCompare(b.displayName);
-          });
-
-          sortedDeployments.forEach((deployment) => {
-            const costInfo =
-              deployment.inputCostPer1M > 0
-                ? ` ($${deployment.inputCostPer1M}/$${deployment.outputCostPer1M} per 1M tokens)`
-                : '';
-            const label = `${deployment.displayName}${costInfo}`;
-            const isDefault = deployment.deployment === data.defaultModel;
-            options.push(
-              `<option value="${deployment.deployment}">${label}${isDefault ? ' ⭐' : ''}</option>`
-            );
-          });
-
-          modelSelect.innerHTML = options.join('');
-
-          // Display default prompt
-          document.getElementById('defaultPromptDisplay').textContent = data.defaultPrompt;
-        } catch (error) {
-          console.error('Error loading AI deployments:', error);
-          document.getElementById('aiModelSelect').innerHTML =
-            '<option value="">Error loading models</option>';
-        }
-      }
-
-      function updateCharCounter() {
-        const textarea = document.getElementById('aiPromptTextarea');
-        const counter = document.getElementById('charCounter');
-        const length = textarea.value.length;
-        const maxLength = 10000;
-
-        counter.textContent = `${length.toLocaleString()} / ${maxLength.toLocaleString()} characters`;
-
-        counter.classList.remove('warning', 'error');
-        if (length > maxLength) {
-          counter.classList.add('error');
-        } else if (length > maxLength * 0.9) {
-          counter.classList.add('warning');
-        }
-      }
-
-      function openAiConfigModal(vendor) {
-        currentReprocessingVendor = vendor;
-        document.getElementById('aiConfigModal').classList.add('active');
-
-        // Reset form
-        document.getElementById('aiModelSelect').value = '';
-        document.getElementById('aiPromptTextarea').value = '';
-        updateCharCounter();
-      }
-
-      function closeAiConfigModal() {
-        document.getElementById('aiConfigModal').classList.remove('active');
-        currentReprocessingVendor = null;
-      }
-
-      function useDefaults() {
-        document.getElementById('aiModelSelect').value = '';
-        document.getElementById('aiPromptTextarea').value = '';
-        updateCharCounter();
-      }
-
-      async function submitAiReprocessing() {
-        if (!currentReprocessingVendor) return;
-
-        const aiModel = document.getElementById('aiModelSelect').value || undefined;
-        const aiPrompt = document.getElementById('aiPromptTextarea').value.trim() || undefined;
-
-        // Validate prompt length
-        if (aiPrompt && aiPrompt.length > 10000) {
-          alert('❌ Prompt exceeds maximum length of 10,000 characters');
+      async function rerunAI(vendorName) {
+        if (
+          !confirm(
+            `Rerun AI mapping for ${vendorName}? This will create a new processing run using the existing OCR data.`
+          )
+        ) {
           return;
         }
 
-        closeAiConfigModal();
-
         const baseUrl = getFunctionAppUrl();
 
         try {
-          const requestBody = {};
-          if (aiModel) requestBody.aiModel = aiModel;
-          if (aiPrompt) requestBody.aiPrompt = aiPrompt;
-
           const response = await fetch(
-            `${baseUrl}/api/documents/${encodeURIComponent(currentReprocessingVendor)}/process-ai-mapping`,
+            `${baseUrl}/api/documents/${encodeURIComponent(vendorName)}/process-ai-mapping`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined,
             }
           );
 
           const data = await response.json();
           if (response.ok) {
-            const modelMsg = aiModel ? ` with model ${aiModel}` : '';
-            const promptMsg = aiPrompt ? ` and custom prompt` : '';
-            alert(
-              `✅ Reprocessing started for ${currentReprocessingVendor}${modelMsg}${promptMsg}! New run created.`
-            );
+            alert(`✅ AI reprocessing started for ${vendorName}! New run created.`);
             loadResults();
           } else {
             alert(`❌ Error: ${data.error || JSON.stringify(data.details || data)}`);

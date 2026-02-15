@@ -359,8 +359,12 @@ export class DocumentRepository {
         processing_status,
         export_status,
         doc_intel_cost_usd,
+        doc_intel_confidence_score,
         ai_mapping_result,
         ai_model_used,
+        ai_model_cost_usd,
+        ai_confidence_score,
+        ai_completeness_score,
         exported_at,
         created_at,
         updated_at

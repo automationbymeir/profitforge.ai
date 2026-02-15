@@ -2,12 +2,6 @@ import { OpenAI } from 'openai';
 import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
 import { StorageService } from '../data/storage.js';
 import { getStorageConnectionString } from '../utils/config.js';
-import {
-  DEFAULT_AI_MODEL,
-  DEFAULT_AI_PROMPT,
-  MODEL_METADATA,
-  type ModelMetadata,
-} from '../utils/constants.js';
 
 interface TableCell {
   kind: string;
@@ -64,93 +58,18 @@ export interface AIMappingResult {
  * - Database updates
  */
 export class AIService {
-  private endpoint: string;
-  private apiKey: string;
   private openai: OpenAI;
   private documentRepo: DocumentRepository;
 
   constructor(endpoint: string, apiKey: string, documentRepo: DocumentRepository) {
-    this.endpoint = endpoint;
-    this.apiKey = apiKey;
     this.documentRepo = documentRepo;
-    // Initialize with default model - will be recreated if custom model requested
-    this.openai = this.createOpenAIClient(DEFAULT_AI_MODEL);
-    // No bronze-layer usage; AI mapping results are stored in DB
-  }
-
-  /**
-   * Create OpenAI client for specific model deployment
-   */
-  private createOpenAIClient(model: string): OpenAI {
-    return new OpenAI({
-      apiKey: this.apiKey,
-      baseURL: `${this.endpoint}/openai/deployments/${model}`,
+    this.openai = new OpenAI({
+      apiKey,
+      baseURL: `${endpoint}/openai/deployments/gpt-4o`,
       defaultQuery: { 'api-version': '2024-08-01-preview' },
-      defaultHeaders: { 'api-key': this.apiKey },
+      defaultHeaders: { 'api-key': apiKey },
     });
-  }
-
-  /**
-   * List available Azure OpenAI deployments with metadata
-   *
-   * Note: Azure OpenAI doesn't expose a public API to list deployments from the inference endpoint.
-   * This method tests each known model by attempting a lightweight operation and returns those that succeed.
-   * For true dynamic discovery, Azure Resource Manager API access would be required.
-   */
-  async listAvailableModels(): Promise<
-    Array<ModelMetadata & { deployment: string; status: string }>
-  > {
-    const availableModels: Array<ModelMetadata & { deployment: string; status: string }> = [];
-
-    // Get list of models to test from metadata
-    const modelsToTest = Object.keys(MODEL_METADATA);
-
-    // Test each model by attempting to create a client
-    for (const modelName of modelsToTest) {
-      try {
-        // Try to create a client for this deployment
-        const testClient = this.createOpenAIClient(modelName);
-
-        // Attempt a minimal API call to verify deployment exists
-        // Use models.list or a lightweight endpoint
-        await fetch(
-          `${this.endpoint}/openai/deployments/${modelName}/models?api-version=2024-08-01-preview`,
-          {
-            method: 'GET',
-            headers: {
-              'api-key': this.apiKey,
-            },
-            signal: AbortSignal.timeout(2000), // 2 second timeout
-          }
-        ).then(async (response) => {
-          if (response.ok || response.status === 404) {
-            // 404 means the deployment endpoint exists but no models list (expected)
-            // Any other error means deployment doesn't exist
-            const metadata = MODEL_METADATA[modelName];
-            availableModels.push({
-              ...metadata,
-              deployment: modelName,
-              status: 'available',
-            });
-          }
-        });
-      } catch (error: any) {
-        // Model deployment doesn't exist or isn't accessible - skip it
-        console.debug(`Model ${modelName} not available:`, error.message);
-      }
-    }
-
-    // If no models were detected, return all known models as a fallback
-    if (availableModels.length === 0) {
-      console.warn('No models detected via testing, returning all known models as fallback');
-      return modelsToTest.map((modelName) => ({
-        ...MODEL_METADATA[modelName],
-        deployment: modelName,
-        status: 'unknown',
-      }));
-    }
-
-    return availableModels;
+    // No bronze-layer usage; AI mapping results are stored in DB
   }
 
   /**
@@ -330,7 +249,7 @@ Context: ${fullText.substring(0, 2000)}`;
     const startTime = Date.now();
 
     // Retrieve document metadata from database
-    const document = await this.documentRepo.getRunByID(documentId);
+    const document = await this.documentRepo.findById(documentId);
 
     if (!document) {
       const error = new Error('Document not found') as Error & { statusCode: number };
@@ -347,22 +266,6 @@ Context: ${fullText.substring(0, 2000)}`;
       ) as Error & { statusCode: number };
       error.statusCode = 400;
       throw error;
-    }
-
-    // Get requested AI parameters from database (or use defaults)
-    const requestedModel = (document.ai_model_requested as string) || DEFAULT_AI_MODEL;
-    const requestedPrompt = (document.ai_prompt_requested as string) || null;
-
-    // Create OpenAI client for the requested model
-    let openaiClient: OpenAI;
-    try {
-      openaiClient = this.createOpenAIClient(requestedModel);
-    } catch (error) {
-      const err = new Error(
-        `Failed to initialize AI client for model '${requestedModel}'`
-      ) as Error & { statusCode: number };
-      err.statusCode = 500;
-      throw err;
     }
 
     // Retrieve OCR data from blob storage
@@ -395,45 +298,17 @@ Context: ${fullText.substring(0, 2000)}`;
       });
     });
 
-    // Build prompt - use custom if provided, otherwise use default
-    let headerMappingPrompt: string;
-    if (requestedPrompt) {
-      // User provided custom prompt - use it directly
-      headerMappingPrompt = requestedPrompt;
-    } else {
-      // Use default prompt template with header/context substitution
-      const headersText = allHeaders
-        .map((h) => `Table ${h.tableIdx}, Column ${h.colIdx}: "${h.header}"`)
-        .join('\n');
-      headerMappingPrompt = DEFAULT_AI_PROMPT.replace('{HEADERS}', headersText).replace(
-        '{CONTEXT}',
-        ''
-      );
-    }
+    // Build column mapping prompt (no fullText needed since we only use tables)
+    const headerMappingPrompt = this.buildColumnMappingPrompt(allHeaders, '');
 
     // Call OpenAI for column mapping
-    let mappingResponse;
-    try {
-      mappingResponse = await openaiClient.chat.completions.create({
-        model: requestedModel,
-        messages: [{ role: 'user', content: headerMappingPrompt }],
-        response_format: { type: 'json_object' },
-        max_tokens: 500,
-        temperature: 0,
-      });
-    } catch (error: any) {
-      // Gracefully handle model deployment errors
-      const errorMessage = error?.message || 'Unknown error during AI processing';
-
-      // Update run status to 'failed' in database before throwing
-      await this.documentRepo.updateStatus(documentId, 'failed', errorMessage);
-
-      const err = new Error(
-        `AI model '${requestedModel}' failed: ${errorMessage}. The deployment may not exist or may be unavailable.`
-      ) as Error & { statusCode: number };
-      err.statusCode = 503;
-      throw err;
-    }
+    const mappingResponse = await this.openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: headerMappingPrompt }],
+      response_format: { type: 'json_object' },
+      max_tokens: 500,
+      temperature: 0,
+    });
 
     const mappingResult = JSON.parse(mappingResponse.choices[0].message.content || '{}');
     const columnMapping = mappingResult.columnMapping || {};
@@ -443,7 +318,7 @@ Context: ${fullText.substring(0, 2000)}`;
 
     // Calculate quality metrics
     const { completenessScore, confidenceScore, metrics } = this.calculateQualityMetrics(products);
-
+    console.log('Quality Metrics:', { completenessScore, confidenceScore, metrics });
     // Calculate costs
     const promptTokens = mappingResponse.usage?.prompt_tokens || 0;
     const completionTokens = mappingResponse.usage?.completion_tokens || 0;
@@ -481,7 +356,7 @@ Context: ${fullText.substring(0, 2000)}`;
     await this.documentRepo.updateAiMapping({
       result_id: documentId,
       ai_mapping_result: JSON.stringify(mappingResultJson),
-      ai_model_used: requestedModel,
+      ai_model_used: 'gpt-4o',
       ai_prompt_used: headerMappingPrompt,
       ai_model_cost_usd: aiCost,
       ai_confidence_score: confidenceScore,
