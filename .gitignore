@@ -2,7 +2,6 @@ node_modules/
 .env*
 dist/
 *.log
-.pulumi/
 
 # Ignore everything inside .github
 .github/*

@@ -1,0 +1,78 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual trigger
+
+# Prevent concurrent deployments to same stack
+concurrency:
+  group: pulumi-staging
+  cancel-in-progress: false
+
+env:
+  PULUMI_STACK: staging
+  NODE_VERSION: '20.x'
+
+jobs:
+  deploy:
+    name: Deploy to Azure Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install function dependencies
+        run: npm ci
+        working-directory: ./code
+
+      - name: Build functions
+        run: npm run build
+        working-directory: ./code
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Install Pulumi CLI
+        uses: pulumi/actions@v5
+
+      - name: Deploy infrastructure with Pulumi
+        uses: pulumi/actions@v5
+        with:
+          command: up
+          stack-name: ${{ env.PULUMI_STACK }}
+          work-dir: .
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          # Azure credentials are already set by azure/login
+
+      - name: Get deployment outputs
+        id: pulumi-outputs
+        run: |
+          echo "function_url=$(pulumi stack output functionAppEndpoint -s ${{ env.PULUMI_STACK }})" >> $GITHUB_OUTPUT
+          echo "client_url=$(pulumi stack output functionAppEndpoint -s ${{ env.PULUMI_STACK }})/client/index.html" >> $GITHUB_OUTPUT
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+      - name: Deployment summary
+        run: |
+          echo "## ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Stack:** ${{ env.PULUMI_STACK }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Function App:** ${{ steps.pulumi-outputs.outputs.function_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Client App:** ${{ steps.pulumi-outputs.outputs.client_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 View logs: [Azure Portal](https://portal.azure.com)" >> $GITHUB_STEP_SUMMARY
