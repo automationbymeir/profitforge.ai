@@ -56,6 +56,7 @@ jobs:
           stack-name: ${{ env.PULUMI_STACK }}
           work-dir: .
         env:
+          PULUMI_BACKEND_URL: file://. # ← ADD THIS LINE
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
           # Azure credentials are already set by azure/login
 
@@ -65,6 +66,7 @@ jobs:
           echo "function_url=$(pulumi stack output functionAppEndpoint -s ${{ env.PULUMI_STACK }})" >> $GITHUB_OUTPUT
           echo "client_url=$(pulumi stack output functionAppEndpoint -s ${{ env.PULUMI_STACK }})/client/index.html" >> $GITHUB_OUTPUT
         env:
+          PULUMI_BACKEND_URL: file://. # ← ADD THIS LINE
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
 
       - name: Deployment summary
