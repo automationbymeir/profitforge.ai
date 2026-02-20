@@ -16,14 +16,8 @@ export * from './document.js';
 // Product models
 export * from './product.js';
 
-// Vendor models
-export * from './vendor.js';
-
 // OCR models
 export * from './ocr.js';
 
 // API response models
 export * from './api-responses.js';
-
-// Usage tracking models
-export * from './usage.js';

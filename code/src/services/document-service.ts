@@ -1,8 +1,8 @@
 import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
 import { StorageService } from '../data/storage.js';
-import { Document, ProcessingStatus } from '../functions/http/common/models/document.js';
 import { QueueService } from '../functions/infra-adapters/queues.js';
 import { getStorageConnectionString } from '../utils/config.js';
+import { Document, ProcessingStatus } from '../utils/models/document.js';
 
 export interface UploadResult {
   documentName: string;
@@ -121,9 +121,7 @@ export class DocumentService {
   /**
    * Get full document record by ID
    */
-  async getDocument(
-    resultId: string
-  ): Promise<import('../functions/http/common/models/document.js').Document> {
+  async getDocument(resultId: string): Promise<import('../utils/models/document.js').Document> {
     const document = await this.documentRepo.findById(resultId);
 
     if (!document) {
@@ -140,7 +138,7 @@ export class DocumentService {
    */
   async getLatestRunByVendor(
     vendorName: string
-  ): Promise<import('../functions/http/common/models/document.js').Document | null> {
+  ): Promise<import('../utils/models/document.js').Document | null> {
     return await this.documentRepo.findLatestByVendor(vendorName);
   }
 

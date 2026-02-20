@@ -1,6 +1,6 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { errorResponse } from '../../../../utils/httpHelpers.js';
-import { checkDailyUploadLimit, checkIpRateLimit } from '../../../../utils/usageTracker.js';
+import { errorResponse } from '../httpHelpers.js';
+import { checkDailyUploadLimit, checkIpRateLimit } from '../usageTracker.js';
 
 type Handler = (req: HttpRequest, context: InvocationContext) => Promise<HttpResponseInit>;
 

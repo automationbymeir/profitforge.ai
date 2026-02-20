@@ -12,11 +12,7 @@
  */
 
 import sql from 'mssql';
-import type {
-  Document,
-  ExportStatus,
-  ProcessingStatus,
-} from '../../functions/http/common/models/document.js';
+import type { Document, ExportStatus, ProcessingStatus } from '../../utils/models/document.js';
 
 /**
  * Input for creating a new document record
@@ -30,6 +26,8 @@ export interface CreateDocumentInput {
   processing_status: ProcessingStatus;
   export_status: ExportStatus;
   processing_started_at: Date;
+  ai_model_requested?: string | null;
+  ai_prompt_requested?: string | null;
 }
 
 /**
@@ -68,6 +66,16 @@ export interface UpdateAiMappingInput {
   ai_completeness_score: number | null;
   ai_prompt_tokens: number | null;
   ai_completion_tokens: number | null;
+}
+
+/**
+ * Input for updating grading results
+ */
+export interface UpdateGradingResultsInput {
+  result_id: string;
+  grading_results: string; // JSON string of GradingMetrics
+  grading_analysis: string; // JSON string of GradingAnalysis
+  graded_at: Date;
 }
 
 /**
@@ -116,13 +124,15 @@ export class DocumentRepository {
       .input('fileType', sql.NVarChar, input.document_type)
       .input('status', sql.NVarChar, input.processing_status || 'pending')
       .input('exportStatus', sql.NVarChar, input.export_status || 'not_exported')
-      .input('processingStartedAt', sql.DateTime, input.processing_started_at).query(`
+      .input('processingStartedAt', sql.DateTime, input.processing_started_at)
+      .input('aiModelRequested', sql.NVarChar, input.ai_model_requested || null)
+      .input('aiPromptRequested', sql.NVarChar, input.ai_prompt_requested || null).query(`
         INSERT INTO vvocr.document_processing_results 
         (document_name, document_path, document_size_bytes, document_type, processing_status, vendor_name,
-         export_status, processing_started_at)
+         export_status, processing_started_at, ai_model_requested, ai_prompt_requested)
         OUTPUT INSERTED.result_id
         VALUES (@documentName, @documentPath, @fileSize, @fileType, @status, @vendorName,
-                @exportStatus, @processingStartedAt )
+                @exportStatus, @processingStartedAt, @aiModelRequested, @aiPromptRequested)
       `);
 
     return result.recordset[0].result_id;
@@ -154,6 +164,9 @@ export class DocumentRepository {
           ai_model_cost_usd,
           ai_confidence_score,
           ai_completeness_score,
+          grading_results,
+          grading_analysis,
+          graded_at,
           exported_at,
           created_at,
           updated_at
@@ -188,6 +201,9 @@ export class DocumentRepository {
           export_status,
           doc_intel_confidence_score,
           doc_intel_cost_usd,
+          grading_results,
+          grading_analysis,
+          graded_at,
           doc_intel_prompt_used,
           ai_model_requested,
           ai_prompt_requested,
@@ -259,6 +275,9 @@ export class DocumentRepository {
           ai_model_cost_usd,
           ai_confidence_score,
           ai_completeness_score,
+          grading_results,
+          grading_analysis,
+          graded_at,
           exported_at,
           created_at,
           updated_at
@@ -296,6 +315,9 @@ export class DocumentRepository {
           ai_model_cost_usd,
           ai_confidence_score,
           ai_completeness_score,
+          grading_results,
+          grading_analysis,
+          graded_at,
           exported_at,
           created_at,
           updated_at
@@ -332,6 +354,9 @@ export class DocumentRepository {
           ai_model_cost_usd,
           ai_confidence_score,
           ai_completeness_score,
+          grading_results,
+          grading_analysis,
+          graded_at,
           exported_at,
           created_at,
           updated_at
@@ -365,6 +390,9 @@ export class DocumentRepository {
         ai_model_cost_usd,
         ai_confidence_score,
         ai_completeness_score,
+        grading_results,
+        grading_analysis,
+        graded_at,
         exported_at,
         created_at,
         updated_at
@@ -489,8 +517,34 @@ export class DocumentRepository {
     return result.rowsAffected[0] || 0;
   }
 
-  /**
-   * Update processing status
+  /**   * Update grading results for a document
+   *
+   * @param input - Grading data
+   * @returns Number of rows affected (should be 1)
+   */
+  async updateGradingResults(input: UpdateGradingResultsInput): Promise<number> {
+    const request = this.pool
+      .request()
+      .input('resultId', sql.UniqueIdentifier, input.result_id)
+      .input('gradingResults', sql.NVarChar, input.grading_results)
+      .input('gradingAnalysis', sql.NVarChar, input.grading_analysis)
+      .input('gradedAt', sql.DateTime2, input.graded_at);
+
+    const query = `
+        UPDATE vvocr.document_processing_results
+        SET 
+          grading_results = @gradingResults,
+          grading_analysis = @gradingAnalysis,
+          graded_at = @gradedAt,
+          updated_at = GETUTCDATE()
+        WHERE result_id = @resultId
+      `;
+
+    const result = await request.query(query);
+    return result.rowsAffected[0] || 0;
+  }
+
+  /**   * Update processing status
    *
    * @param resultId - Document UUID
    * @param status - New processing status

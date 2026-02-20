@@ -1,7 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { createRunService } from '../../../services/run-service.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
-import { withCors, withErrorHandler } from '../common/middleware/index.js';
+import { withCors, withErrorHandler } from '../../../utils/middleware/index.js';
 
 /**
  * Delete Run Handler - HTTP DELETE endpoint to delete a specific processing run

@@ -158,7 +158,9 @@ export async function aiProductMapperQueueTrigger(
     const aiService = await createAIService();
     const result = await aiService.mapProducts(documentId);
 
-    context.log(`✅ Queue processing complete: ${result.productCount} products extracted`);
+    context.log(
+      `✅ Queue processing complete: ${result.mappingResultJson.productCount} products extracted`
+    );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     context.error(`❌ Queue processing failed: ${errorMessage}`);

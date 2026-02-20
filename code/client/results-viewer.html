@@ -708,6 +708,231 @@
       .info-box strong {
         color: #0078d4;
       }
+
+      /* Grading Results Modal */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        overflow-y: auto;
+        padding: 20px;
+      }
+      .modal-overlay.active {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+      }
+      .modal-content {
+        background: white;
+        border-radius: 12px;
+        max-width: 1200px;
+        width: 100%;
+        margin: 40px auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+      .modal-header {
+        background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+        color: white;
+        padding: 30px 40px;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-header h2 {
+        margin: 0;
+        font-size: 2em;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      .modal-close {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        font-size: 28px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+      .modal-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      .modal-body {
+        padding: 40px;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      .modal-meta {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border-left: 4px solid #0078d4;
+      }
+      .modal-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+      }
+      .modal-section {
+        margin-bottom: 35px;
+      }
+      .modal-section h3 {
+        color: #0078d4;
+        font-size: 1.5em;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+      .metric-card {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 10px;
+        text-align: center;
+        border: 2px solid #e9ecef;
+        transition: all 0.2s;
+      }
+      .metric-card:hover {
+        border-color: #0078d4;
+        box-shadow: 0 4px 8px rgba(0, 120, 212, 0.1);
+      }
+      .metric-value {
+        font-size: 3em;
+        font-weight: 700;
+        margin: 10px 0;
+        line-height: 1;
+      }
+      .metric-value.excellent {
+        color: #28a745;
+      }
+      .metric-value.good {
+        color: #20c997;
+      }
+      .metric-value.fair {
+        color: #ffc107;
+      }
+      .metric-value.poor {
+        color: #dc3545;
+      }
+      .metric-label {
+        font-size: 0.9em;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+      }
+      .metric-explanation {
+        font-size: 0.85em;
+        color: #666;
+        margin-top: 10px;
+        line-height: 1.4;
+      }
+      .field-accuracy {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 15px;
+      }
+      .field-row {
+        display: grid;
+        grid-template-columns: 1fr 120px 1fr;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e9ecef;
+        transition: background 0.2s;
+      }
+      .field-row:hover {
+        background: #f8f9fa;
+      }
+      .field-row:last-child {
+        border-bottom: none;
+      }
+      .field-name {
+        font-weight: 600;
+        color: #333;
+      }
+      .field-score {
+        text-align: center;
+        font-size: 1.3em;
+        font-weight: 700;
+      }
+      .field-bar {
+        height: 12px;
+        background: #e9ecef;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .field-bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        transition: width 0.3s;
+      }
+      .quality-issues {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 20px;
+      }
+      .quality-issues ul {
+        margin: 10px 0 0 0;
+        padding-left: 20px;
+      }
+      .quality-issues li {
+        margin: 8px 0;
+        color: #856404;
+      }
+      .stats-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid #e9ecef;
+      }
+      .stats-row:last-child {
+        border-bottom: none;
+      }
+      .stats-label {
+        color: #666;
+      }
+      .stats-value {
+        font-weight: 600;
+        color: #333;
+        text-align: right;
+      }
+      .explanation-box {
+        background: #e7f3ff;
+        border-left: 4px solid #0078d4;
+        padding: 15px 20px;
+        margin: 15px 0;
+        border-radius: 4px;
+        font-size: 0.95em;
+        line-height: 1.6;
+      }
+      .explanation-box strong {
+        color: #0078d4;
+      }
     </style>
   </head>
   <body>
@@ -823,8 +1048,6 @@
               </div>
               <div class="action-buttons-vendor">
                 <button class="secondary small" onclick="uploadBenchmark('${vendor}')">📊 Upload Benchmark</button>
-                <button class="secondary small" onclick="viewBenchmark('${vendor}')">👁️ View Benchmark</button>
-                ${activeRun.processing_status === 'completed' ? `<button class="secondary small" onclick="gradeRun('${activeRun.result_id}', '${activeRun.vendor_name}')">🎯 Grade vs Benchmark</button>` : ''}
                 ${activeRun.processing_status === 'completed' || activeRun.processing_status === 'ocr_complete' ? `<button class="secondary" onclick="rerunAI('${vendor}')">🔄 Rerun AI</button>` : ''}
                 <button class="danger" onclick="deleteDocument('${activeRun.result_id}')">🗑️ Delete All</button>
               </div>
@@ -939,6 +1162,14 @@
               <div class="action-buttons">
                 ${result.processing_status === 'completed' && result.export_status !== 'confirmed' && result.export_status !== 'exported' ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export</button>` : ''}
                 ${result.export_status === 'confirmed' || result.export_status === 'exported' ? `<span class="status confirmed" style="padding: 10px 20px;">✓ Exported</span>` : ''}
+                ${
+                  result.grading_results && result.graded_at
+                    ? `
+                  <button class="secondary small" onclick="viewGradingResults('${result.result_id}')">📊 View Benchmark Grades</button>
+                  <button class="secondary small" onclick="downloadGradingResults('${result.result_id}', '${result.vendor_name}')">⬇️ Download Grades</button>
+                `
+                    : ''
+                }
                 <button class="danger small" onclick="deleteRun('${result.result_id}')">🗑️ Delete This Run</button>
               </div>
 
@@ -952,10 +1183,35 @@
                   <div style="margin-top: 15px; max-height: 500px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
                     <table class="products-table">
                       <thead style="position: sticky; top: 0; background: white; z-index: 1;">
-                        <tr><th>SKU</th><th>Product Name</th><th>Price</th><th>Unit/Dimensions</th></tr>
+                        <tr>${getAllFieldNames(products)
+                          .map((field) => `<th>${formatFieldName(field)}</th>`)
+                          .join('')}</tr>
                       </thead>
                       <tbody>
-                        ${products.map((p) => `<tr><td><span class="product-sku">${p.sku || 'N/A'}</span></td><td><span class="product-name">${p.name || 'N/A'}</span></td><td><span class="product-price">$${(p.price || 0).toFixed(2)}</span></td><td><span class="product-unit">${p.unit || 'N/A'}</span></td></tr>`).join('')}
+                        ${products
+                          .map((p) => {
+                            const fields = getAllFieldNames(products);
+                            return `<tr>${fields
+                              .map((field) => {
+                                const value = p[field];
+                                if (value === null || value === undefined) {
+                                  return '<td><span style="color: #999;">-</span></td>';
+                                } else if (typeof value === 'number') {
+                                  // Check if it's a price field
+                                  if (
+                                    field.toLowerCase().includes('price') ||
+                                    field.toLowerCase().includes('cost')
+                                  ) {
+                                    return `<td><span class="product-price">$${value.toFixed(2)}</span></td>`;
+                                  }
+                                  return `<td>${value}</td>`;
+                                } else {
+                                  return `<td>${value}</td>`;
+                                }
+                              })
+                              .join('')}</tr>`;
+                          })
+                          .join('')}
                       </tbody>
                     </table>
                   </div>
@@ -973,6 +1229,36 @@
         if (score >= 80) return 'high';
         if (score >= 60) return 'medium';
         return 'low';
+      }
+
+      // Get all unique field names from products array
+      function getAllFieldNames(products) {
+        const fieldSet = new Set();
+        products.forEach((product) => {
+          Object.keys(product).forEach((key) => fieldSet.add(key));
+        });
+
+        // Convert to array and prioritize common fields first
+        const fields = Array.from(fieldSet);
+        const priority = ['sku', 'product_name', 'name', 'price', 'unit', 'description'];
+
+        return fields.sort((a, b) => {
+          const aIndex = priority.indexOf(a.toLowerCase());
+          const bIndex = priority.indexOf(b.toLowerCase());
+
+          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+          if (aIndex !== -1) return -1;
+          if (bIndex !== -1) return 1;
+          return a.localeCompare(b);
+        });
+      }
+
+      // Format field name for display (convert snake_case to Title Case)
+      function formatFieldName(fieldName) {
+        return fieldName
+          .split('_')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
       }
 
       window.addEventListener('DOMContentLoaded', () => {
@@ -1292,6 +1578,289 @@
         if (score >= 60) return 'fair';
         return 'poor';
       }
+
+      // View grading results for a specific run
+      async function viewGradingResults(runId) {
+        const baseUrl = getFunctionAppUrl();
+
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/documents?resultId=${encodeURIComponent(runId)}`
+          );
+
+          if (!response.ok) {
+            alert('Failed to load run data');
+            return;
+          }
+
+          const results = await response.json();
+          if (!results || results.length === 0) {
+            alert('Run not found');
+            return;
+          }
+
+          const runData = results[0];
+
+          if (!runData.grading_results || !runData.grading_analysis) {
+            alert('No grading results available for this run');
+            return;
+          }
+
+          const metrics = JSON.parse(runData.grading_results);
+          const analysis = JSON.parse(runData.grading_analysis);
+
+          // Populate modal with grading results
+          const modalBody = document.getElementById('gradingModalBody');
+          modalBody.innerHTML = `
+            <div class="modal-meta">
+              <div class="modal-meta-grid">
+                <div>
+                  <div class="info-label">Run ID</div>
+                  <div class="info-value">${runId.substring(0, 13)}</div>
+                </div>
+                <div>
+                  <div class="info-label">Vendor</div>
+                  <div class="info-value">${runData.vendor_name}</div>
+                </div>
+                <div>
+                  <div class="info-label">Document</div>
+                  <div class="info-value">${runData.document_name}</div>
+                </div>
+                <div>
+                  <div class="info-label">Graded At</div>
+                  <div class="info-value">${new Date(runData.graded_at).toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Overall Metrics -->
+            <div class="modal-section">
+              <h3><span>📈</span> Overall Performance Metrics</h3>
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <div class="metric-label">Accuracy</div>
+                  <div class="metric-value ${getMetricClass(metrics.accuracy)}">${metrics.accuracy.toFixed(1)}%</div>
+                  <div class="metric-explanation">How well extracted data matches benchmark overall</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">Precision</div>
+                  <div class="metric-value ${getMetricClass(metrics.precision)}">${metrics.precision.toFixed(1)}%</div>
+                  <div class="metric-explanation">Percentage of extracted products that are correct</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">Recall</div>
+                  <div class="metric-value ${getMetricClass(metrics.recall)}">${metrics.recall.toFixed(1)}%</div>
+                  <div class="metric-explanation">Percentage of benchmark products that were found</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">F1 Score</div>
+                  <div class="metric-value ${getMetricClass(metrics.f1Score)}">${metrics.f1Score.toFixed(1)}%</div>
+                  <div class="metric-explanation">Harmonic mean of precision and recall</div>
+                </div>
+              </div>
+              
+              <div class="explanation-box">
+                <strong>What do these metrics mean?</strong><br>
+                • <strong>Accuracy</strong> = Overall correctness of extracted data across all fields<br>
+                • <strong>Precision</strong> = Of all products extracted, what % are actually real products from the benchmark<br>
+                • <strong>Recall</strong> = Of all products in the benchmark, what % were successfully extracted<br>
+                • <strong>F1 Score</strong> = Balance between precision and recall (higher is better)
+              </div>
+            </div>
+
+            <!-- Product Matching Statistics -->
+            <div class="modal-section">
+              <h3><span>📦</span> Product Matching Statistics</h3>
+              <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px;">
+                <div class="stats-row">
+                  <div class="stats-label">Total Benchmark Products</div>
+                  <div class="stats-value">${metrics.totalBenchmarkProducts}</div>
+                </div>
+                <div class="stats-row">
+                  <div class="stats-label">Total Extracted Products</div>
+                  <div class="stats-value">${metrics.totalExtractedProducts}</div>
+                </div>
+                <div class="stats-row">
+                  <div class="stats-label">✅ Correct Matches (≥90% match)</div>
+                  <div class="stats-value" style="color: #28a745;">${metrics.correctMatches}</div>
+                </div>
+                <div class="stats-row">
+                  <div class="stats-label">⚠️ Partial Matches (50-90% match)</div>
+                  <div class="stats-value" style="color: #ffc107;">${metrics.partialMatches}</div>
+                </div>
+                <div class="stats-row">
+                  <div class="stats-label">❌ Missed Products (not found)</div>
+                  <div class="stats-value" style="color: #dc3545;">${metrics.missedProducts}</div>
+                </div>
+                <div class="stats-row">
+                  <div class="stats-label">🚫 False Positives (shouldn't exist)</div>
+                  <div class="stats-value" style="color: #dc3545;">${metrics.falsePositives}</div>
+                </div>
+              </div>
+              
+              <div class="explanation-box">
+                <strong>Understanding Product Matching:</strong><br>
+                • <strong>Correct Matches</strong>: Products that match the benchmark very closely (90%+ similarity)<br>
+                • <strong>Partial Matches</strong>: Products found but with some field discrepancies<br>
+                • <strong>Missed Products</strong>: Products in the benchmark that weren't extracted from the document<br>
+                • <strong>False Positives</strong>: Extracted products that don't exist in the benchmark (duplicates, errors, etc.)
+              </div>
+            </div>
+
+            <!-- Field-Level Accuracy -->
+            <div class="modal-section">
+              <h3><span>🎯</span> Field-Level Accuracy</h3>
+              <div class="field-accuracy">
+                ${Object.entries(analysis.fieldAccuracy || {})
+                  .map(
+                    ([field, accuracy]) => `
+                  <div class="field-row">
+                    <div class="field-name">${field}</div>
+                    <div class="field-score ${getMetricClass(accuracy)}">${accuracy.toFixed(1)}%</div>
+                    <div class="field-bar">
+                      <div class="field-bar-fill" style="width: ${accuracy}%; background: ${getFieldBarColor(accuracy)};"></div>
+                    </div>
+                  </div>
+                `
+                  )
+                  .join('')}
+              </div>
+              
+              <div class="explanation-box">
+                <strong>Field Accuracy Explained:</strong><br>
+                For each field (SKU, product name, price, etc.), this shows the percentage of products where the extracted value exactly matches the benchmark value. Low scores indicate systematic extraction errors for that specific field.
+              </div>
+            </div>
+
+            <!-- Quality Issues -->
+            ${
+              analysis.qualityIssues && analysis.qualityIssues.length > 0
+                ? `
+            <div class="modal-section">
+              <h3><span>⚠️</span> Quality Issues Detected</h3>
+              <div class="quality-issues">
+                <strong>Issues found (${analysis.qualityIssues.length}):</strong>
+                <ul>
+                  ${analysis.qualityIssues.map((issue) => `<li>${issue}</li>`).join('')}
+                </ul>
+              </div>
+            </div>
+            `
+                : ''
+            }
+
+            <!-- Action Buttons -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e9ecef; text-align: center;">
+              <button onclick="downloadGradingResults('${runId}', '${runData.vendor_name}')" class="success">
+                ⬇️ Download Full Report (JSON)
+              </button>
+              <button onclick="closeGradingModal()" class="secondary" style="margin-left: 10px;">
+                Close
+              </button>
+            </div>
+          `;
+
+          // Show modal
+          document.getElementById('gradingModal').classList.add('active');
+        } catch (error) {
+          alert(`Error loading grading results: ${error.message}`);
+        }
+      }
+
+      function getMetricClass(score) {
+        if (score >= 80) return 'excellent';
+        if (score >= 60) return 'good';
+        if (score >= 40) return 'fair';
+        return 'poor';
+      }
+
+      function getFieldBarColor(score) {
+        if (score >= 80) return 'linear-gradient(90deg, #28a745, #20c997)';
+        if (score >= 60) return 'linear-gradient(90deg, #20c997, #17a2b8)';
+        if (score >= 40) return 'linear-gradient(90deg, #ffc107, #fd7e14)';
+        return 'linear-gradient(90deg, #dc3545, #c82333)';
+      }
+
+      function closeGradingModal() {
+        document.getElementById('gradingModal').classList.remove('active');
+      }
+
+      // Close modal when clicking outside
+      document.addEventListener('click', (e) => {
+        const modal = document.getElementById('gradingModal');
+        if (e.target === modal) {
+          closeGradingModal();
+        }
+      });
+
+      // Download grading results as JSON
+      async function downloadGradingResults(runId, vendorName) {
+        const baseUrl = getFunctionAppUrl();
+
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/documents?resultId=${encodeURIComponent(runId)}`
+          );
+
+          if (!response.ok) {
+            alert('Failed to load run data');
+            return;
+          }
+
+          const results = await response.json();
+          if (!results || results.length === 0) {
+            alert('Run not found');
+            return;
+          }
+
+          const runData = results[0];
+
+          if (!runData.grading_results || !runData.grading_analysis) {
+            alert('No grading results available for this run');
+            return;
+          }
+
+          // Create complete grading report
+          const gradingReport = {
+            runId: runId,
+            vendorName: vendorName,
+            documentName: runData.document_name,
+            gradedAt: runData.graded_at,
+            metrics: JSON.parse(runData.grading_results),
+            analysis: JSON.parse(runData.grading_analysis),
+          };
+
+          // Create download link
+          const blob = new Blob([JSON.stringify(gradingReport, null, 2)], {
+            type: 'application/json',
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `grading-report-${vendorName}-${runId.substring(0, 8)}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          alert('✅ Grading report downloaded successfully!');
+        } catch (error) {
+          alert(`Error downloading grading results: ${error.message}`);
+        }
+      }
     </script>
+
+    <!-- Grading Results Modal -->
+    <div id="gradingModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><span>📊</span> Benchmark Grading Results</h2>
+          <button class="modal-close" onclick="closeGradingModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="gradingModalBody">
+          <!-- Content will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
   </body>
 </html>

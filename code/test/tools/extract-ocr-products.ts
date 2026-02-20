@@ -40,9 +40,19 @@ interface OcrProductsOutput {
     extractedAt: string;
     totalTables: number;
     totalProducts: number;
-    mergeIterations: number;
+    cleanupStats?: {
+      columnsBeforeCleanup: number;
+      columnsAfterCleanup: number;
+      emptyColumnsRemoved: string[];
+    };
   };
   tables: ExtractedTable[];
+  preMergedTables?: ExtractedTable[];
+  deterministicCleanup?: {
+    columns: string[];
+    products: Record<string, string>[];
+    productCount: number;
+  };
 }
 
 /**
@@ -176,6 +186,93 @@ export function columnsMatch(cols1: string[], cols2: string[]): boolean {
 }
 
 /**
+ * Get column signature for grouping (normalized, sorted column names)
+ */
+function getColumnSignature(columns: string[]): string {
+  return columns.map(normalizeColumn).sort().join('|');
+}
+
+/**
+ * Merge tables with identical column sets and clean up empty columns
+ */
+function preMergeIdenticalTables(tables: ExtractedTable[]): {
+  mergedTables: ExtractedTable[];
+  iterations: number;
+} {
+  // Group tables by column signature
+  const groups = new Map<string, ExtractedTable[]>();
+
+  tables.forEach((table) => {
+    const signature = getColumnSignature(table.columns);
+    if (!groups.has(signature)) {
+      groups.set(signature, []);
+    }
+    groups.get(signature)!.push(table);
+  });
+
+  console.log(`\n🔗 Pre-merging tables with identical columns...`);
+  console.log(`  Found ${groups.size} unique column patterns`);
+
+  const mergedTables: ExtractedTable[] = [];
+  let iterations = 0;
+
+  groups.forEach((groupTables) => {
+    if (groupTables.length === 1) {
+      // Single table, just clean up empty columns
+      const table = groupTables[0];
+      const cleaned = cleanupEmptyColumns(table.columns, table.rows);
+
+      if (cleaned.emptyColumnsRemoved.length > 0) {
+        console.log(
+          `  Table ${table.tableIndex}: Removed ${cleaned.emptyColumnsRemoved.length} empty columns`
+        );
+      }
+
+      mergedTables.push({
+        tableIndex: table.tableIndex,
+        columns: cleaned.columns,
+        rows: cleaned.products,
+        productCount: cleaned.products.length,
+      });
+    } else {
+      // Multiple tables with same columns - merge them
+      iterations += groupTables.length - 1;
+      console.log(
+        `  Merging ${groupTables.length} tables with signature: ${groupTables[0].columns.join(', ')}`
+      );
+
+      let merged = groupTables[0];
+      for (let i = 1; i < groupTables.length; i++) {
+        merged = mergeTables(merged, groupTables[i]);
+      }
+
+      // Clean up empty columns after merging
+      const cleaned = cleanupEmptyColumns(merged.columns, merged.rows);
+
+      console.log(`    → Merged ${groupTables.length} tables: ${merged.productCount} products`);
+      if (cleaned.emptyColumnsRemoved.length > 0) {
+        console.log(
+          `    → Removed ${cleaned.emptyColumnsRemoved.length} empty columns: ${cleaned.emptyColumnsRemoved.join(', ')}`
+        );
+      }
+
+      mergedTables.push({
+        tableIndex: Math.min(...groupTables.map((t) => t.tableIndex)),
+        columns: cleaned.columns,
+        rows: cleaned.products,
+        productCount: cleaned.products.length,
+      });
+    }
+  });
+
+  console.log(
+    `  ✓ Pre-merge complete: ${tables.length} → ${mergedTables.length} tables (${iterations} merges)`
+  );
+
+  return { mergedTables, iterations };
+}
+
+/**
  * Calculate inconsistency score between two tables
  * inconsistency = (outerJoin - innerJoin) / outerJoin
  *               = 1 - (innerJoin / outerJoin)
@@ -184,7 +281,7 @@ export function columnsMatch(cols1: string[], cols2: string[]): boolean {
  * Score of 0 = identical columns
  * Score of 1 = no common columns
  */
-function calculateInconsistency(cols1: string[], cols2: string[]): number {
+function _calculateInconsistency(cols1: string[], cols2: string[]): number {
   const normalized1 = cols1.map(normalizeColumn);
   const normalized2 = cols2.map(normalizeColumn);
 
@@ -230,6 +327,50 @@ function mergeTables(table1: ExtractedTable, table2: ExtractedTable): ExtractedT
 }
 
 /**
+ * Deterministic cleanup: Remove columns where all values are empty/falsy
+ */
+function cleanupEmptyColumns(
+  columns: string[],
+  products: Record<string, string>[]
+): {
+  columns: string[];
+  products: Record<string, string>[];
+  emptyColumnsRemoved: string[];
+} {
+  const emptyColumns: string[] = [];
+  const nonEmptyColumns: string[] = [];
+
+  // Check each column to see if it has any non-empty values
+  for (const col of columns) {
+    const hasData = products.some((product) => {
+      const value = product[col];
+      return value && value.trim() !== '';
+    });
+
+    if (hasData) {
+      nonEmptyColumns.push(col);
+    } else {
+      emptyColumns.push(col);
+    }
+  }
+
+  // Create cleaned products with only non-empty columns
+  const cleanedProducts = products.map((product) => {
+    const cleaned: Record<string, string> = {};
+    nonEmptyColumns.forEach((col) => {
+      cleaned[col] = product[col] || '';
+    });
+    return cleaned;
+  });
+
+  return {
+    columns: nonEmptyColumns,
+    products: cleanedProducts,
+    emptyColumnsRemoved: emptyColumns,
+  };
+}
+
+/**
  * Main extraction function
  */
 function extractOcrProducts(rawOcrData: any): OcrProductsOutput {
@@ -268,105 +409,70 @@ function extractOcrProducts(rawOcrData: any): OcrProductsOutput {
     }
   }
 
-  // Smart table merging based on inconsistency score
-  const INCONSISTENCY_THRESHOLD = 0.3; // Merge if 70%+ columns are common
-  let mergeIterations = 0;
-
-  console.log(`\n🔄 Starting smart table merging (threshold: ${INCONSISTENCY_THRESHOLD})...`);
-
-  while (extractedTables.length > 1) {
-    // Calculate inconsistency for all pairs
-    const pairs: Array<{
-      i: number;
-      j: number;
-      inconsistency: number;
-      table1Idx: number;
-      table2Idx: number;
-    }> = [];
-
-    for (let i = 0; i < extractedTables.length; i++) {
-      for (let j = i + 1; j < extractedTables.length; j++) {
-        const inconsistency = calculateInconsistency(
-          extractedTables[i].columns,
-          extractedTables[j].columns
-        );
-
-        pairs.push({
-          i,
-          j,
-          inconsistency,
-          table1Idx: extractedTables[i].tableIndex,
-          table2Idx: extractedTables[j].tableIndex,
-        });
-      }
-    }
-
-    // Sort by: inconsistency (ascending), then table1Idx, then table2Idx
-    pairs.sort((a, b) => {
-      if (Math.abs(a.inconsistency - b.inconsistency) > 0.001) {
-        return a.inconsistency - b.inconsistency;
-      }
-      if (a.table1Idx !== b.table1Idx) {
-        return a.table1Idx - b.table1Idx;
-      }
-      return a.table2Idx - b.table2Idx;
-    });
-
-    // Check if we should merge the best pair
-    const bestPair = pairs[0];
-
-    if (bestPair.inconsistency >= INCONSISTENCY_THRESHOLD) {
-      console.log(
-        `\n✓ Merge complete: Lowest inconsistency (${bestPair.inconsistency.toFixed(3)}) exceeds threshold`
-      );
-      break;
-    }
-
-    // Merge the tables
-    mergeIterations++;
-    const table1 = extractedTables[bestPair.i];
-    const table2 = extractedTables[bestPair.j];
-
-    console.log(
-      `\n  Iteration ${mergeIterations}: Merging tables ${table1.tableIndex} and ${table2.tableIndex}`
-    );
-    console.log(`    Inconsistency: ${bestPair.inconsistency.toFixed(3)}`);
-    console.log(
-      `    Table ${table1.tableIndex}: ${table1.columns.length} cols, ${table1.productCount} rows`
-    );
-    console.log(
-      `    Table ${table2.tableIndex}: ${table2.columns.length} cols, ${table2.productCount} rows`
-    );
-
-    const merged = mergeTables(table1, table2);
-
-    console.log(`    → Merged: ${merged.columns.length} cols, ${merged.productCount} rows`);
-
-    // Remove the two tables and add the merged one
-    extractedTables = [
-      ...extractedTables.slice(0, bestPair.i),
-      ...extractedTables.slice(bestPair.i + 1, bestPair.j),
-      ...extractedTables.slice(bestPair.j + 1),
-      merged,
-    ];
-  }
+  // PRE-MERGE: Merge tables with identical column sets first
+  const preMergeResult = preMergeIdenticalTables(extractedTables);
+  const preMergedTables = [...preMergeResult.mergedTables]; // Store for output
+  extractedTables = preMergeResult.mergedTables;
 
   // Re-index tables sequentially
   extractedTables = extractedTables.map((table, idx) => ({
     ...table,
-    tableIndex: idx + 1,
+    constableIndex: idx + 1,
   }));
 
   const totalProducts = extractedTables.reduce((sum, t) => sum + t.productCount, 0);
+
+  // DETERMINISTIC CLEANUP: Merge all tables into one and remove empty columns
+  console.log(`\n🧹 Applying deterministic cleanup...`);
+  let allProducts: Record<string, string>[] = [];
+  const allColumns = new Set<string>();
+
+  // Collect all products and columns from all tables
+  extractedTables.forEach((table) => {
+    table.columns.forEach((col) => allColumns.add(col));
+    allProducts = allProducts.concat(table.rows);
+  });
+
+  const columnsBeforeCleanup = Array.from(allColumns);
+  console.log(`  Columns before cleanup: ${columnsBeforeCleanup.length}`);
+  console.log(`  Total products: ${allProducts.length}`);
+
+  // Normalize all products to have all columns
+  const normalizedProducts = allProducts.map((product) => {
+    const normalized: Record<string, string> = {};
+    columnsBeforeCleanup.forEach((col) => {
+      normalized[col] = product[col] || '';
+    });
+    return normalized;
+  });
+
+  // Remove empty columns
+  const cleaned = cleanupEmptyColumns(columnsBeforeCleanup, normalizedProducts);
+
+  console.log(`  Columns after cleanup: ${cleaned.columns.length}`);
+  console.log(
+    `  Empty columns removed (${cleaned.emptyColumnsRemoved.length}):`,
+    cleaned.emptyColumnsRemoved
+  );
 
   return {
     metadata: {
       extractedAt: new Date().toISOString(),
       totalTables: extractedTables.length,
       totalProducts,
-      mergeIterations,
+      cleanupStats: {
+        columnsBeforeCleanup: columnsBeforeCleanup.length,
+        columnsAfterCleanup: cleaned.columns.length,
+        emptyColumnsRemoved: cleaned.emptyColumnsRemoved,
+      },
     },
     tables: extractedTables,
+    preMergedTables,
+    deterministicCleanup: {
+      columns: cleaned.columns,
+      products: cleaned.products,
+      productCount: cleaned.products.length,
+    },
   };
 }
 
@@ -395,7 +501,17 @@ function main() {
   console.log(`\n✅ Extraction complete:`);
   console.log(`   Tables: ${result.metadata.totalTables}`);
   console.log(`   Products: ${result.metadata.totalProducts}`);
-  console.log(`   Merge iterations: ${result.metadata.mergeIterations}`);
+
+  // Print pre-merged tables summary
+  if (result.preMergedTables && result.preMergedTables.length > 1) {
+    console.log(`\n📋 Pre-Merged Tables (after identical column merge):`);
+    result.preMergedTables.forEach((table) => {
+      console.log(
+        `   Table ${table.tableIndex}: ${table.productCount} products, ${table.columns.length} columns`
+      );
+      console.log(`      Columns: ${table.columns.join(', ')}`);
+    });
+  }
 
   // Print summary of tables
   console.log(`\n📊 Table Summary:`);
@@ -405,6 +521,21 @@ function main() {
     );
     console.log(`      Columns: ${table.columns.join(', ')}`);
   });
+
+  // Print deterministic cleanup results
+  if (result.deterministicCleanup) {
+    console.log(`\n🧹 Deterministic Cleanup Results:`);
+    console.log(
+      `   Final columns (${result.deterministicCleanup.columns.length}): ${result.deterministicCleanup.columns.join(', ')}`
+    );
+    console.log(`   Final products: ${result.deterministicCleanup.productCount}`);
+    console.log(
+      `   Empty columns removed: ${result.metadata.cleanupStats?.emptyColumnsRemoved.length || 0}`
+    );
+    if (result.metadata.cleanupStats?.emptyColumnsRemoved.length) {
+      console.log(`      → ${result.metadata.cleanupStats.emptyColumnsRemoved.join(', ')}`);
+    }
+  }
 
   console.log(`\n💾 Writing output to: ${outputPath}`);
   writeFileSync(outputPath, JSON.stringify(result, null, 2));

@@ -1,5 +1,5 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { errorResponse } from '../../../../utils/httpHelpers.js';
+import { errorResponse } from '../httpHelpers.js';
 
 const DEFAULT_CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',

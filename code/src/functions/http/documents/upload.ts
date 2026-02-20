@@ -1,9 +1,14 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { createDocumentService } from '../../../services/index.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
+import {
+  withAuth,
+  withCors,
+  withErrorHandler,
+  withRateLimit,
+} from '../../../utils/middleware/index.js';
 import { incrementDailyUploadCount, incrementIpUploadCount } from '../../../utils/usageTracker.js';
 import { validateVendorName } from '../../../utils/validations.js';
-import { withAuth, withCors, withErrorHandler, withRateLimit } from '../common/middleware/index.js';
 
 /**
  * Upload Handler Core - Business logic for document uploads

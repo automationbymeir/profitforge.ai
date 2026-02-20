@@ -66,80 +66,12 @@ export interface Document {
   ai_confidence_score: number | null;
   ai_completeness_score: number | null;
 
+  /** Grading results (benchmark comparison) */
+  grading_results: string | null;
+  grading_analysis: string | null;
+  graded_at: Date | null;
+
   /** Timestamps */
   created_at: Date;
   updated_at: Date;
-}
-
-/**
- * Upload request payload
- */
-export interface UploadRequest {
-  /** PDF file to process */
-  file: File;
-
-  /** Vendor name */
-  vendorName: string;
-}
-
-/**
- * Upload response
- */
-export interface UploadResult {
-  /** New document result ID */
-  resultId: string;
-
-  /** Original filename */
-  documentName: string;
-
-  /** Vendor name */
-  vendorName: string;
-
-  /** Blob storage path */
-  filePath: string;
-
-  /** Initial processing status */
-  status: string;
-}
-
-/**
- * Delete document result
- */
-export interface DeleteDocumentResult {
-  /** Number of database records deleted */
-  documentsDeleted: number;
-
-  /** Number of blobs deleted from storage */
-  blobsDeleted: number;
-}
-
-/**
- * Confirm mapping result
- */
-export interface ConfirmMappingResult {
-  /** Document ID */
-  documentId: string;
-
-  /** Vendor name */
-  vendor: string;
-
-  /** Number of products exported */
-  productsExported: number;
-}
-
-/**
- * Document query filters
- */
-export interface DocumentFilters {
-  /** Filter by specific result ID */
-  resultId?: string;
-
-  /** Filter by vendor name */
-  vendorName?: string;
-
-  /** Show all versions or just latest */
-  showAllVersions?: boolean;
-
-  /** Limit number of results */
-  limit?: number;
 }

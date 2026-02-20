@@ -1,7 +1,7 @@
 import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
 import { VendorProductRepository } from '../data/repositories/VendorProductRepository.js';
-import { Product } from '../functions/http/common/models/product.js';
 import { QueueService } from '../functions/infra-adapters/queues.js';
+import { Product } from '../utils/models/product.js';
 import { StorageService } from './index.js';
 
 export interface CreateOCRRunResult {
@@ -101,12 +101,12 @@ export class RunService {
    *
    * @param vendorName - Vendor to reprocess
    * @param _aiModel - Optional custom AI model (reserved for future use)
-   * @param _aiPrompt - Optional custom AI prompt (reserved for future use)
+   * @param aiPrompt - Optional custom AI prompt
    */
   async createAIRun(
     vendorName: string,
     _aiModel?: string,
-    _aiPrompt?: string
+    aiPrompt?: string
   ): Promise<CreateAIRunResult> {
     // Get latest run for this vendor to copy OCR metadata
     const latestRun = await this.documentRepo.findLatestByVendor(vendorName);
@@ -144,6 +144,8 @@ export class RunService {
       document_size_bytes: latestRun.document_size_bytes || 0,
       export_status: 'not_exported',
       processing_started_at: new Date(),
+      ai_model_requested: _aiModel || null,
+      ai_prompt_requested: aiPrompt || null,
     });
     // Copy OCR metadata to new run
     await this.documentRepo.updateOcrResults({

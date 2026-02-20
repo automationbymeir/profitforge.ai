@@ -72,23 +72,3 @@ export interface OCRResult {
   /** Processing duration in ms */
   processingDuration: number;
 }
-
-/**
- * OCR data stored in bronze layer
- */
-export interface OCRData {
-  /** Tables extracted */
-  tables: Table[];
-
-  /** Page count */
-  pageCount: number;
-
-  /** Table count */
-  tableCount: number;
-
-  /** Confidence score */
-  confidenceScore: number;
-
-  /** Model used */
-  modelId: string;
-}

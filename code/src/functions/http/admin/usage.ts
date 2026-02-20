@@ -1,11 +1,11 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
+import { withCors, withErrorHandler } from '../../../utils/middleware/index.js';
 import {
   cleanupOldUsageRecords,
   getUsageStats,
   initializeUsageTable,
 } from '../../../utils/usageTracker.js';
-import { withCors, withErrorHandler } from '../common/middleware/index.js';
 
 // Initialize table on cold start
 initializeUsageTable().catch((err) => console.error('Failed to init usage table:', err));

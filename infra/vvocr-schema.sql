@@ -149,6 +149,60 @@ BEGIN
 END
 GO
 
+-- Add grading_results column (stores grading metrics and scores as JSON)
+IF NOT EXISTS (
+    SELECT * FROM sys.columns 
+    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
+    AND name = 'grading_results'
+)
+BEGIN
+    ALTER TABLE vvocr.document_processing_results
+    ADD grading_results NVARCHAR(MAX) NULL;
+    
+    PRINT 'Added column: grading_results';
+END
+ELSE
+BEGIN
+    PRINT 'Column grading_results already exists';
+END
+GO
+
+-- Add grading_analysis column (stores detailed analysis insights as JSON)
+IF NOT EXISTS (
+    SELECT * FROM sys.columns 
+    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
+    AND name = 'grading_analysis'
+)
+BEGIN
+    ALTER TABLE vvocr.document_processing_results
+    ADD grading_analysis NVARCHAR(MAX) NULL;
+    
+    PRINT 'Added column: grading_analysis';
+END
+ELSE
+BEGIN
+    PRINT 'Column grading_analysis already exists';
+END
+GO
+
+-- Add graded_at column (timestamp when grading was performed)
+IF NOT EXISTS (
+    SELECT * FROM sys.columns 
+    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
+    AND name = 'graded_at'
+)
+BEGIN
+    ALTER TABLE vvocr.document_processing_results
+    ADD graded_at DATETIME2 NULL;
+    
+    PRINT 'Added column: graded_at';
+END
+ELSE
+BEGIN
+    PRINT 'Column graded_at already exists';
+END
+GO
+
 
 PRINT 'VVOCR tables created successfully!';
 

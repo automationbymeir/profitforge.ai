@@ -1,8 +1,8 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { createBenchmarkService } from '../../../services/benchmark-service.js';
 import { errorResponse, successResponse } from '../../../utils/httpHelpers.js';
+import { withCors, withErrorHandler } from '../../../utils/middleware/index.js';
 import { validateVendorName } from '../../../utils/validations.js';
-import { withCors, withErrorHandler } from '../common/middleware/index.js';
 
 /**
  * POST /documents/benchmark
