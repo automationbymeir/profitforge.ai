@@ -10,7 +10,7 @@
  * @module data/repositories
  */
 
-import { PrismaClient, document_processing_results } from '@prisma/client';
+import { PrismaClient, Prisma, document_processing_results } from '@prisma/client';
 import type { Document, ExportStatus, ProcessingStatus } from '../../utils/models/document.js';
 
 /**
@@ -145,50 +145,7 @@ export class DocumentRepository {
     return document ? this.mapToDocument(document) : null;
   }
 
-  /**
-   * Get existing run by ID for processing (OCR/AI)
-   * Returns full document record including ai_mapping_result
-   * Throws error if run not found
-   *
-   * @param resultId - Document UUID
-   * @returns Complete document record including ai_mapping_result
-   * @throws Error if run not found
-   */
-  async getRunByID(resultId: string): Promise<Document> {
-    const document = await this.prisma.document_processing_results.findUnique({
-      where: { result_id: resultId },
-    });
 
-    if (!document) {
-      throw new Error(`Run not found: ${resultId}`);
-    }
-
-    return this.mapToDocument(document);
-  }
-
-  /**
-   * Get processing status for a run (for polling/testing)
-   *
-   * @param resultId - Document UUID
-   * @returns Current processing status
-   * @throws Error if run not found
-   */
-  async getStatus(resultId: string): Promise<ProcessingStatus> {
-    try {
-      const document = await this.prisma.document_processing_results.findUnique({
-        where: { result_id: resultId },
-        select: { processing_status: true },
-      });
-
-      if (!document) {
-        throw new Error(`Run not found: ${resultId}`);
-      }
-
-      return document.processing_status as ProcessingStatus;
-    } catch (err) {
-      throw new Error(`Failed to get status for run: ${resultId}, Error: ${err}`);
-    }
-  }
 
   /**
    * Find all documents for a specific vendor
@@ -220,20 +177,7 @@ export class DocumentRepository {
     return document ? this.mapToDocument(document) : null;
   }
 
-  /**
-   * Find all document runs with a specific document path
-   *
-   * @param documentPath - Document path in blob storage
-   * @returns Array of document records (ordered by created_at DESC)
-   */
-  async findByDocumentPath(documentPath: string): Promise<Document[]> {
-    const documents = await this.prisma.document_processing_results.findMany({
-      where: { document_path: documentPath },
-      orderBy: { created_at: 'desc' },
-    });
 
-    return documents.map((doc) => this.mapToDocument(doc));
-  }
 
   /**
    * Query documents with flexible filters
@@ -243,20 +187,12 @@ export class DocumentRepository {
    * @returns Array of matching documents
    */
   async query(filters?: DocumentQueryFilters): Promise<Document[]> {
-    const where: any = {};
-
-    if (filters?.result_id) {
-      where.result_id = filters.result_id;
-    }
-    if (filters?.vendor_name) {
-      where.vendor_name = filters.vendor_name;
-    }
-    if (filters?.processing_status) {
-      where.processing_status = filters.processing_status;
-    }
-    if (filters?.export_status) {
-      where.export_status = filters.export_status;
-    }
+    const where: Prisma.document_processing_resultsWhereInput = {
+      ...(filters?.result_id && { result_id: filters.result_id }),
+      ...(filters?.vendor_name && { vendor_name: filters.vendor_name }),
+      ...(filters?.processing_status && { processing_status: filters.processing_status }),
+      ...(filters?.export_status && { export_status: filters.export_status }),
+    };
 
     const documents = await this.prisma.document_processing_results.findMany({
       where,
@@ -265,7 +201,7 @@ export class DocumentRepository {
       skip: filters?.offset,
     });
 
-    return documents.map((doc) => this.mapToDocument(doc));
+    return documents.map(this.mapToDocument);
   }
 
   /**
@@ -283,26 +219,6 @@ export class DocumentRepository {
         doc_intel_cost_usd: input.doc_intel_cost_usd,
         doc_intel_prompt_used: input.doc_intel_prompt_used,
         processing_status: 'ocr_complete',
-        updated_at: new Date(),
-      },
-    });
-
-    return result.count;
-  }
-
-  /**
-   * Update requested AI parameters (model and prompt)
-   * Stores user's requested AI configuration before processing
-   *
-   * @param input - AI parameters
-   * @returns Number of rows affected (1 if successful)
-   */
-  async updateAiParameters(input: UpdateAiParametersInput): Promise<number> {
-    const result = await this.prisma.document_processing_results.updateMany({
-      where: { result_id: input.result_id },
-      data: {
-        ai_model_requested: input.ai_model_requested,
-        ai_prompt_requested: input.ai_prompt_requested,
         updated_at: new Date(),
       },
     });
@@ -369,22 +285,14 @@ export class DocumentRepository {
     status: ProcessingStatus,
     errorMessage?: string | null
   ): Promise<number> {
-    const updateData: any = {
-      processing_status: status,
-      updated_at: new Date(),
-    };
-
-    if (errorMessage !== undefined) {
-      updateData.error_message = errorMessage;
-    }
-
-    if (status === 'completed') {
-      updateData.processing_completed_at = new Date();
-    }
-
     const result = await this.prisma.document_processing_results.updateMany({
       where: { result_id: resultId },
-      data: updateData,
+      data: {
+        processing_status: status,
+        updated_at: new Date(),
+        ...(errorMessage !== undefined && { error_message: errorMessage }),
+        ...(status === 'completed' && { processing_completed_at: new Date() }),
+      },
     });
 
     return result.count;
@@ -398,18 +306,13 @@ export class DocumentRepository {
    * @returns Number of rows affected (1 if successful)
    */
   async updateExportStatus(resultId: string, exportStatus: ExportStatus): Promise<number> {
-    const updateData: any = {
-      export_status: exportStatus,
-      updated_at: new Date(),
-    };
-
-    if (exportStatus === 'exported') {
-      updateData.exported_at = new Date();
-    }
-
     const result = await this.prisma.document_processing_results.updateMany({
       where: { result_id: resultId },
-      data: updateData,
+      data: {
+        export_status: exportStatus,
+        updated_at: new Date(),
+        ...(exportStatus === 'exported' && { exported_at: new Date() }),
+      },
     });
 
     return result.count;
@@ -427,7 +330,7 @@ export class DocumentRepository {
         where: { result_id: resultId },
       });
       return 1;
-    } catch (error) {
+    } catch {
       // If record not found, return 0
       return 0;
     }
@@ -442,20 +345,6 @@ export class DocumentRepository {
   async deleteByVendor(vendorName: string): Promise<number> {
     const result = await this.prisma.document_processing_results.deleteMany({
       where: { vendor_name: vendorName },
-    });
-
-    return result.count;
-  }
-
-  /**
-   * Delete all documents with a specific document path
-   *
-   * @param documentPath - Document path in blob storage
-   * @returns Number of rows deleted
-   */
-  async deleteByDocumentPath(documentPath: string): Promise<number> {
-    const result = await this.prisma.document_processing_results.deleteMany({
-      where: { document_path: documentPath },
     });
 
     return result.count;
@@ -502,42 +391,36 @@ export class DocumentRepository {
 
   /**
    * Helper method to map Prisma result to Document type
-   * Handles BigInt to number conversion for document_size_bytes
+   * Handles BigInt to number conversion and null coalescing
    */
-  private mapToDocument(doc: document_processing_results): Document {
-    return {
-      result_id: doc.result_id,
-      document_name: doc.document_name,
-      document_path: doc.document_path || '',
-      document_size_bytes: doc.document_size_bytes ? Number(doc.document_size_bytes) : 0,
-      document_type: doc.document_type || '',
-      vendor_name: doc.vendor_name,
-      processing_status: doc.processing_status as ProcessingStatus,
-      export_status: doc.export_status as ExportStatus,
-      exported_at: doc.exported_at,
-      processing_started_at: doc.processing_started_at || new Date(),
-      doc_intel_confidence_score: doc.doc_intel_confidence_score
-        ? Number(doc.doc_intel_confidence_score)
-        : null,
-      doc_intel_cost_usd: doc.doc_intel_cost_usd ? Number(doc.doc_intel_cost_usd) : null,
-      doc_intel_prompt_used: doc.doc_intel_prompt_used,
-      ai_model_requested: doc.ai_model_requested,
-      ai_prompt_requested: doc.ai_prompt_requested,
-      ai_mapping_result: doc.ai_mapping_result,
-      ai_prompt_used: doc.ai_prompt_used,
-      ai_model_used: doc.ai_model_used,
-      ai_model_cost_usd: doc.ai_model_cost_usd ? Number(doc.ai_model_cost_usd) : null,
-      ai_confidence_score: doc.ai_confidence_score ? Number(doc.ai_confidence_score) : null,
-      ai_completeness_score: doc.ai_completeness_score
-        ? Number(doc.ai_completeness_score)
-        : null,
-      grading_results: null,
-      grading_analysis: null,
-      graded_at: null,
-      created_at: doc.created_at,
-      updated_at: doc.updated_at,
-    };
-  }
+  private mapToDocument = (doc: document_processing_results): Document => ({
+    result_id: doc.result_id,
+    document_name: doc.document_name,
+    document_path: doc.document_path ?? '',
+    document_size_bytes: Number(doc.document_size_bytes ?? 0),
+    document_type: doc.document_type ?? '',
+    vendor_name: doc.vendor_name,
+    processing_status: doc.processing_status as ProcessingStatus,
+    export_status: doc.export_status as ExportStatus,
+    exported_at: doc.exported_at,
+    processing_started_at: doc.processing_started_at ?? new Date(),
+    doc_intel_confidence_score: doc.doc_intel_confidence_score ? Number(doc.doc_intel_confidence_score) : null,
+    doc_intel_cost_usd: doc.doc_intel_cost_usd ? Number(doc.doc_intel_cost_usd) : null,
+    doc_intel_prompt_used: doc.doc_intel_prompt_used,
+    ai_model_requested: doc.ai_model_requested,
+    ai_prompt_requested: doc.ai_prompt_requested,
+    ai_mapping_result: doc.ai_mapping_result,
+    ai_prompt_used: doc.ai_prompt_used,
+    ai_model_used: doc.ai_model_used,
+    ai_model_cost_usd: doc.ai_model_cost_usd ? Number(doc.ai_model_cost_usd) : null,
+    ai_confidence_score: doc.ai_confidence_score ? Number(doc.ai_confidence_score) : null,
+    ai_completeness_score: doc.ai_completeness_score ? Number(doc.ai_completeness_score) : null,
+    grading_results: null,
+    grading_analysis: null,
+    graded_at: null,
+    created_at: doc.created_at,
+    updated_at: doc.updated_at,
+  });
 }
 
 /**

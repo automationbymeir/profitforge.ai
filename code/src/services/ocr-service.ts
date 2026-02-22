@@ -46,7 +46,10 @@ export class OCRService {
 
     try {
       // Get existing run details
-      const run = await this.documentRepo.getRunByID(documentId);
+      const run = await this.documentRepo.findById(documentId);
+      if (!run) {
+        throw new Error(`Run not found: ${documentId}`);
+      }
       const ocrCachePath = `${run.vendor_name}/ocr-azure-doc-intelligence.json`;
 
       let ocrMetadata: {
