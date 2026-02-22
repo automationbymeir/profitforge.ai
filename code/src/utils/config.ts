@@ -149,106 +149,105 @@ export function getSqlConnectionString(): string {
 export function getPrismaConnectionString(): string {
   const connectionString = getSqlConnectionString();
   
-  // If already in correct format, return as-is
+  // Fast path: already in correct format
   if (connectionString.startsWith('sqlserver://')) {
     return connectionString;
   }
   
-  // Parse connection string into key-value pairs
-  const params: Record<string, string> = {};
+  // Key mapping for normalization (lookup table vs multiple conditionals)
+  const KEY_MAP: Record<string, string> = {
+    server: 'host',
+    datasource: 'host',
+    host: 'host',
+    database: 'database',
+    initialcatalog: 'database',
+    userid: 'user',
+    user: 'user',
+    uid: 'user',
+    password: 'password',
+    pwd: 'password',
+    encrypt: 'encrypt',
+    trustservercertificate: 'trustServerCertificate',
+  };
+  
+  const params: Record<string, string> = {
+    encrypt: 'true',
+    trustServerCertificate: 'false',
+  };
   let host = '';
   let port = '1433';
   
-  // Split by semicolon and parse
-  const parts = connectionString.split(';').filter(p => p.trim());
-  
-  for (const part of parts) {
-    const trimmed = part.trim();
+  // Single pass parsing
+  const parts = connectionString.split(';');
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i].trim();
+    if (!part) continue;
     
-    // Check if this is a key=value pair
-    if (trimmed.includes('=')) {
-      const [key, ...valueParts] = trimmed.split('=');
-      const value = valueParts.join('='); // Handle passwords with = in them
-      const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, '');
-      
-      // Normalize keys to Prisma format
-      if (normalizedKey === 'server' || normalizedKey === 'datasource' || normalizedKey === 'host') {
-        // Extract host and port from "server.database.windows.net,1433" or "tcp:server.database.windows.net,1433"
-        let serverValue = value.trim();
-        
-        // Strip tcp: prefix if present (common in Azure SQL connection strings)
-        if (serverValue.toLowerCase().startsWith('tcp:')) {
-          serverValue = serverValue.substring(4);
-        }
-        
-        // Now parse host and port
-        const serverParts = serverValue.split(/[,:]/);
-        host = serverParts[0].trim();
-        if (serverParts[1]) {
-          port = serverParts[1].trim();
-        }
-      } else if (normalizedKey === 'database' || normalizedKey === 'initialcatalog') {
-        params.database = value.trim();
-      } else if (normalizedKey === 'userid' || normalizedKey === 'user' || normalizedKey === 'uid') {
-        params.user = value.trim();
-      } else if (normalizedKey === 'password' || normalizedKey === 'pwd') {
-        params.password = value.trim();
-      } else if (normalizedKey === 'encrypt') {
-        params.encrypt = value.trim();
-      } else if (normalizedKey === 'trustservercertificate') {
-        params.trustServerCertificate = value.trim();
-      } else {
-        // Keep other params as-is
-        params[normalizedKey] = value.trim();
+    const eqIndex = part.indexOf('=');
+    if (eqIndex === -1) {
+      // No '=' means it might be "host:port" format
+      if (!host && part.includes(':')) {
+        const colonIndex = part.indexOf(':');
+        host = part.slice(0, colonIndex).trim();
+        port = part.slice(colonIndex + 1).trim();
+      } else if (!host) {
+        host = part;
       }
-    } else if (!host && trimmed.includes(':')) {
-      // This might be "host:port" format (first part without =)
-      const [h, p] = trimmed.split(':');
-      host = h.trim();
-      port = p.trim();
-    } else if (!host) {
-      // Assume it's just a hostname
-      host = trimmed;
+      continue;
+    }
+    
+    // Parse key=value (handle passwords with = in them)
+    const key = part.slice(0, eqIndex).trim().toLowerCase().replace(/\s+/g, '');
+    const value = part.slice(eqIndex + 1).trim();
+    
+    const normalizedKey = KEY_MAP[key];
+    
+    if (normalizedKey === 'host') {
+      // Strip tcp: prefix and parse host:port or host,port
+      let serverValue = value.startsWith('tcp:') ? value.slice(4) : value;
+      const delimIndex = Math.max(serverValue.indexOf(':'), serverValue.indexOf(','));
+      
+      if (delimIndex !== -1) {
+        host = serverValue.slice(0, delimIndex).trim();
+        port = serverValue.slice(delimIndex + 1).trim();
+      } else {
+        host = serverValue;
+      }
+    } else if (normalizedKey) {
+      params[normalizedKey] = value;
+    } else {
+      // Pass through unknown parameters
+      params[key] = value;
     }
   }
   
-  // Ensure we have minimum required fields
-  if (!host) {
-    throw new Error('Failed to parse SQL connection string: missing host/server');
-  }
-  if (!params.database) {
-    throw new Error('Failed to parse SQL connection string: missing database');
-  }
-  if (!params.user) {
-    throw new Error('Failed to parse SQL connection string: missing user');
-  }
-  if (!params.password) {
-    throw new Error('Failed to parse SQL connection string: missing password');
-  }
+  // Validate required fields (fail fast)
+  if (!host) throw new Error('Failed to parse SQL connection string: missing host/server');
+  if (!params.database) throw new Error('Failed to parse SQL connection string: missing database');
+  if (!params.user) throw new Error('Failed to parse SQL connection string: missing user');
+  if (!params.password) throw new Error('Failed to parse SQL connection string: missing password');
   
-  // Build Prisma connection string
-  const prismaParams = [
-    `database=${params.database}`,
-    `user=${params.user}`,
-    `password=${params.password}`,
-    `encrypt=${params.encrypt || 'true'}`,
-    `trustServerCertificate=${params.trustServerCertificate || 'false'}`,
-  ];
+  // Build connection string (avoid array allocation for common case)
+  const result = `sqlserver://${host}:${port};database=${params.database};user=${params.user};password=${params.password};encrypt=${params.encrypt};trustServerCertificate=${params.trustServerCertificate}`;
   
-  // Add any additional parameters
-  for (const [key, value] of Object.entries(params)) {
-    if (!['database', 'user', 'password', 'encrypt', 'trustServerCertificate'].includes(key)) {
-      prismaParams.push(`${key}=${value}`);
+  // Append any extra parameters
+  const extraParams: string[] = [];
+  for (const key in params) {
+    if (key !== 'database' && key !== 'user' && key !== 'password' && 
+        key !== 'encrypt' && key !== 'trustServerCertificate') {
+      extraParams.push(`${key}=${params[key]}`);
     }
   }
   
-  const result = `sqlserver://${host}:${port};${prismaParams.join(';')}`;
+  const finalResult = extraParams.length > 0 ? `${result};${extraParams.join(';')}` : result;
   
-  // Debug log (mask password)
-  const debugResult = result.replace(/password=[^;]+/, 'password=***');
-  console.log('[Prisma] Converted connection string:', debugResult);
+  // Debug log (mask password) - only log in development
+  if (process.env.NODE_ENV !== 'production') {
+    const debugResult = finalResult.replace(/password=[^;]+/, 'password=***');
+    console.log('[Prisma] Converted connection string:', debugResult);
+  }
   
-  return result;
+  return finalResult;
 }
 
 /**
