@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/functions/**/*.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npx prisma generate && tsc",
     "watch": "tsc --watch",
     "prestart": "npm run build",
     "start": "func start",
@@ -26,6 +26,12 @@
     "db:connections": "tsx test/tools/dbMonitor.ts connections",
     "db:slow-queries": "tsx test/tools/dbMonitor.ts slow-queries",
     "db:all": "npm run db:logs && echo '\n---\n' && npm run db:connections && echo '\n---\n' && npm run db:slow-queries",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "prisma:format": "prisma format",
+    "prisma:push": "prisma db push",
+    "prisma:pull": "prisma db pull",
+    "prisma:migrate": "prisma migrate dev",
     "extract:ocr": "tsx test/tools/extract-ocr-products.ts test/outputs/raw-ocr-data.json test/outputs/ocr-extracted-products.json",
     "extract:excel": "tsx test/tools/extract-excel-products.ts test/e2e/common/docs/FRIELING/FRIELING_JUL25_PRICE_LIST.xlsx test/outputs/excel-extracted-products.json"
   },
@@ -35,6 +41,7 @@
     "@azure/functions": "^4.0.0",
     "@azure/storage-blob": "^12.19.0",
     "@azure/storage-queue": "^12.29.0",
+    "@prisma/client": "^5.22.0",
     "mssql": "^10.0.1",
     "openai": "^6.16.0",
     "xlsx": "^0.18.5"
@@ -45,6 +52,7 @@
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^1.2.0",
     "dotenv": "^17.2.3",
+    "prisma": "^5.22.0",
     "supertest": "^6.3.4",
     "tsx": "^4.21.0",
     "typescript": "^5.0.0",

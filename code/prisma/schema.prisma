@@ -1,0 +1,104 @@
+// Prisma Schema for ProfitForge.ai
+// Database: Azure SQL Server (Serverless)
+// Tables: document_processing_results, vendor_products
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("SQL_CONNECTION_STRING")
+}
+
+model document_processing_results {
+  result_id                   String    @id @default(dbgenerated("NEWID()")) @db.UniqueIdentifier
+  
+  // Document metadata
+  document_name               String    @db.NVarChar(500)
+  document_path               String?   @db.NVarChar(1000)
+  document_size_bytes         BigInt?
+  document_type               String?   @db.NVarChar(50)
+  uploaded_at                 DateTime  @default(now()) @db.DateTime2
+  
+  // Processing status
+  processing_status           String    @default("pending") @db.NVarChar(50)
+  processing_started_at       DateTime? @db.DateTime2
+  processing_completed_at     DateTime? @db.DateTime2
+  
+  // Document Intelligence (Azure Form Recognizer) results
+  doc_intel_confidence_score  Decimal?  @db.Decimal(5,4)
+  doc_intel_prompt_used       String?   @db.NVarChar(Max)
+  doc_intel_cost_usd          Decimal?  @db.Decimal(10,6)
+  
+  // AI Model results
+  ai_model_requested          String?   @db.NVarChar(100)
+  ai_prompt_requested         String?   @db.NVarChar(Max)
+  ai_model_used               String?   @db.NVarChar(100)
+  ai_mapping_result           String?   @db.NVarChar(Max)
+  ai_prompt_used              String?   @db.NVarChar(Max)
+  ai_confidence_score         Decimal?  @db.Decimal(5,2)
+  ai_completeness_score       Decimal?  @db.Decimal(5,2)
+  ai_prompt_tokens            Int?
+  ai_completion_tokens        Int?
+  ai_model_cost_usd           Decimal?  @db.Decimal(10,6)
+  
+  // Validation
+  requires_manual_review      Boolean   @default(false) @db.Bit
+  manual_review_reason        String?   @db.NVarChar(500)
+  reviewed_by                 String?   @db.NVarChar(100)
+  reviewed_at                 DateTime? @db.DateTime2
+  
+  // Vendor information
+  vendor_name                 String    @db.NVarChar(200)
+  
+  // Export status
+  export_status               String    @default("not_exported") @db.NVarChar(50)
+  exported_at                 DateTime? @db.DateTime2
+  
+  // Metadata
+  error_message               String?   @db.NVarChar(Max)
+  created_at                  DateTime  @default(now()) @db.DateTime2
+  updated_at                  DateTime  @default(now()) @db.DateTime2
+  
+  // Relations
+  vendor_products             vendor_products[]
+  
+  @@index([processing_status], map: "IX_document_processing_status")
+  @@index([uploaded_at], map: "IX_document_uploaded_at")
+  @@index([requires_manual_review], map: "IX_document_requires_review")
+  @@index([vendor_name], map: "IX_document_vendor_name")
+  @@index([document_path], map: "IX_document_path")
+  @@map("vvocr.document_processing_results")
+}
+
+model vendor_products {
+  id                      String    @id @default(dbgenerated("NEWID()")) @db.UniqueIdentifier
+  vendor_id               String    @db.NVarChar(100)
+  vendor_name             String    @db.NVarChar(200)
+  
+  // Product information
+  product_name            String?   @db.NVarChar(500)
+  sku                     String?   @db.NVarChar(200)
+  price                   Decimal?  @db.Decimal(18,4)
+  unit                    String?   @db.NVarChar(100)
+  description             String?   @db.NVarChar(Max)
+  
+  // Source tracking
+  source_document_id      String    @db.UniqueIdentifier
+  source_document_name    String?   @db.NVarChar(500)
+  
+  // Metadata
+  created_at              DateTime  @default(now()) @db.DateTime2
+  updated_at              DateTime  @default(now()) @db.DateTime2
+  
+  // Relations
+  document                document_processing_results @relation(fields: [source_document_id], references: [result_id], onDelete: NoAction, onUpdate: NoAction)
+  
+  @@index([vendor_id], map: "IX_vendor_products_vendor_id")
+  @@index([sku], map: "IX_vendor_products_sku")
+  @@index([source_document_id], map: "IX_vendor_products_source_doc")
+  @@map("vvocr.vendor_products")
+}
+

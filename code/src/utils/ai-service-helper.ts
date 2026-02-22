@@ -303,7 +303,6 @@ export function calculateJsonResult(
     products,
     headerNames
   );
-  console.log('Quality Metrics:', { completenessScore, confidenceScore, metrics });
 
   // Calculate costs
   const promptTokens = normalizationResponse.usage?.prompt_tokens || 0;
