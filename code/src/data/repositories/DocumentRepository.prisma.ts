@@ -117,11 +117,11 @@ export class DocumentRepository {
         document_size_bytes: BigInt(input.document_size_bytes),
         document_type: input.document_type,
         vendor_name: input.vendor_name,
-        processing_status: input.processing_status || 'pending',
-        export_status: input.export_status || 'not_exported',
+        processing_status: input.processing_status ?? 'pending',
+        export_status: input.export_status ?? 'not_exported',
         processing_started_at: input.processing_started_at,
-        ai_model_requested: input.ai_model_requested || null,
-        ai_prompt_requested: input.ai_prompt_requested || null,
+        ai_model_requested: input.ai_model_requested ?? null,
+        ai_prompt_requested: input.ai_prompt_requested ?? null,
       },
       select: {
         result_id: true,
@@ -159,7 +159,7 @@ export class DocumentRepository {
       orderBy: { created_at: 'desc' },
     });
 
-    return documents.map((doc) => this.mapToDocument(doc));
+    return documents.map(this.mapToDocument);
   }
 
   /**
