@@ -45,11 +45,13 @@
  * ============================================================================
  */
 
+// Load .env file if it exists
+import 'dotenv/config';
+
 import { QueueServiceClient } from '@azure/storage-queue';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const QUEUE_NAME = 'ai-mapping-queue';
 const COMMAND = process.argv[2] || 'view';
 
 interface MessageInfo {
@@ -106,6 +108,7 @@ function displayMessages(messages: MessageInfo[], isPoison: boolean = false) {
       const decoded = Buffer.from(msg.messageText, 'base64').toString('utf-8');
       const content = JSON.parse(decoded);
       console.log(`   Document ID: ${content.documentId}`);
+      if (content.blobPath) console.log(`   Blob Path: ${content.blobPath}`);
       if (content.testMessage) console.log(`   [TEST MESSAGE]`);
     } catch {
       console.log(`   Content: ${msg.messageText.substring(0, 100)}...`);
@@ -118,38 +121,44 @@ function displayMessages(messages: MessageInfo[], isPoison: boolean = false) {
  * View messages in queue and poison queue
  */
 async function viewQueue() {
-  console.log(`\n📋 Viewing messages in queue: ${QUEUE_NAME}\n`);
+  console.log(`\n📋 Viewing messages in all queues\n`);
 
   const connectionString = getConnectionString();
   const queueServiceClient = QueueServiceClient.fromConnectionString(connectionString);
-  const queueClient = queueServiceClient.getQueueClient(QUEUE_NAME);
-  const poisonQueueClient = queueServiceClient.getQueueClient(`${QUEUE_NAME}-poison`);
+  const queueNames = ['ocr-queue', 'ai-mapping-queue'];
 
-  // Main queue
-  const properties = await queueClient.getProperties();
+  for (const queueName of queueNames) {
+    const queueClient = queueServiceClient.getQueueClient(queueName);
+    const poisonQueueClient = queueServiceClient.getQueueClient(`${queueName}-poison`);
 
-  console.log(`📊 MAIN QUEUE (${QUEUE_NAME})`);
-  console.log(`   Total messages: ${properties.approximateMessagesCount ?? 0}\n`);
+    // Main queue
+    const properties = await queueClient.getProperties();
 
-  const peekedMessages = await queueClient.peekMessages({ numberOfMessages: 10 });
-  displayMessages(peekedMessages.peekedMessageItems, false);
+    console.log(`📊 QUEUE: ${queueName}`);
+    console.log(`   Total messages: ${properties.approximateMessagesCount ?? 0}\n`);
 
-  // Poison queue
-  try {
-    const poisonProps = await poisonQueueClient.getProperties();
-    console.log(`☠️  POISON QUEUE (${QUEUE_NAME}-poison)`);
-    console.log(`   Total messages: ${poisonProps.approximateMessagesCount ?? 0}`);
-    console.log(`   (Messages that failed 5+ times)\n`);
+    const peekedMessages = await queueClient.peekMessages({ numberOfMessages: 10 });
+    displayMessages(peekedMessages.peekedMessageItems, false);
 
-    const poisonMessages = await poisonQueueClient.peekMessages({ numberOfMessages: 10 });
-    displayMessages(poisonMessages.peekedMessageItems, true);
+    // Poison queue
+    try {
+      const poisonProps = await poisonQueueClient.getProperties();
+      if ((poisonProps.approximateMessagesCount ?? 0) > 0) {
+        console.log(`☠️  POISON QUEUE (${queueName}-poison)`);
+        console.log(`   Total messages: ${poisonProps.approximateMessagesCount ?? 0}`);
+        console.log(`   (Messages that failed 5+ times)\n`);
 
-    if ((poisonProps.approximateMessagesCount ?? 0) > 0) {
-      console.log("   💡 Tip: Run 'npm run queue:purge' to clear all messages\n");
+        const poisonMessages = await poisonQueueClient.peekMessages({ numberOfMessages: 10 });
+        displayMessages(poisonMessages.peekedMessageItems, true);
+
+        console.log("   💡 Tip: Run 'npx tsx test/tools/queue.ts purge' to clear all messages\n");
+      }
+    } catch (_e) {
+      // Poison queue doesn't exist, skip
     }
-  } catch (_e) {
-    console.log(`☠️  POISON QUEUE (${QUEUE_NAME}-poison)`);
-    console.log(`   Queue doesn't exist yet\n`);
+
+    console.log('─'.repeat(80));
+    console.log();
   }
 }
 
@@ -157,72 +166,83 @@ async function viewQueue() {
  * Purge all messages from queue and poison queue
  */
 export async function purgeQueue() {
-  console.log(`\n🗑️  Purging queue: ${QUEUE_NAME}\n`);
+  console.log(`\n🗑️  Purging queues...\n`);
 
   const connectionString = getConnectionString();
   const queueServiceClient = QueueServiceClient.fromConnectionString(connectionString);
 
-  // Clear main queue
-  const queueClient = queueServiceClient.getQueueClient(QUEUE_NAME);
-  const propsBeforeMain = await queueClient.getProperties();
-  console.log(
-    `📋 Main queue (${QUEUE_NAME}): ${propsBeforeMain.approximateMessagesCount ?? 0} messages`
-  );
+  // Purge both ocr-queue and ai-mapping-queue
+  const queueNames = ['ocr-queue', 'ai-mapping-queue'];
 
-  if ((propsBeforeMain.approximateMessagesCount ?? 0) > 0) {
-    await queueClient.clearMessages();
-    console.log(`   ✅ Cleared`);
-  } else {
-    console.log(`   Already empty`);
-  }
+  for (const queueName of queueNames) {
+    const queueClient = queueServiceClient.getQueueClient(queueName);
+    const propsBeforeMain = await queueClient.getProperties();
+    console.log(`📋 ${queueName}: ${propsBeforeMain.approximateMessagesCount ?? 0} messages`);
 
-  // Clear poison queue
-  const poisonQueueClient = queueServiceClient.getQueueClient(`${QUEUE_NAME}-poison`);
-  try {
-    const propsBeforePoison = await poisonQueueClient.getProperties();
-    console.log(
-      `\n☠️  Poison queue (${QUEUE_NAME}-poison): ${propsBeforePoison.approximateMessagesCount ?? 0} messages`
-    );
-
-    if ((propsBeforePoison.approximateMessagesCount ?? 0) > 0) {
-      await poisonQueueClient.clearMessages();
+    if ((propsBeforeMain.approximateMessagesCount ?? 0) > 0) {
+      await queueClient.clearMessages();
       console.log(`   ✅ Cleared`);
     } else {
       console.log(`   Already empty`);
     }
-  } catch (_e) {
-    console.log(`   Poison queue doesn't exist (this is fine)`);
+
+    // Clear poison queue
+    const poisonQueueClient = queueServiceClient.getQueueClient(`${queueName}-poison`);
+    try {
+      const propsBeforePoison = await poisonQueueClient.getProperties();
+      if ((propsBeforePoison.approximateMessagesCount ?? 0) > 0) {
+        console.log(
+          `☠️  ${queueName}-poison: ${propsBeforePoison.approximateMessagesCount ?? 0} messages`
+        );
+        await poisonQueueClient.clearMessages();
+        console.log(`   ✅ Cleared`);
+      }
+    } catch (_e) {
+      // Poison queue doesn't exist, skip
+    }
+    console.log();
   }
 
-  console.log(`\n✅ Purge complete\n`);
+  console.log(`✅ Purge complete\n`);
 }
 
 /**
  * Send a test message to the queue
  */
 async function sendTestMessage() {
-  console.log(`📤 Sending test message to ${QUEUE_NAME}...\n`);
+  console.log(`📤 Sending test messages...\n`);
 
   const connectionString = getConnectionString();
   const queueServiceClient = QueueServiceClient.fromConnectionString(connectionString);
-  const queueClient = queueServiceClient.getQueueClient(QUEUE_NAME);
 
-  // Create queue if it doesn't exist
-  await queueClient.createIfNotExists();
+  // Send to OCR queue
+  const ocrQueueClient = queueServiceClient.getQueueClient('ocr-queue');
+  await ocrQueueClient.createIfNotExists();
 
-  // Create test message
-  const testMessage = {
-    documentId: `TEST-${Date.now()}`,
+  const ocrMessage = {
+    documentId: `TEST-OCR-${Date.now()}`,
+    blobPath: 'test-vendor/test-document.pdf',
     timestamp: new Date().toISOString(),
     testMessage: true,
   };
+  await ocrQueueClient.sendMessage(Buffer.from(JSON.stringify(ocrMessage)).toString('base64'));
+  console.log('✅ Test message sent to ocr-queue');
+  console.log(`   Document ID: ${ocrMessage.documentId}\n`);
 
-  // Send message (base64 encoded)
-  await queueClient.sendMessage(Buffer.from(JSON.stringify(testMessage)).toString('base64'));
+  // Send to AI mapping queue
+  const aiQueueClient = queueServiceClient.getQueueClient('ai-mapping-queue');
+  await aiQueueClient.createIfNotExists();
 
-  console.log('✅ Test message sent successfully!');
-  console.log(`   Document ID: ${testMessage.documentId}`);
-  console.log('\n💡 Run: npm run queue:view to see the message');
+  const aiMessage = {
+    documentId: `TEST-AI-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    testMessage: true,
+  };
+  await aiQueueClient.sendMessage(Buffer.from(JSON.stringify(aiMessage)).toString('base64'));
+  console.log('✅ Test message sent to ai-mapping-queue');
+  console.log(`   Document ID: ${aiMessage.documentId}`);
+
+  console.log('\n💡 Run: npx tsx test/tools/queue.ts view to see the messages');
   console.log('   Note: May take 2-5 seconds for message count to update (eventual consistency)\n');
 }
 

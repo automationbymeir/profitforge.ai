@@ -1,0 +1,351 @@
+<!-- This file contains the quality metrics modal code to be added to results-viewer.html -->
+
+<!-- Add this JavaScript function after the closeGradingModal() function -->
+<script>
+  function closeQualityModal() {
+    document.getElementById('qualityModal').classList.remove('active');
+  }
+
+  // View quality metrics for extraction
+  async function viewQualityMetrics(runId) {
+    const baseUrl = getFunctionAppUrl();
+
+    try {
+      const response = await fetch(
+        `${baseUrl}/api/documents?resultId=${encodeURIComponent(runId)}`
+      );
+
+      if (!response.ok) {
+        alert('Failed to load run data');
+        return;
+      }
+
+      const results = await response.json();
+      if (!results || results.length === 0) {
+        alert('Run not found');
+        return;
+      }
+
+      const runData = results[0];
+
+      if (!runData.ai_mapping_result) {
+        alert('No extraction results available for this run');
+        return;
+      }
+
+      const mappingData = JSON.parse(runData.ai_mapping_result);
+      const qualityMetrics = mappingData.qualityMetrics;
+
+      if (!qualityMetrics) {
+        alert('Quality metrics not available');
+        return;
+      }
+
+      // Populate modal with quality metrics
+      const modalBody = document.getElementById('qualityModalBody');
+      const productCount =
+        mappingData.productCount ||
+        qualityMetrics.totalFields / Object.keys(qualityMetrics.fieldPopulationRates).length;
+
+      modalBody.innerHTML = `
+        <div class="modal-meta">
+          <div class="modal-meta-grid">
+            <div>
+              <div class="info-label">Run ID</div>
+              <div class="info-value">${runId.substring(0, 13)}</div>
+            </div>
+            <div>
+              <div class="info-label">Vendor</div>
+              <div class="info-value">${runData.vendor_name}</div>
+            </div>
+            <div>
+              <div class="info-label">Document</div>
+              <div class="info-value">${runData.document_name}</div>
+            </div>
+            <div>
+              <div class="info-label">Extracted At</div>
+              <div class="info-value">${new Date(mappingData.timestamp).toLocaleString()}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overall Quality Scores -->
+        <div class="modal-section">
+          <h3><span>📈</span> Overall Quality Scores</h3>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">Completeness Score</div>
+              <div class="metric-value ${getMetricClass(qualityMetrics.completenessScore)}">${qualityMetrics.completenessScore.toFixed(1)}%</div>
+              <div class="metric-explanation">What % of all data fields are populated</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Confidence Score</div>
+              <div class="metric-value ${getMetricClass(qualityMetrics.confidenceScore)}">${qualityMetrics.confidenceScore.toFixed(1)}%</div>
+              <div class="metric-explanation">What % of products are fully complete</div>
+            </div>
+          </div>
+          
+          <div class="explanation-box">
+            <strong>Understanding the Scores:</strong><br>
+            • <strong>Completeness Score</ (${qualityMetrics.completenessScore.toFixed(1)}%)</strong>: Overall data fill rate. ${qualityMetrics.completenessScore >= 85 ? '✅ Excellent!' : qualityMetrics.completenessScore >= 60 ? '⚠️ Acceptable but has gaps' : '❌ Poor - many missing values'}<br>
+            • <strong>Confidence Score (${qualityMetrics.confidenceScore.toFixed(1)}%)</strong>: Products with ALL fields filled. ${qualityMetrics.confidenceScore >= 80 ? '✅ Very consistent!' : qualityMetrics.confidenceScore >= 40 ? '⚠️ Many products missing fields' : '❌ Most products incomplete'}<br>
+            ${qualityMetrics.confidenceScore < 20 && qualityMetrics.completenessScore > 60 ? '<br><strong>⚠️ Low confidence + moderate completeness = sparse but widespread data</strong>. Most products are missing at least one field.' : ''}
+          </div>
+        </div>
+
+        <!-- Basic Statistics -->
+        <div class="modal-section">
+          <h3><span>📊</span> Extraction Statistics</h3>
+          <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px;">
+            <div class="stats-row">
+              <div class="stats-label">Total Products Extracted</div>
+              <div class="stats-value">${Math.round(productCount)}</div>
+            </div>
+            <div class="stats-row">
+              <div class="stats-label">Total Fields per Product</div>
+              <div class="stats-value">${Object.keys(qualityMetrics.fieldPopulationRates).length}</div>
+            </div>
+            <div class="stats-row">
+              <div class="stats-label">Populated Fields</div>
+              <div class="stats-value" style="color: #28a745;">${qualityMetrics.populatedFields} / ${qualityMetrics.totalFields}</div>
+            </div>
+            <div class="stats-row">
+              <div class="stats-label">Empty Fields</div>
+              <div class="stats-value" style="color: #dc3545;">${qualityMetrics.emptyFields}</div>
+            </div>
+            <div class="stats-row">
+              <div class="stats-label">Products with All Fields</div>
+              <div class="stats-value" style="color: ${qualityMetrics.productsWithAllFields > 0 ? '#28a745' : '#dc3545'};">${qualityMetrics.productsWithAllFields}</div>
+            </div>
+            <div class="stats-row">
+              <div class="stats-label">Average Fields per Product</div>
+              <div class="stats-value">${qualityMetrics.averageFieldsPerProduct.toFixed(1)}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Completeness Distribution -->
+        <div class="modal-section">
+          <h3><span>📊</span> Product Completeness Distribution</h3>
+          <div class="distribution-chart">
+            <div class="distribution-bar-container">
+              <div class="distribution-bar" style="--width: ${(qualityMetrics.completenessDistribution['100%'] / productCount) * 100}%; --color: #28a745;">
+                <span class="distribution-label">100% Complete</span>
+                <span class="distribution-value">${qualityMetrics.completenessDistribution['100%']} products</span>
+              </div>
+              <div class="distribution-bar" style="--width: ${(qualityMetrics.completenessDistribution['90-99%'] / productCount) * 100}%; --color: #20c997;">
+                <span class="distribution-label">90-99% Complete</span>
+                <span class="distribution-value">${qualityMetrics.completenessDistribution['90-99%']} products</span>
+              </div>
+              <div class="distribution-bar" style="--width: ${(qualityMetrics.completenessDistribution['75-89%'] / productCount) * 100}%; --color: #17a2b8;">
+                <span class="distribution-label">75-89% Complete</span>
+                <span class="distribution-value">${qualityMetrics.completenessDistribution['75-89%']} products</span>
+              </div>
+              <div class="distribution-bar" style="--width: ${(qualityMetrics.completenessDistribution['50-74%'] / productCount) * 100}%; --color: #ffc107;">
+                <span class="distribution-label">50-74% Complete</span>
+                <span class="distribution-value">${qualityMetrics.completenessDistribution['50-74%']} products</span>
+              </div>
+              <div class="distribution-bar" style="--width: ${(qualityMetrics.completenessDistribution['<50%'] / productCount) * 100}%; --color: #dc3545;">
+                <span class="distribution-label">&lt;50% Complete</span>
+                <span class="distribution-value">${qualityMetrics.completenessDistribution['<50%']} products</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="explanation-box">
+            <strong>What this shows:</strong><br>
+            Distribution of how complete each product is. Ideally, most products should be in the 100% or 90-99% categories.
+            ${qualityMetrics.completenessDistribution['<50%'] > 0 ? `<br><strong>⚠️ ${qualityMetrics.completenessDistribution['<50%']} products are less than 50% complete</strong> - these may be extraction errors.` : ''}
+          </div>
+        </div>
+
+        <!-- Field-Level Population Rates -->
+        <div class="modal-section">
+          <h3><span>🎯</span> Field-Level Population Rates</h3>
+          <div class="field-accuracy">
+            ${Object.entries(qualityMetrics.fieldPopulationRates)
+              .sort((a, b) => b[1] - a[1])
+              .map(
+                ([field, rate]) => `
+              <div class="field-row">
+                <div class="field-name">${field}${qualityMetrics.dataQualityIssues.fieldsWithHighMissingRate.includes(field) ? ' ⚠️' : ''}${qualityMetrics.dataQualityIssues.fieldsWithAllSameValue.includes(field) ? ' 🔁' : ''}</div>
+                <div class="field-score ${getMetricClass(rate)}">${rate.toFixed(1)}%</div>
+                <div class="field-bar">
+                  <div class="field-bar-fill" style="width: ${rate}%; background: ${getFieldBarColor(rate)};"></div>
+                </div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+          
+          <div class="explanation-box">
+            <strong>Field Population Explained:</strong><br>
+            For each field/column, this shows what % of products have a value for that field.<br>
+            • ⚠️ = High missing rate (>50% of products missing this field)<br>
+            • 🔁 = All values are identical (possible extraction error)
+          </div>
+        </div>
+
+        <!-- Data Quality Issues -->
+        ${
+          qualityMetrics.dataQualityIssues.fieldsWithHighMissingRate.length > 0 ||
+          qualityMetrics.dataQualityIssues.fieldsWithAllSameValue.length > 0 ||
+          qualityMetrics.dataQualityIssues.emptyOrNearlyEmptyProducts > 0
+            ? `
+        <div class="modal-section">
+          <h3><span>⚠️</span> Data Quality Issues Detected</h3>
+          <div class="quality-issues">
+            ${
+              qualityMetrics.dataQualityIssues.emptyOrNearlyEmptyProducts > 0
+                ? `
+              <div class="quality-issue-item" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 15px; border-radius: 4px;">
+                <strong>🚨 Empty or Nearly Empty Products: ${qualityMetrics.dataQualityIssues.emptyOrNearlyEmptyProducts}</strong><br>
+                These products have less than 50% of fields populated and may be extraction errors or blank rows.
+              </div>
+            `
+                : ''
+            }
+            
+            ${
+              qualityMetrics.dataQualityIssues.fieldsWithHighMissingRate.length > 0
+                ? `
+              <div class="quality-issue-item" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 15px; border-radius: 4px;">
+                <strong>⚠️ Fields with High Missing Rate (>50%):</strong><br>
+                <div style="margin-top: 10px;">
+                  ${qualityMetrics.dataQualityIssues.fieldsWithHighMissingRate.map((f) => `<span style="display: inline-block; background: #ffc107; color: white; padding: 4px 8px; margin: 4px; border-radius: 4px; font-size: 0.9em;">${f}</span>`).join(' ')}
+                </div>
+                <small style="color: #856404;">These fields are missing from more than half of products. Check if the AI correctly identified these columns.</small>
+              </div>
+            `
+                : ''
+            }
+            
+            ${
+              qualityMetrics.dataQualityIssues.fieldsWithAllSameValue.length > 0
+                ? `
+              <div class="quality-issue-item" style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin-bottom: 15px; border-radius: 4px;">
+                <strong>🔁 Fields with All Identical Values:</strong><br>
+                <div style="margin-top: 10px;">
+                  ${qualityMetrics.dataQualityIssues.fieldsWithAllSameValue.map((f) => `<span style="display: inline-block; background: #17a2b8; color: white; padding: 4px 8px; margin: 4px; border-radius: 4px; font-size: 0.9em;">${f}</span>`).join(' ')}
+                </div>
+                <small style="color: #0c5460;">All products have the exact same value for these fields. This might indicate an extraction error where header values were extracted as data.</small>
+              </div>
+            `
+                : ''
+            }
+          </div>
+        </div>
+        `
+            : `
+        <div class="modal-section">
+          <div style="text-align: center; padding: 20px; background: #d4edda; border: 2px solid #c3e6cb; border-radius: 8px; color: #155724;">
+            <strong style="font-size: 1.2em;">✅ No Data Quality Issues Detected!</strong><br>
+            The extraction appears clean with no obvious problems.
+          </div>
+        </div>
+        `
+        }
+
+        <!-- Action Buttons -->
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e9ecef; text-align: center;">
+          <button onclick="downloadProducts('${runId}', '${runData.vendor_name}')" class="success">
+            ⬇️ Download Products (JSON)
+          </button>
+          <button onclick="closeQualityModal()" class="secondary" style="margin-left: 10px;">
+            Close
+          </button>
+        </div>
+      `;
+
+      // Show modal
+      document.getElementById('qualityModal').classList.add('active');
+    } catch (error) {
+      alert(`Error loading quality metrics: ${error.message}`);
+    }
+  }
+</script>
+
+<!-- Add this styling for the distribution bars -->
+<style>
+  .distribution-chart {
+    padding: 15px;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+  }
+
+  .distribution-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .distribution-bar {
+    position: relative;
+    height: 60px;
+    background: var(--color);
+    width: var(--width);
+    border-radius: 4px;
+    min-width: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 15px;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+  }
+
+  .distribution-bar:hover {
+    transform: translateX(5px);
+  }
+
+  .distribution-label {
+    font-size: 0.9em;
+  }
+
+  .distribution-value {
+    font-size: 1.1em;
+  }
+
+  .quality-issue-item {
+    margin-bottom: 15px;
+  }
+
+  .stats-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .stats-row:last-child {
+    border-bottom: none;
+  }
+
+  .stats-label {
+    font-weight: 500;
+    color: #666;
+  }
+
+  .stats-value {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1em;
+  }
+</style>
+
+<!-- Add this modal HTML at the end of the body, after the gradingModal -->
+<div id="qualityModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><span>📈</span> Extraction Quality Metrics</h2>
+      <button class="modal-close" onclick="closeQualityModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="qualityModalBody">
+      <!-- Content will be populated by JavaScript -->
+    </div>
+  </div>
+</div>

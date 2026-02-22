@@ -26,6 +26,20 @@ export interface MappingResultJson {
     emptyFields: number;
     productsWithAllFields: number;
     averageFieldsPerProduct: number;
+    // Enhanced KPIs
+    fieldPopulationRates: Record<string, number>; // % populated per field
+    completenessDistribution: {
+      '100%': number;
+      '90-99%': number;
+      '75-89%': number;
+      '50-74%': number;
+      '<50%': number;
+    };
+    dataQualityIssues: {
+      emptyOrNearlyEmptyProducts: number;
+      fieldsWithHighMissingRate: string[]; // Fields with >50% missing
+      fieldsWithAllSameValue: string[]; // Possible extraction errors
+    };
   };
   usage: {
     promptTokens: number;
@@ -51,6 +65,30 @@ export function extractTableHeaders(
   return allHeaders;
 }
 
+/**
+ * Calculate quality metrics for extracted products
+ *
+ * Returns two primary KPIs for evaluating extraction quality:
+ *
+ * **COMPLETENESS SCORE**: Overall data fill rate across all fields
+ * - Measures: What % of all possible data cells are populated
+ * - Range: 0-100%
+ * - Good: >85% | Acceptable: 60-85% | Poor: <60%
+ * - Use case: Understand overall extraction success rate
+ *
+ * **CONFIDENCE SCORE**: Percentage of fully complete products
+ * - Measures: What % of products have ALL fields populated
+ * - Range: 0-100%
+ * - Good: >80% | Acceptable: 40-80% | Poor: <40%
+ * - Use case: Understand data consistency and reliability
+ *
+ * Low confidence with acceptable completeness (e.g., 10% confidence, 75% completeness)
+ * indicates sparse but widespread data - most products missing at least one field.
+ *
+ * @param products - Array of extracted products
+ * @param columnHeaders - Expected column headers to check against
+ * @returns Quality scores and detailed metrics
+ */
 export function calculateQualityMetrics(
   products: Product[],
   columnHeaders: string[]
@@ -63,12 +101,40 @@ export function calculateQualityMetrics(
     emptyFields: number;
     productsWithAllFields: number;
     averageFieldsPerProduct: number;
+    fieldPopulationRates: Record<string, number>;
+    completenessDistribution: {
+      '100%': number;
+      '90-99%': number;
+      '75-89%': number;
+      '50-74%': number;
+      '<50%': number;
+    };
+    dataQualityIssues: {
+      emptyOrNearlyEmptyProducts: number;
+      fieldsWithHighMissingRate: string[];
+      fieldsWithAllSameValue: string[];
+    };
   };
 } {
   const totalFieldCount = products.length * columnHeaders.length;
   let populatedFields = 0;
   let emptyFields = 0;
   let productsWithAllFields = 0;
+
+  // Track field-level statistics
+  const fieldStats: Record<string, { populated: number; uniqueValues: Set<string> }> = {};
+  columnHeaders.forEach((header) => {
+    fieldStats[header] = { populated: 0, uniqueValues: new Set() };
+  });
+
+  // Track product completeness
+  const completenessDistribution = {
+    '100%': 0,
+    '90-99%': 0,
+    '75-89%': 0,
+    '50-74%': 0,
+    '<50%': 0,
+  };
 
   products.forEach((p) => {
     let fieldsInProduct = 0;
@@ -77,16 +143,66 @@ export function calculateQualityMetrics(
       if (value !== undefined && value !== null && value !== '') {
         populatedFields++;
         fieldsInProduct++;
+        fieldStats[header].populated++;
+        fieldStats[header].uniqueValues.add(String(value));
       } else {
         emptyFields++;
       }
     });
-    if (fieldsInProduct === columnHeaders.length) {
+
+    // Categorize product completeness
+    const productCompleteness = (fieldsInProduct / columnHeaders.length) * 100;
+    if (productCompleteness === 100) {
+      completenessDistribution['100%']++;
       productsWithAllFields++;
+    } else if (productCompleteness >= 90) {
+      completenessDistribution['90-99%']++;
+    } else if (productCompleteness >= 75) {
+      completenessDistribution['75-89%']++;
+    } else if (productCompleteness >= 50) {
+      completenessDistribution['50-74%']++;
+    } else {
+      completenessDistribution['<50%']++;
     }
   });
 
+  // Calculate field-level population rates
+  const fieldPopulationRates: Record<string, number> = {};
+  const fieldsWithHighMissingRate: string[] = [];
+  const fieldsWithAllSameValue: string[] = [];
+
+  columnHeaders.forEach((header) => {
+    const populationRate = (fieldStats[header].populated / products.length) * 100;
+    fieldPopulationRates[header] = Math.round(populationRate * 100) / 100;
+
+    // Flag fields with high missing rate (>50% missing)
+    if (populationRate < 50) {
+      fieldsWithHighMissingRate.push(header);
+    }
+
+    // Flag fields where all values are identical (possible extraction error)
+    if (fieldStats[header].uniqueValues.size === 1 && fieldStats[header].populated > 1) {
+      fieldsWithAllSameValue.push(header);
+    }
+  });
+
+  // Count empty or nearly empty products (<20% complete)
+  const emptyOrNearlyEmptyProducts = completenessDistribution['<50%'];
+
+  // COMPLETENESS SCORE: Percentage of all possible data fields that are populated
+  // Formula: (populated fields / total possible fields) × 100
+  // Example: 617 products × 10 columns = 6,170 total fields
+  //          If 4,767 are populated → 77.2% completeness
+  // High score (>85%) = most data extracted successfully
+  // Low score (<50%) = many missing values, possible extraction issues
   const completenessScore = totalFieldCount > 0 ? (populatedFields / totalFieldCount) * 100 : 0;
+
+  // CONFIDENCE SCORE: Percentage of products that have ALL fields populated
+  // Formula: (products with all fields / total products) × 100
+  // Example: Only 10 out of 617 products fully populated → 1.6% confidence
+  // High score (>80%) = consistent, complete data extraction
+  // Low score (<20%) = sparse data, most products missing at least one field
+  // Note: More strict than completeness - even one missing field = not counted
   const confidenceScore = products.length > 0 ? (productsWithAllFields / products.length) * 100 : 0;
 
   return {
@@ -98,6 +214,13 @@ export function calculateQualityMetrics(
       emptyFields,
       productsWithAllFields,
       averageFieldsPerProduct: products.length > 0 ? populatedFields / products.length : 0,
+      fieldPopulationRates,
+      completenessDistribution,
+      dataQualityIssues: {
+        emptyOrNearlyEmptyProducts,
+        fieldsWithHighMissingRate,
+        fieldsWithAllSameValue,
+      },
     },
   };
 }

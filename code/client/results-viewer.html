@@ -933,6 +933,62 @@
       .explanation-box strong {
         color: #0078d4;
       }
+
+      /* Distribution chart styles */
+      .distribution-chart {
+        padding: 15px;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+      }
+      .distribution-bar-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .distribution-bar {
+        position: relative;
+        height: 60px;
+        background: var(--color);
+        width: var(--width);
+        border-radius: 4px;
+        min-width: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 15px;
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+      }
+      .distribution-bar:hover {
+        transform: translateX(5px);
+      }
+      .distribution-label {
+        font-size: 0.9em;
+      }
+      .distribution-value {
+        font-size: 1.1em;
+      }
+      .stats-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .stats-row:last-child {
+        border-bottom: none;
+      }
+      .stats-label {
+        font-weight: 500;
+        color: #666;
+      }
+      .stats-value {
+        font-weight: 600;
+        color: #333;
+        font-size: 1.1em;
+      }
     </style>
   </head>
   <body>
@@ -1160,8 +1216,6 @@
               </div>
 
               <div class="action-buttons">
-                ${result.processing_status === 'completed' && result.export_status !== 'confirmed' && result.export_status !== 'exported' ? `<button class="success" onclick="confirmMapping('${result.result_id}')">✓ Confirm & Export</button>` : ''}
-                ${result.export_status === 'confirmed' || result.export_status === 'exported' ? `<span class="status confirmed" style="padding: 10px 20px;">✓ Exported</span>` : ''}
                 ${
                   result.grading_results && result.graded_at
                     ? `
@@ -1170,6 +1224,7 @@
                 `
                     : ''
                 }
+                ${result.processing_status === 'completed' || result.processing_status === 'ocr_complete' ? `<button class="secondary small" onclick="openRerunPromptModal('${result.result_id}', '${result.vendor_name}', null)">🔄 Rerun AI Mapping</button>` : ''}
                 <button class="danger small" onclick="deleteRun('${result.result_id}')">🗑️ Delete This Run</button>
               </div>
 
@@ -1178,8 +1233,25 @@
               ${
                 products.length > 0
                   ? `
+              <details style="margin-top: 20px;" id="quality-metrics-section-${result.result_id}" ontoggle="if(this.open) loadQualityMetrics('${result.result_id}', '${result.vendor_name}', '${result.document_name}')">
+                <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f0f0f0; border-radius: 4px; user-select: none;">📈 Quality Metrics</summary>
+                <div id="quality-metrics-${result.result_id}" style="margin-top: 15px;"></div>
+              </details>`
+                  : ''
+              }
+
+              ${
+                products.length > 0
+                  ? `
                 <details style="margin-top: 20px;">
-                  <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f0f0f0; border-radius: 4px; user-select: none;">📦 Extracted Products (${products.length} items)</summary>
+                  <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f0f0f0; border-radius: 4px; user-select: none;">
+                    <span>📦 Extracted Products (${products.length} items)</span>
+                    <span style="float: right; display: inline-flex; gap: 8px;">
+                      ${result.processing_status === 'completed' && result.export_status !== 'confirmed' && result.export_status !== 'exported' ? `<button class="success small" onclick="event.stopPropagation(); confirmMapping('${result.result_id}');" style="margin: 0;">✓ Confirm & Export</button>` : ''}
+                      ${result.export_status === 'confirmed' || result.export_status === 'exported' ? `<span class="status confirmed" style="padding: 5px 12px; font-size: 0.9em;">✓ Exported</span>` : ''}
+                      <button class="secondary small" onclick="event.stopPropagation(); downloadProducts('${result.result_id}', '${result.vendor_name}');" style="margin: 0;">📥 Download</button>
+                    </span>
+                  </summary>
                   <div style="margin-top: 15px; max-height: 500px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px;">
                     <table class="products-table">
                       <thead style="position: sticky; top: 0; background: white; z-index: 1;">
@@ -1785,15 +1857,280 @@
         document.getElementById('gradingModal').classList.remove('active');
       }
 
+      // View quality metrics for extraction
+      async function loadQualityMetrics(runId, vendorName, documentName) {
+        const baseUrl = getFunctionAppUrl();
+        const container = document.getElementById(`quality-metrics-${runId}`);
+        const section = document.getElementById(`quality-metrics-section-${runId}`);
+
+        if (!container) {
+          alert('Container not found');
+          return;
+        }
+
+        // If already loaded, just open the section
+        if (container.innerHTML.trim() !== '') {
+          section.open = true;
+          return;
+        }
+
+        // Show loading state
+        container.innerHTML =
+          '<div style="text-align: center; padding: 20px;">Loading metrics...</div>';
+        section.open = true;
+
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/documents?resultId=${encodeURIComponent(runId)}`
+          );
+          if (!response.ok) {
+            container.innerHTML =
+              '<div style="color: red; padding: 20px;">Failed to load run data</div>';
+            return;
+          }
+          const results = await response.json();
+          if (!results || results.length === 0) {
+            container.innerHTML = '<div style="color: red; padding: 20px;">Run not found</div>';
+            return;
+          }
+          const runData = results[0];
+          if (!runData.ai_mapping_result) {
+            container.innerHTML =
+              '<div style="color: red; padding: 20px;">No extraction results available</div>';
+            return;
+          }
+          const mappingData = JSON.parse(runData.ai_mapping_result);
+          const qualityMetrics = mappingData.qualityMetrics;
+          if (!qualityMetrics) {
+            container.innerHTML =
+              '<div style="color: red; padding: 20px;">Quality metrics not available</div>';
+            return;
+          }
+          const productCount =
+            mappingData.productCount ||
+            Math.round(
+              qualityMetrics.totalFields / Object.keys(qualityMetrics.fieldPopulationRates).length
+            );
+          const getMetricBadge = (score, label) => {
+            if (score >= 85) return `✅ Excellent! ${label} is very high`;
+            if (score >= 60) return `⚠️ Acceptable but ${label} has gaps`;
+            return `❌ Poor - ${label} needs improvement`;
+          };
+          container.innerHTML = `
+            <div style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 4px; background: white;">
+              <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px 0; color: #333;">📈 Overall Quality Scores</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                  <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; border: 1px solid #e0e0e0;">
+                    <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">COMPLETENESS SCORE</div>
+                    <div style="font-size: 2em; font-weight: bold; color: ${qualityMetrics.completenessScore >= 80 ? '#28a745' : qualityMetrics.completenessScore >= 60 ? '#ffc107' : '#dc3545'};">${qualityMetrics.completenessScore.toFixed(1)}%</div>
+                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;">What % of all data fields are populated</div>
+                  </div>
+                  <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; border: 1px solid #e0e0e0;">
+                    <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">CONFIDENCE SCORE</div>
+                    <div style="font-size: 2em; font-weight: bold; color: ${qualityMetrics.confidenceScore >= 80 ? '#28a745' : qualityMetrics.confidenceScore >= 60 ? '#ffc107' : '#dc3545'};">${qualityMetrics.confidenceScore.toFixed(1)}%</div>
+                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;">What % of products have ALL fields</div>
+                  </div>
+                </div>
+                <div style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 12px; border-radius: 4px; font-size: 0.9em;">
+                  <strong>Understanding the Scores:</strong><br>
+                  • <strong>Completeness (${qualityMetrics.completenessScore.toFixed(1)}%)</strong>: ${getMetricBadge(qualityMetrics.completenessScore, 'data fill')}<br>
+                  • <strong>Confidence (${qualityMetrics.confidenceScore.toFixed(1)}%)</strong>: ${qualityMetrics.confidenceScore >= 80 ? '✅ Very consistent!' : qualityMetrics.confidenceScore >= 40 ? '⚠️ Many products missing fields' : '❌ Most products incomplete'}
+                </div>
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px 0; color: #333;">📊 Extraction Statistics</h4>
+                <div style="background: white; border: 1px solid #e0e0e0; border-radius: 4px; padding: 15px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                    <span style="color: #666;">Total Products Extracted</span>
+                    <strong>${productCount}</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                    <span style="color: #666;">Fields per Product</span>
+                    <strong>${Object.keys(qualityMetrics.fieldPopulationRates).length}</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                    <span style="color: #666;">Populated Fields</span>
+                    <strong style="color: #28a745;">${qualityMetrics.populatedFields} / ${qualityMetrics.totalFields}</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                    <span style="color: #666;">Empty Fields</span>
+                    <strong style="color: #dc3545;">${qualityMetrics.emptyFields}</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                    <span style="color: #666;">Products with All Fields</span>
+                    <strong style="color: ${qualityMetrics.productsWithAllFields > 0 ? '#28a745' : '#dc3545'};">${qualityMetrics.productsWithAllFields}</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span style="color: #666;">Avg Fields/Product</span>
+                    <strong>${qualityMetrics.averageFieldsPerProduct.toFixed(1)}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px 0; color: #333;">📊 Product Completeness Distribution</h4>
+                <div style="background: white; border: 1px solid #e0e0e0; border-radius: 4px; padding: 15px;">
+                  ${Object.entries({
+                    '100%': {
+                      value: qualityMetrics.completenessDistribution['100%'],
+                      color: '#28a745',
+                    },
+                    '90-99%': {
+                      value: qualityMetrics.completenessDistribution['90-99%'],
+                      color: '#20c997',
+                    },
+                    '75-89%': {
+                      value: qualityMetrics.completenessDistribution['75-89%'],
+                      color: '#17a2b8',
+                    },
+                    '50-74%': {
+                      value: qualityMetrics.completenessDistribution['50-74%'],
+                      color: '#ffc107',
+                    },
+                    '<50%': {
+                      value: qualityMetrics.completenessDistribution['<50%'],
+                      color: '#dc3545',
+                    },
+                  })
+                    .map(
+                      ([label, data]) => `
+                    <div style="margin-bottom: 10px;">
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.9em;">
+                        <span>${label} Complete</span>
+                        <strong>${data.value} products</strong>
+                      </div>
+                      <div style="width: 100%; height: 20px; background: #f0f0f0; border-radius: 3px; overflow: hidden;">
+                        <div style="height: 100%; background: ${data.color}; width: ${((data.value / productCount) * 100).toFixed(1)}%;"></div>
+                      </div>
+                    </div>
+                  `
+                    )
+                    .join('')}
+                </div>
+              </div>
+
+              <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px 0; color: #333;">🎯 Field-Level Population Rates</h4>
+                <div style="background: white; border: 1px solid #e0e0e0; border-radius: 4px; padding: 15px;">
+                  ${Object.entries(qualityMetrics.fieldPopulationRates)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(
+                      ([field, rate]) => `
+                      <div style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.9em;">
+                          <span>${field}${qualityMetrics.dataQualityIssues.fieldsWithHighMissingRate.includes(field) ? ' ⚠️' : ''}${qualityMetrics.dataQualityIssues.fieldsWithAllSameValue.includes(field) ? ' 🔁' : ''}</span>
+                          <strong style="color: ${rate >= 80 ? '#28a745' : rate >= 60 ? '#ffc107' : '#dc3545'};">${rate.toFixed(1)}%</strong>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: #f0f0f0; border-radius: 3px; overflow: hidden;">
+                          <div style="height: 100%; background: ${rate >= 80 ? '#28a745' : rate >= 60 ? '#ffc107' : '#dc3545'}; width: ${rate}%;"></div>
+                        </div>
+                      </div>
+                    `
+                    )
+                    .join('')}
+                  <div style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                    <strong>Legend:</strong> ⚠️ = >50% missing • 🔁 = All identical values
+                  </div>
+                </div>
+              </div>
+
+              ${
+                qualityMetrics.dataQualityIssues.fieldsWithHighMissingRate.length > 0 ||
+                qualityMetrics.dataQualityIssues.fieldsWithAllSameValue.length > 0 ||
+                qualityMetrics.dataQualityIssues.emptyOrNearlyEmptyProducts > 0
+                  ? `
+              <div>
+                <h4 style="margin: 0 0 15px 0; color: #333;">⚠️ Data Quality Issues</h4>
+                ${
+                  qualityMetrics.dataQualityIssues.emptyOrNearlyEmptyProducts > 0
+                    ? `
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 10px; border-radius: 4px; font-size: 0.9em;">
+                  <strong>🚨 Empty/Nearly Empty: ${qualityMetrics.dataQualityIssues.emptyOrNearlyEmptyProducts} products</strong><br>
+                  Less than 50% complete - likely extraction errors
+                </div>`
+                    : ''
+                }
+                ${
+                  qualityMetrics.dataQualityIssues.fieldsWithHighMissingRate.length > 0
+                    ? `
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 10px; border-radius: 4px; font-size: 0.9em;">
+                  <strong>⚠️ High Missing Rate:</strong><br>
+                  ${qualityMetrics.dataQualityIssues.fieldsWithHighMissingRate.map((f) => `<span style="display:inline-block;background:#ffc107;color:white;padding:3px 8px;margin:3px;border-radius:3px;font-size:0.9em;">${f}</span>`).join('')}<br>
+                  <small style="color:#856404;">Missing from >50% of products</small>
+                </div>`
+                    : ''
+                }
+                ${
+                  qualityMetrics.dataQualityIssues.fieldsWithAllSameValue.length > 0
+                    ? `
+                <div style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 12px; margin-bottom: 10px; border-radius: 4px; font-size: 0.9em;">
+                  <strong>🔁 All Identical Values:</strong><br>
+                  ${qualityMetrics.dataQualityIssues.fieldsWithAllSameValue.map((f) => `<span style="display:inline-block;background:#17a2b8;color:white;padding:3px 8px;margin:3px;border-radius:3px;font-size:0.9em;">${f}</span>`).join('')}<br>
+                  <small style="color:#0c5460;">Possible header-to-data confusion</small>
+                </div>`
+                    : ''
+                }
+              </div>`
+                  : `
+              <div style="text-align: center; padding: 20px; background: #d4edda; border: 2px solid #c3e6cb; border-radius: 4px; color: #155724;">
+                <strong style="font-size: 1.1em;">✅ No Data Quality Issues Detected!</strong><br>
+                Extraction appears clean
+              </div>`
+              }
+            </div>
+          `;
+        } catch (error) {
+          container.innerHTML = `<div style="color: red; padding: 20px;">Error loading quality metrics: ${error.message}</div>`;
+        }
+      }
+
       // Close modal when clicking outside
       document.addEventListener('click', (e) => {
-        const modal = document.getElementById('gradingModal');
-        if (e.target === modal) {
+        const gradingModal = document.getElementById('gradingModal');
+        const rerunPromptModal = document.getElementById('rerunPromptModal');
+        if (e.target === gradingModal) {
           closeGradingModal();
+        }
+        if (e.target === rerunPromptModal) {
+          closeRerunPromptModal();
         }
       });
 
       // Download grading results as JSON
+      async function downloadProducts(runId, vendorName) {
+        const baseUrl = getFunctionAppUrl();
+
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/documents/runs/${encodeURIComponent(runId)}/download`
+          );
+
+          if (!response.ok) {
+            alert('Failed to download products');
+            return;
+          }
+
+          // Get the JSON data
+          const data = await response.json();
+
+          // Create blob and download
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${vendorName}_${runId}_products.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error('Error downloading products:', error);
+          alert('Failed to download products');
+        }
+      }
+
       async function downloadGradingResults(runId, vendorName) {
         const baseUrl = getFunctionAppUrl();
 
@@ -1848,6 +2185,147 @@
           alert(`Error downloading grading results: ${error.message}`);
         }
       }
+
+      // ===== Rerun AI Mapping with Prompt Editing =====
+      let currentRerunData = { runId: null, vendorName: null };
+
+      async function openRerunPromptModal(runId, vendorName, previousPrompt) {
+        currentRerunData = { runId, vendorName };
+
+        const textarea = document.getElementById('rerunPromptTextarea');
+        const modal = document.getElementById('rerunPromptModal');
+
+        // Load prompt - use previous or fetch from most recent run
+        let promptToUse = previousPrompt;
+        if (!promptToUse || promptToUse === 'null' || promptToUse === 'undefined') {
+          promptToUse = await getDefaultPrompt(vendorName);
+        }
+
+        textarea.value = promptToUse;
+        updateRerunPromptCharCounter();
+
+        // Add input listener for character counter
+        textarea.oninput = updateRerunPromptCharCounter;
+
+        modal.classList.add('active');
+      }
+
+      function closeRerunPromptModal() {
+        document.getElementById('rerunPromptModal').classList.remove('active');
+        currentRerunData = { runId: null, vendorName: null };
+      }
+
+      function updateRerunPromptCharCounter() {
+        const textarea = document.getElementById('rerunPromptTextarea');
+        const counter = document.getElementById('rerunPromptCharCounter');
+        const button = document.getElementById('executeRerunButton');
+        const length = textarea.value.length;
+
+        counter.textContent = `${length.toLocaleString()} / 10,000 characters`;
+
+        // Update styling based on length
+        counter.classList.remove('warning', 'error');
+        if (length > 10000) {
+          counter.classList.add('error');
+          button.disabled = true;
+        } else if (length >= 9000) {
+          counter.classList.add('warning');
+          button.disabled = false;
+        } else {
+          button.disabled = false;
+        }
+      }
+
+      async function executeRerunWithPrompt() {
+        const textarea = document.getElementById('rerunPromptTextarea');
+        const prompt = textarea.value.trim();
+        const { vendorName } = currentRerunData;
+
+        if (!vendorName) {
+          alert('Error: Vendor name not found');
+          return;
+        }
+
+        if (prompt.length > 10000) {
+          alert('Prompt exceeds maximum length of 10,000 characters');
+          return;
+        }
+
+        const baseUrl = getFunctionAppUrl();
+
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/documents/${encodeURIComponent(vendorName)}/process-ai-mapping`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ aiPrompt: prompt }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            closeRerunPromptModal();
+            alert(
+              `✅ AI reprocessing started for ${vendorName}! New run created with your custom prompt.`
+            );
+            loadResults();
+          } else {
+            alert(`❌ Error: ${data.error || JSON.stringify(data.details || data)}`);
+          }
+        } catch (error) {
+          alert(`❌ Network error: ${error.message}`);
+        }
+      }
+
+      async function getDefaultPrompt(vendorName) {
+        // Try to fetch the actual prompt used in the most recent completed run for this vendor
+        const baseUrl = getFunctionAppUrl();
+
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/documents?vendor=${encodeURIComponent(vendorName)}&limit=10`
+          );
+          if (response.ok) {
+            const results = await response.json();
+
+            // Find the most recent run with an ai_prompt_used value
+            const runWithPrompt = results.find(
+              (run) => run.ai_prompt_used && run.processing_status === 'completed'
+            );
+
+            if (runWithPrompt && runWithPrompt.ai_prompt_used) {
+              return runWithPrompt.ai_prompt_used;
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to fetch previous prompt, using fallback:', error);
+        }
+
+        // Fallback to a sample default prompt if no previous runs found
+        return `You are a data extraction assistant. Your task is to normalize and structure product catalog data from OCR-extracted text.
+
+Instructions:
+1. Extract all products with their details (SKU, name, price, unit, etc.)
+2. Ensure consistent formatting across all fields
+3. Map column headers to standard field names
+4. Handle variations in naming conventions
+5. Preserve numerical accuracy for prices and quantities
+6. Output in valid JSON format
+
+Output Format:
+{
+  "products": [
+    {
+      "sku": "...",
+      "product_name": "...",
+      "price": 0.00,
+      "unit": "..."
+    }
+  ]
+}`;
+      }
     </script>
 
     <!-- Grading Results Modal -->
@@ -1859,6 +2337,41 @@
         </div>
         <div class="modal-body" id="gradingModalBody">
           <!-- Content will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Rerun AI Mapping Modal -->
+    <div id="rerunPromptModal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 900px">
+        <div class="modal-header">
+          <h2><span>🔄</span> Edit AI Prompt & Rerun</h2>
+          <button class="modal-close" onclick="closeRerunPromptModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-section">
+            <div class="form-section-title">AI Prompt</div>
+            <div class="form-section-description">
+              Edit the prompt below to customize how the AI maps product data from OCR results. The
+              AI will create a new processing run with your updated prompt.
+            </div>
+            <textarea
+              id="rerunPromptTextarea"
+              placeholder="Enter AI prompt..."
+              rows="15"
+            ></textarea>
+            <div id="rerunPromptCharCounter" class="char-counter">0 / 10,000 characters</div>
+            <div class="info-box" style="margin-top: 15px">
+              <strong>Note:</strong> This will create a new AI mapping run using the existing OCR
+              data. The original document will not be re-processed.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button onclick="closeRerunPromptModal()" class="secondary">Cancel</button>
+          <button id="executeRerunButton" onclick="executeRerunWithPrompt()" class="success">
+            Execute Rerun
+          </button>
         </div>
       </div>
     </div>

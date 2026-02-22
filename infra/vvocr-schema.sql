@@ -112,97 +112,24 @@ BEGIN
 END
 GO
 
-
--- Add ai_model_requested column (stores user's requested model)
-IF NOT EXISTS (
-    SELECT * FROM sys.columns 
-    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
-    AND name = 'ai_model_requested'
-)
-BEGIN
-    ALTER TABLE vvocr.document_processing_results
-    ADD ai_model_requested NVARCHAR(100) NULL;
+-- example how to alter table to add new column for storing user's requested AI model (if not already exists)
+-- -- Add ai_model_requested column (stores user's requested model)
+-- IF NOT EXISTS (
+--     SELECT * FROM sys.columns 
+--     WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
+--     AND name = 'ai_model_requested'
+-- )
+-- BEGIN
+--     ALTER TABLE vvocr.document_processing_results
+--     ADD ai_model_requested NVARCHAR(100) NULL;
     
-    PRINT 'Added column: ai_model_requested';
-END
-ELSE
-BEGIN
-    PRINT 'Column ai_model_requested already exists';
-END
-GO
-
--- Add ai_prompt_requested column (stores user's custom prompt, max enforced by app at 10k chars)
-IF NOT EXISTS (
-    SELECT * FROM sys.columns 
-    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
-    AND name = 'ai_prompt_requested'
-)
-BEGIN
-    ALTER TABLE vvocr.document_processing_results
-    ADD ai_prompt_requested NVARCHAR(MAX) NULL;
-    
-    PRINT 'Added column: ai_prompt_requested';
-END
-ELSE
-BEGIN
-    PRINT 'Column ai_prompt_requested already exists';
-END
-GO
-
--- Add grading_results column (stores grading metrics and scores as JSON)
-IF NOT EXISTS (
-    SELECT * FROM sys.columns 
-    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
-    AND name = 'grading_results'
-)
-BEGIN
-    ALTER TABLE vvocr.document_processing_results
-    ADD grading_results NVARCHAR(MAX) NULL;
-    
-    PRINT 'Added column: grading_results';
-END
-ELSE
-BEGIN
-    PRINT 'Column grading_results already exists';
-END
-GO
-
--- Add grading_analysis column (stores detailed analysis insights as JSON)
-IF NOT EXISTS (
-    SELECT * FROM sys.columns 
-    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
-    AND name = 'grading_analysis'
-)
-BEGIN
-    ALTER TABLE vvocr.document_processing_results
-    ADD grading_analysis NVARCHAR(MAX) NULL;
-    
-    PRINT 'Added column: grading_analysis';
-END
-ELSE
-BEGIN
-    PRINT 'Column grading_analysis already exists';
-END
-GO
-
--- Add graded_at column (timestamp when grading was performed)
-IF NOT EXISTS (
-    SELECT * FROM sys.columns 
-    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') 
-    AND name = 'graded_at'
-)
-BEGIN
-    ALTER TABLE vvocr.document_processing_results
-    ADD graded_at DATETIME2 NULL;
-    
-    PRINT 'Added column: graded_at';
-END
-ELSE
-BEGIN
-    PRINT 'Column graded_at already exists';
-END
-GO
-
+--     PRINT 'Added column: ai_model_requested';
+-- END
+-- ELSE
+-- BEGIN
+--     PRINT 'Column ai_model_requested already exists';
+-- END
+-- GO
 
 PRINT 'VVOCR tables created successfully!';
 

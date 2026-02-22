@@ -56,6 +56,6 @@ export async function blobUploadTrigger(blob: Buffer, context: InvocationContext
 // Register blob trigger function
 app.storageBlob('blobUploadTrigger', {
   path: 'uploads/{vendorName}/{filename}',
-  connection: 'AzureWebJobsStorage',
+  connection: 'STORAGE_CONNECTION_STRING',
   handler: blobUploadTrigger,
 });
