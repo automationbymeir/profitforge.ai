@@ -3,13 +3,15 @@
 // Tables: document_processing_results, vendor_products
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "sqlserver"
   url      = env("DATABASE_URL")
+  schemas  = ["vvocr"]
 }
 
 model document_processing_results {
@@ -70,7 +72,8 @@ model document_processing_results {
   @@index([requires_manual_review], map: "IX_document_requires_review")
   @@index([vendor_name], map: "IX_document_vendor_name")
   @@index([document_path], map: "IX_document_path")
-  @@map("vvocr.document_processing_results")
+  @@map("document_processing_results")
+  @@schema("vvocr")
 }
 
 model vendor_products {
@@ -99,6 +102,7 @@ model vendor_products {
   @@index([vendor_id], map: "IX_vendor_products_vendor_id")
   @@index([sku], map: "IX_vendor_products_sku")
   @@index([source_document_id], map: "IX_vendor_products_source_doc")
-  @@map("vvocr.vendor_products")
+  @@map("vendor_products")
+  @@schema("vvocr")
 }
 
