@@ -17,9 +17,26 @@
 import { PrismaClient } from '@prisma/client';
 import { RETRY_CONFIG } from '../utils/constants.js';
 import { isTransientError } from '../utils/typeGuards.js';
+import { getPrismaConnectionString } from '../utils/config.js';
 
 // Global singleton instance
 let globalPrisma: PrismaClient | null = null;
+
+/**
+ * Initialize Prisma with correct connection string format
+ * Sets the DATABASE_URL environment variable that Prisma expects
+ */
+function initializePrismaEnvironment(): void {
+  if (!process.env.SQL_CONNECTION_STRING) {
+    throw new Error('SQL_CONNECTION_STRING environment variable is required');
+  }
+  
+  // Set the connection string in Prisma's expected format
+  const prismaConnectionString = getPrismaConnectionString();
+  process.env.DATABASE_URL = prismaConnectionString;
+  
+  console.log('[Prisma] Connection string initialized');
+}
 
 /**
  * Get or create the Prisma Client singleton.
@@ -33,6 +50,9 @@ export function getPrismaClient(): PrismaClient {
   if (globalPrisma) {
     return globalPrisma;
   }
+
+  // Initialize environment for Prisma
+  initializePrismaEnvironment();
 
   // Create new Prisma Client with logging and error handling
   globalPrisma = new PrismaClient({

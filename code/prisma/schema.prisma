@@ -9,7 +9,7 @@ generator client {
 
 datasource db {
   provider = "sqlserver"
-  url      = env("SQL_CONNECTION_STRING")
+  url      = env("DATABASE_URL")
 }
 
 model document_processing_results {

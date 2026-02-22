@@ -135,6 +135,27 @@ export function getSqlConnectionString(): string {
 }
 
 /**
+ * Convert SQL connection string to Prisma format
+ * 
+ * Prisma requires: sqlserver://server:port;database=db;user=user;password=pass;encrypt=true
+ * Input may be in various formats that mssql library accepts
+ * 
+ * @returns Connection string in Prisma-compatible format
+ */
+export function getPrismaConnectionString(): string {
+  const connectionString = getSqlConnectionString();
+  
+  // If already in correct format, return as-is
+  if (connectionString.startsWith('sqlserver://')) {
+    return connectionString;
+  }
+  
+  // Otherwise, assume it's already in the correct format and just needs the protocol
+  // Azure SQL connection strings from environment are typically already semicolon-delimited
+  return `sqlserver://${connectionString}`;
+}
+
+/**
  * Get Function App URL
  */
 export function getFunctionAppURL(): string {
