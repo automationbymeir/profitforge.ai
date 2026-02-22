@@ -36,22 +36,8 @@ export function getPrismaClient(): PrismaClient {
 
   // Create new Prisma Client with logging and error handling
   globalPrisma = new PrismaClient({
-    log: [
-      { level: 'warn', emit: 'event' },
-      { level: 'error', emit: 'event' },
-    ],
     // Connection pool settings for Azure SQL Serverless
     // Prisma manages the pool internally via tedious driver
-  });
-
-  // Log warnings
-  globalPrisma.$on('warn', (e) => {
-    console.warn('[Prisma Warning]', e.message);
-  });
-
-  // Log errors
-  globalPrisma.$on('error', (e) => {
-    console.error('[Prisma Error]', e.message);
   });
 
   return globalPrisma;
@@ -90,7 +76,7 @@ export async function withPrismaRetry<T>(
 
       // Check if error is transient and we have retries left
       if (isTransientError(error) && attempt < retries) {
-        const delay = RETRY_CONFIG.INITIAL_DELAY_MS * Math.pow(2, attempt - 1);
+        const delay = RETRY_CONFIG.BASE_DELAY_MS * Math.pow(2, attempt - 1);
         console.warn(
           `[Prisma] Transient error on attempt ${attempt}/${retries}. Retrying in ${delay}ms...`,
           lastError.message

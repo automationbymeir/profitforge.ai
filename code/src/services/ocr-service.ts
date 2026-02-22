@@ -1,5 +1,5 @@
 import { AzureKeyCredential, DocumentAnalysisClient } from '@azure/ai-form-recognizer';
-import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
+import { DocumentRepository } from '../data/repositories/DocumentRepository.prisma.js';
 import { StorageService } from '../data/storage.js';
 import type { QueueService } from '../functions/infra-adapters/queues.js';
 import { getStorageConnectionString } from '../utils/config.js';
@@ -159,11 +159,11 @@ export async function createOCRService(): Promise<OCRService> {
       'Missing Document Intelligence configuration (DOCUMENT_INTELLIGENCE_ENDPOINT or DOCUMENT_INTELLIGENCE_KEY)'
     );
   }
-  const { getConnectionPool } = await import('../utils/database.js');
-  const { DocumentRepository } = await import('../data/repositories/DocumentRepository.js');
+  const { getPrismaClient } = await import('../data/prisma-client.js');
+  const { DocumentRepository } = await import('../data/repositories/DocumentRepository.prisma.js');
   const { QueueService } = await import('../functions/infra-adapters/queues.js');
-  const pool = await getConnectionPool();
-  const documentRepo = new DocumentRepository(pool);
+  const prisma = getPrismaClient();
+  const documentRepo = new DocumentRepository(prisma);
   const storageService = new StorageService(getStorageConnectionString());
   const queueService = new QueueService(getStorageConnectionString());
   return new OCRService(documentRepo, storageService, queueService, endpoint, apiKey);

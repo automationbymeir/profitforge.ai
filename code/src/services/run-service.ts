@@ -1,5 +1,5 @@
-import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
-import { VendorProductRepository } from '../data/repositories/VendorProductRepository.js';
+import { DocumentRepository } from '../data/repositories/DocumentRepository.prisma.js';
+import { VendorProductRepository } from '../data/repositories/VendorProductRepository.prisma.js';
 import { QueueService } from '../functions/infra-adapters/queues.js';
 import { Product } from '../utils/models/product.js';
 import { StorageService } from './index.js';
@@ -251,17 +251,17 @@ export class RunService {
 
 // Factory function for RunService
 export async function createRunService(): Promise<RunService> {
-  const { getConnectionPool } = await import('../utils/database.js');
+  const { getPrismaClient } = await import('../data/prisma-client.js');
   const { getStorageConnectionString } = await import('../utils/config.js');
-  const { DocumentRepository } = await import('../data/repositories/DocumentRepository.js');
+  const { DocumentRepository } = await import('../data/repositories/DocumentRepository.prisma.js');
   const { VendorProductRepository } =
-    await import('../data/repositories/VendorProductRepository.js');
+    await import('../data/repositories/VendorProductRepository.prisma.js');
   const { QueueService } = await import('../functions/infra-adapters/queues.js');
   const { StorageService } = await import('../data/storage.js');
 
-  const pool = await getConnectionPool();
-  const documentRepo = new DocumentRepository(pool);
-  const vendorProductRepo = new VendorProductRepository(pool);
+  const prisma = getPrismaClient();
+  const documentRepo = new DocumentRepository(prisma);
+  const vendorProductRepo = new VendorProductRepository(prisma);
   const queueService = new QueueService(getStorageConnectionString());
   const storageService = new StorageService(getStorageConnectionString());
 

@@ -1,5 +1,5 @@
 import { OpenAI } from 'openai';
-import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
+import { DocumentRepository } from '../data/repositories/DocumentRepository.prisma.js';
 import { StorageService } from '../data/storage.js';
 
 import {
@@ -161,7 +161,7 @@ export async function createAIService(): Promise<AIService> {
     throw new Error('Missing AI project configuration (AI_PROJECT_ENDPOINT or AI_PROJECT_KEY)');
   }
 
-  const { createDocumentRepository } = await import('../data/repositories/DocumentRepository.js');
+  const { createDocumentRepository } = await import('../data/repositories/DocumentRepository.prisma.js');
   const documentRepo = await createDocumentRepository();
   const storageService = new StorageService(getStorageConnectionString());
   return new AIService(endpoint, apiKey, documentRepo, storageService);

@@ -93,7 +93,6 @@ export class VendorProductRepository {
         source_document_id: product.source_document_id,
         source_document_name: product.source_document_name,
       })),
-      skipDuplicates: false,
     });
 
     return result.count;
@@ -179,4 +178,14 @@ export class VendorProductRepository {
       price: product.price ? Number(product.price) : null,
     };
   }
+}
+
+/**
+ * Factory function for VendorProductRepository
+ * Creates a repository instance with Prisma client
+ */
+export async function createVendorProductRepository(): Promise<VendorProductRepository> {
+  const { getPrismaClient } = await import('../prisma-client.js');
+  const prisma = getPrismaClient();
+  return new VendorProductRepository(prisma);
 }

@@ -140,30 +140,6 @@ export class DocumentRepository {
   async findById(resultId: string): Promise<Document | null> {
     const document = await this.prisma.document_processing_results.findUnique({
       where: { result_id: resultId },
-      select: {
-        result_id: true,
-        document_name: true,
-        document_path: true,
-        document_size_bytes: true,
-        document_type: true,
-        vendor_name: true,
-        processing_status: true,
-        export_status: true,
-        doc_intel_confidence_score: true,
-        doc_intel_cost_usd: true,
-        doc_intel_prompt_used: true,
-        ai_mapping_result: true,
-        ai_model_requested: true,
-        ai_prompt_requested: true,
-        ai_model_used: true,
-        ai_prompt_used: true,
-        ai_model_cost_usd: true,
-        ai_confidence_score: true,
-        ai_completeness_score: true,
-        exported_at: true,
-        created_at: true,
-        updated_at: true,
-      },
     });
 
     return document ? this.mapToDocument(document) : null;
@@ -530,18 +506,46 @@ export class DocumentRepository {
    */
   private mapToDocument(doc: document_processing_results): Document {
     return {
-      ...doc,
-      document_size_bytes: doc.document_size_bytes ? Number(doc.document_size_bytes) : null,
+      result_id: doc.result_id,
+      document_name: doc.document_name,
+      document_path: doc.document_path || '',
+      document_size_bytes: doc.document_size_bytes ? Number(doc.document_size_bytes) : 0,
+      document_type: doc.document_type || '',
+      vendor_name: doc.vendor_name,
+      processing_status: doc.processing_status as ProcessingStatus,
+      export_status: doc.export_status as ExportStatus,
+      exported_at: doc.exported_at,
+      processing_started_at: doc.processing_started_at || new Date(),
       doc_intel_confidence_score: doc.doc_intel_confidence_score
         ? Number(doc.doc_intel_confidence_score)
         : null,
       doc_intel_cost_usd: doc.doc_intel_cost_usd ? Number(doc.doc_intel_cost_usd) : null,
+      doc_intel_prompt_used: doc.doc_intel_prompt_used,
+      ai_model_requested: doc.ai_model_requested,
+      ai_prompt_requested: doc.ai_prompt_requested,
+      ai_mapping_result: doc.ai_mapping_result,
+      ai_prompt_used: doc.ai_prompt_used,
+      ai_model_used: doc.ai_model_used,
       ai_model_cost_usd: doc.ai_model_cost_usd ? Number(doc.ai_model_cost_usd) : null,
       ai_confidence_score: doc.ai_confidence_score ? Number(doc.ai_confidence_score) : null,
       ai_completeness_score: doc.ai_completeness_score
         ? Number(doc.ai_completeness_score)
         : null,
-      price: doc.price ? Number(doc.price) : undefined,
-    } as Document;
+      grading_results: null,
+      grading_analysis: null,
+      graded_at: null,
+      created_at: doc.created_at,
+      updated_at: doc.updated_at,
+    };
   }
+}
+
+/**
+ * Factory function for DocumentRepository
+ * Creates a repository instance with Prisma client
+ */
+export async function createDocumentRepository(): Promise<DocumentRepository> {
+  const { getPrismaClient } = await import('../prisma-client.js');
+  const prisma = getPrismaClient();
+  return new DocumentRepository(prisma);
 }

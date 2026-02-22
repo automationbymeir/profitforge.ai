@@ -1,4 +1,4 @@
-import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
+import { DocumentRepository } from '../data/repositories/DocumentRepository.prisma.js';
 import { StorageService } from '../data/storage.js';
 import { getStorageConnectionString } from '../utils/config.js';
 import { calculateGrade, GradingResult } from '../utils/grading-helper.js';
@@ -91,7 +91,7 @@ export class GradingService {
  * Create a GradingService instance
  */
 export async function createGradingService(): Promise<GradingService> {
-  const { createDocumentRepository } = await import('../data/repositories/DocumentRepository.js');
+  const { createDocumentRepository } = await import('../data/repositories/DocumentRepository.prisma.js');
   const documentRepo = await createDocumentRepository();
   const storageService = new StorageService(getStorageConnectionString());
 

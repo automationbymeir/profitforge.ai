@@ -1,4 +1,4 @@
-import { DocumentRepository } from '../data/repositories/DocumentRepository.js';
+import { DocumentRepository } from '../data/repositories/DocumentRepository.prisma.js';
 import { StorageService } from '../data/storage.js';
 import { QueueService } from '../functions/infra-adapters/queues.js';
 import { getStorageConnectionString } from '../utils/config.js';
@@ -182,10 +182,10 @@ export class DocumentService {
  * For production: use this factory to create with real dependencies
  */
 export async function createDocumentService(): Promise<DocumentService> {
-  const { getConnectionPool } = await import('../utils/database.js');
-  const pool = await getConnectionPool();
+  const { getPrismaClient } = await import('../data/prisma-client.js');
+  const prisma = getPrismaClient();
 
-  const documentRepo = new DocumentRepository(pool);
+  const documentRepo = new DocumentRepository(prisma);
   const storageService = new StorageService(getStorageConnectionString());
   const queueService = new QueueService(getStorageConnectionString());
   const containerName = process.env.STORAGE_CONTAINER_DOCUMENTS || 'uploads';

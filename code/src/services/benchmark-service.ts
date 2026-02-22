@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { DocumentRepository } from '../data/repositories/DocumentRepository.js';
+import type { DocumentRepository } from '../data/repositories/DocumentRepository.prisma.js';
 import type { StorageService } from '../data/storage.js';
 import { Product } from '../utils/models/product.js';
 
@@ -138,13 +138,13 @@ export class BenchmarkService {
  */
 export async function createBenchmarkService(): Promise<BenchmarkService> {
   const { StorageService } = await import('../data/storage.js');
-  const { DocumentRepository } = await import('../data/repositories/DocumentRepository.js');
+  const { DocumentRepository } = await import('../data/repositories/DocumentRepository.prisma.js');
   const { getStorageConnectionString } = await import('../utils/config.js');
-  const { getConnectionPool } = await import('../utils/database.js');
+  const { getPrismaClient } = await import('../data/prisma-client.js');
 
   const storageService = new StorageService(getStorageConnectionString());
-  const pool = await getConnectionPool();
-  const documentRepo = new DocumentRepository(pool);
+  const prisma = getPrismaClient();
+  const documentRepo = new DocumentRepository(prisma);
 
   return new BenchmarkService(storageService, documentRepo);
 }
