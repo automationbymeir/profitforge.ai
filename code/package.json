@@ -26,12 +26,6 @@
     "db:connections": "tsx test/tools/dbMonitor.ts connections",
     "db:slow-queries": "tsx test/tools/dbMonitor.ts slow-queries",
     "db:all": "npm run db:logs && echo '\n---\n' && npm run db:connections && echo '\n---\n' && npm run db:slow-queries",
-    "prisma:generate": "prisma generate",
-    "prisma:studio": "prisma studio",
-    "prisma:format": "prisma format",
-    "prisma:push": "prisma db push",
-    "prisma:pull": "prisma db pull",
-    "prisma:migrate": "prisma migrate dev",
     "extract:ocr": "tsx test/tools/extract-ocr-products.ts test/outputs/raw-ocr-data.json test/outputs/ocr-extracted-products.json",
     "extract:excel": "tsx test/tools/extract-excel-products.ts test/e2e/common/docs/FRIELING/FRIELING_JUL25_PRICE_LIST.xlsx test/outputs/excel-extracted-products.json"
   },

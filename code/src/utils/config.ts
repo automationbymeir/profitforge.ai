@@ -136,24 +136,34 @@ export function getSqlConnectionString(): string {
 
 /**
  * Convert SQL connection string to Prisma format
- * 
+ *
  * Prisma requires: sqlserver://HOST:PORT;database=DB;user=USER;password=PASS;encrypt=true
- * 
+ *
  * Supports multiple input formats:
  * 1. Already in Prisma format: sqlserver://host:port;database=...
  * 2. mssql semicolon format: host:port;database=...;user=...;password=...
  * 3. Azure SQL format: Server=host;Database=db;User Id=user;Password=pass
- * 
+ *
  * @returns Connection string in Prisma-compatible format
  */
 export function getPrismaConnectionString(): string {
   const connectionString = getSqlConnectionString();
-  
+  return parseSqlConnectionString(connectionString);
+}
+
+/**
+ * Get Function App URL
+ */
+export function getFunctionAppURL(): string {
+  return getConfig().functionAppURL;
+}
+
+function parseSqlConnectionString(connectionString: string): string {
   // Fast path: already in correct format
   if (connectionString.startsWith('sqlserver://')) {
     return connectionString;
   }
-  
+
   // Key mapping for normalization (lookup table vs multiple conditionals)
   const KEY_MAP: Record<string, string> = {
     server: 'host',
@@ -169,20 +179,20 @@ export function getPrismaConnectionString(): string {
     encrypt: 'encrypt',
     trustservercertificate: 'trustServerCertificate',
   };
-  
+
   const params: Record<string, string> = {
     encrypt: 'true',
     trustServerCertificate: 'false',
   };
   let host = '';
   let port = '1433';
-  
+
   // Single pass parsing
   const parts = connectionString.split(';');
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i].trim();
     if (!part) continue;
-    
+
     const eqIndex = part.indexOf('=');
     if (eqIndex === -1) {
       // No '=' means it might be "host:port" format
@@ -195,18 +205,18 @@ export function getPrismaConnectionString(): string {
       }
       continue;
     }
-    
+
     // Parse key=value (handle passwords with = in them)
     const key = part.slice(0, eqIndex).trim().toLowerCase().replace(/\s+/g, '');
     const value = part.slice(eqIndex + 1).trim();
-    
+
     const normalizedKey = KEY_MAP[key];
-    
+
     if (normalizedKey === 'host') {
       // Strip tcp: prefix and parse host:port or host,port
-      let serverValue = value.startsWith('tcp:') ? value.slice(4) : value;
+      const serverValue = value.startsWith('tcp:') ? value.slice(4) : value;
       const delimIndex = Math.max(serverValue.indexOf(':'), serverValue.indexOf(','));
-      
+
       if (delimIndex !== -1) {
         host = serverValue.slice(0, delimIndex).trim();
         port = serverValue.slice(delimIndex + 1).trim();
@@ -220,39 +230,37 @@ export function getPrismaConnectionString(): string {
       params[key] = value;
     }
   }
-  
+
   // Validate required fields (fail fast)
   if (!host) throw new Error('Failed to parse SQL connection string: missing host/server');
   if (!params.database) throw new Error('Failed to parse SQL connection string: missing database');
   if (!params.user) throw new Error('Failed to parse SQL connection string: missing user');
   if (!params.password) throw new Error('Failed to parse SQL connection string: missing password');
-  
+
   // Build connection string (avoid array allocation for common case)
   const result = `sqlserver://${host}:${port};database=${params.database};user=${params.user};password=${params.password};encrypt=${params.encrypt};trustServerCertificate=${params.trustServerCertificate}`;
-  
+
   // Append any extra parameters
   const extraParams: string[] = [];
   for (const key in params) {
-    if (key !== 'database' && key !== 'user' && key !== 'password' && 
-        key !== 'encrypt' && key !== 'trustServerCertificate') {
+    if (
+      key !== 'database' &&
+      key !== 'user' &&
+      key !== 'password' &&
+      key !== 'encrypt' &&
+      key !== 'trustServerCertificate'
+    ) {
       extraParams.push(`${key}=${params[key]}`);
     }
   }
-  
+
   const finalResult = extraParams.length > 0 ? `${result};${extraParams.join(';')}` : result;
-  
+
   // Debug log (mask password) - only log in development
   if (process.env.NODE_ENV !== 'production') {
     const debugResult = finalResult.replace(/password=[^;]+/, 'password=***');
     console.log('[Prisma] Converted connection string:', debugResult);
   }
-  
-  return finalResult;
-}
 
-/**
- * Get Function App URL
- */
-export function getFunctionAppURL(): string {
-  return getConfig().functionAppURL;
+  return finalResult;
 }

@@ -46,7 +46,7 @@ describe('Integration: Upload Endpoint Errors', () => {
     );
     formData.append(
       'vendorName',
-      generateTestVendorName(TEST_VENDOR_PREFIXES.INTEGRATION, 'UNSUPPORTED_FILE')
+      generateTestVendorName(`${TEST_VENDOR_PREFIXES.INTEGRATION}_UNSUPPORTED`)
     );
 
     const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/upload`, {
@@ -96,7 +96,7 @@ describe('Integration: Upload Endpoint Errors', () => {
     );
     formData.append(
       'vendorName',
-      generateTestVendorName(TEST_VENDOR_PREFIXES.INTEGRATION, 'LARGE_FILE')
+      generateTestVendorName(`${TEST_VENDOR_PREFIXES.INTEGRATION}_LARGE_FILE`)
     );
 
     const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/upload`, {

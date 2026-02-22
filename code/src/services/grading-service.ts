@@ -91,7 +91,8 @@ export class GradingService {
  * Create a GradingService instance
  */
 export async function createGradingService(): Promise<GradingService> {
-  const { createDocumentRepository } = await import('../data/repositories/DocumentRepository.prisma.js');
+  const { createDocumentRepository } =
+    await import('../data/repositories/DocumentRepository.prisma.js');
   const documentRepo = await createDocumentRepository();
   const storageService = new StorageService(getStorageConnectionString());
 

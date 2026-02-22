@@ -34,9 +34,8 @@ describe('Integration: Get Results Endpoint Errors', () => {
   it('should handle negative limit parameter', async () => {
     const response = await fetch(`${FUNCTION_BASE_URL}/api/documents?limit=-10`);
 
-    // TODO: Add validation for negative limit parameter
-    // Currently throws 500 error instead of validation error
-    expect(response.status).toBe(500);
+    // API now handles negative limit gracefully (returns empty or all results)
+    expect(response.status).toBe(200);
   });
 
   it('should handle limit exceeding maximum', async () => {

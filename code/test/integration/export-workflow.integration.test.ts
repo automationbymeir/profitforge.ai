@@ -6,8 +6,8 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
 import { getPrismaClient } from '../../src/data/prisma-client.js';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
 import { cleanTestDatabase } from './common/utils';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
@@ -35,20 +35,34 @@ describe('Integration: Export/Confirm Workflow', () => {
       document_path: 'TEST_VENDOR/catalog.pdf',
       document_size_bytes: 1024,
       document_type: 'application/pdf',
-      processing_status: 'completed',
-      product_count: 2,
+      processing_status: 'ocr_complete',
+      export_status: 'not_exported',
+      processing_started_at: new Date(),
+    });
+
+    // Update with AI mapping results
+    await documentRepo.updateAiMapping({
+      result_id: documentId,
       ai_mapping_result: JSON.stringify({ products }),
+      ai_model_used: 'gpt-4o',
+      ai_prompt_used: null,
+      ai_model_cost_usd: 0.01,
+      ai_confidence_score: 0.95,
+      ai_completeness_score: 0.98,
+      ai_prompt_tokens: 1000,
+      ai_completion_tokens: 500,
     });
 
     // Verify initial export status
     const beforeExport = await documentRepo.findById(documentId);
     expect(beforeExport?.export_status).toBe('not_exported');
+    expect(beforeExport?.processing_status).toBe('completed');
 
     // Wait briefly to ensure database commit is visible across connection pools
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Act - Confirm mapping
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/${documentId}/confirm`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/runs/${documentId}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -56,7 +70,7 @@ describe('Integration: Export/Confirm Workflow', () => {
     // Debug: Log response details if not 200
     if (response.status !== 200) {
       const errorBody = await response.text();
-      console.log(`❌ Confirm mapping failed: ${response.status} ${errorBody}`);
+      console.log(`❌ Confirm mapping failed (status ${response.status}):`, errorBody);
     }
 
     // Assert
@@ -65,15 +79,14 @@ describe('Integration: Export/Confirm Workflow', () => {
     expect(result.productsExported).toBe(2);
 
     // Verify products in vendor_products table using Prisma
-    const prisma = getPrismaClient();
-    const products = await prisma.vendor_products.findMany({
+    const exportedProducts = await prisma.vendor_products.findMany({
       where: { source_document_id: documentId },
       orderBy: { sku: 'asc' },
     });
 
-    expect(products).toHaveLength(2);
-    expect(products[0].vendor_name).toBe('TEST_VENDOR');
-    expect(products[0].sku).toBe('A001');
+    expect(exportedProducts).toHaveLength(2);
+    expect(exportedProducts[0].vendor_name).toBe('TEST_VENDOR');
+    expect(exportedProducts[0].sku).toBe('A001');
 
     // Verify export status updated to 'confirmed'
     const afterExport = await documentRepo.findById(documentId);
@@ -82,7 +95,7 @@ describe('Integration: Export/Confirm Workflow', () => {
 
   it('should reject confirmation with invalid UUID', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/not-a-uuid/confirm`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/runs/not-a-uuid/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -93,7 +106,7 @@ describe('Integration: Export/Confirm Workflow', () => {
 
   it('should reject confirmation without documentId', async () => {
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents//confirm`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/runs//confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -114,11 +127,12 @@ describe('Integration: Export/Confirm Workflow', () => {
       document_size_bytes: 1024,
       document_type: 'application/pdf',
       processing_status: 'completed',
-      product_count: 0,
+      export_status: 'not_exported',
+      processing_started_at: new Date(),
     });
 
     // Act
-    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/${documentId}/confirm`, {
+    const response = await fetch(`${FUNCTION_BASE_URL}/api/documents/runs/${documentId}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -139,18 +153,31 @@ describe('Integration: Export/Confirm Workflow', () => {
       document_path: 'TEST_VENDOR/catalog.pdf',
       document_size_bytes: 1024,
       document_type: 'application/pdf',
-      processing_status: 'completed',
-      product_count: 1,
+      processing_status: 'ocr_complete',
+      export_status: 'not_exported',
+      processing_started_at: new Date(),
+    });
+
+    // Update with AI mapping results
+    await documentRepo.updateAiMapping({
+      result_id: documentId,
       ai_mapping_result: JSON.stringify({ products }),
+      ai_model_used: 'gpt-4o',
+      ai_prompt_used: null,
+      ai_model_cost_usd: 0.01,
+      ai_confidence_score: 0.95,
+      ai_completeness_score: 0.98,
+      ai_prompt_tokens: 1000,
+      ai_completion_tokens: 500,
     });
 
     // Act - Confirm twice
-    const response1 = await fetch(`${FUNCTION_BASE_URL}/api/documents/${documentId}/confirm`, {
+    const response1 = await fetch(`${FUNCTION_BASE_URL}/api/documents/runs/${documentId}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
 
-    const response2 = await fetch(`${FUNCTION_BASE_URL}/api/documents/${documentId}/confirm`, {
+    const response2 = await fetch(`${FUNCTION_BASE_URL}/api/documents/runs/${documentId}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -160,11 +187,10 @@ describe('Integration: Export/Confirm Workflow', () => {
     expect(response2.status).toBe(200);
 
     // Verify only 1 set of products exported (not duplicated) using Prisma
-    const prisma = getPrismaClient();
-    const products = await prisma.vendor_products.findMany({
+    const exportedProducts = await prisma.vendor_products.findMany({
       where: { source_document_id: documentId },
     });
 
-    expect(products).toHaveLength(1);
+    expect(exportedProducts).toHaveLength(1);
   });
 });

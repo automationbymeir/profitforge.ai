@@ -13,8 +13,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
-import { getPrismaClient } from '../../src/data/prisma-client';
 import { mockDocumentIntelligence, mockOpenAI } from './common/fixtures/azure-ai-mocks';
 import { cleanTestDatabase } from './common/utils';
 
@@ -57,16 +55,14 @@ describe('Integration: Upload Workflow', () => {
     // Assert
     expect(response.status).toBe(201);
     const data = await response.json();
-    expect(data.resultId).toBeDefined();
-    expect(data.documentName).toBe('test.pdf'); // Service stores original filename
+    expect(data.documentName).toBe('test.pdf');
     expect(data.vendorName).toBe(testVendor);
+    expect(data.filePath).toBe(`${testVendor}/test.pdf`);
+    expect(data.status).toBe('pending');
 
-    // Verify database record created
-    const prisma = getPrismaClient();
-    const documentRepo = new DocumentRepository(prisma);
-    const docs = await documentRepo.findByVendor(testVendor);
-    expect(docs).toHaveLength(1);
-    expect(docs[0].processing_status).toBe('pending');
+    // Note: Database record is created asynchronously by blob trigger
+    // Cannot verify immediately after upload in this test
+    // See: document-service.ts - "ONLY uploads blob to storage - blob trigger will create run record"
   });
 
   it('should validate required fields', async () => {
@@ -135,6 +131,7 @@ describe('Integration: Upload Workflow', () => {
     // Assert - Upload succeeds, file size validation happens in blob processor
     expect(response.status).toBe(201);
     const data = await response.json();
-    expect(data.resultId).toBeDefined();
+    expect(data.documentName).toBeDefined();
+    expect(data.status).toBe('pending');
   });
 });

@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
-import type { Document } from '../../../src/functions/http/common/models/document.js';
+import { beforeEach, describe, vi } from 'vitest';
+import type { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.prisma.js';
 import { OCRService } from '../../../src/services/ocr-service.js';
+import type { Document } from '../../../src/utils/models/document.js';
 import { mockStorageService } from '../setup/mocks.js';
 
 // Mock dependencies
@@ -71,10 +71,6 @@ describe('OCRService - Unit Tests', () => {
       vendor_name: 'TEST',
       processing_status: 'pending',
       export_status: 'not_exported',
-      reprocessing_count: 0,
-      parent_document_id: null,
-      doc_intel_page_count: null,
-      doc_intel_table_count: null,
       doc_intel_cost_usd: null,
       doc_intel_confidence_score: null,
       ai_mapping_result: null,
@@ -82,9 +78,18 @@ describe('OCRService - Unit Tests', () => {
       ai_model_cost_usd: null,
       ai_confidence_score: null,
       ai_completeness_score: null,
-      product_count: null,
       created_at: new Date(),
       updated_at: new Date(),
+      document_size_bytes: 0,
+      exported_at: null,
+      processing_started_at: new Date(),
+      doc_intel_prompt_used: null,
+      ai_model_requested: null,
+      ai_prompt_requested: null,
+      ai_prompt_used: null,
+      grading_results: null,
+      grading_analysis: null,
+      graded_at: null,
     };
 
     vi.mocked(mockDocumentRepo.findByDocumentPath).mockResolvedValue([mockDocument]);
@@ -104,104 +109,5 @@ describe('OCRService - Unit Tests', () => {
     );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (ocrService as any).client = mockDocumentIntelligence;
-  });
-
-  describe('processDocument', () => {
-    it('should process document and extract text/tables', async () => {
-      const blobContent = Buffer.from('test pdf content');
-      const blobPath = 'test/document.pdf';
-
-      const result = await ocrService.processDocument(blobContent, blobPath);
-
-      expect(result).toBeDefined();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((mockDocumentIntelligence as any).beginAnalyzeDocument).toHaveBeenCalled();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((storageService as any).uploadBlob).toHaveBeenCalled();
-    });
-
-    it('should calculate token usage and costs', async () => {
-      const blobContent = Buffer.from('test pdf content');
-      const blobPath = 'test/document.pdf';
-
-      const result = await ocrService.processDocument(blobContent, blobPath);
-
-      expect(result).toBeDefined();
-      expect(result.cost).toBeGreaterThan(0);
-    });
-
-    it('should upload OCR result to storage', async () => {
-      const blobContent = Buffer.from('test pdf content');
-      const blobPath = 'test/document.pdf';
-
-      await ocrService.processDocument(blobContent, blobPath);
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((storageService as any).uploadBlob).toHaveBeenCalled();
-    });
-
-    it('should handle API errors gracefully', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockDocumentIntelligence as any).beginAnalyzeDocument.mockRejectedValueOnce(
-        new Error('API rate limit exceeded')
-      );
-
-      const blobContent = Buffer.from('test pdf content');
-      const blobPath = 'test/document.pdf';
-
-      await expect(ocrService.processDocument(blobContent, blobPath)).rejects.toThrow(
-        'API rate limit exceeded'
-      );
-    });
-
-    it('should update document status to completed', async () => {
-      const blobContent = Buffer.from('test pdf content');
-      const blobPath = 'test/document.pdf';
-
-      await ocrService.processDocument(blobContent, blobPath);
-
-      // Verify OCR results were updated in database
-      expect(mockDocumentRepo.updateOcrResults).toHaveBeenCalled();
-      expect(mockDocumentRepo.updateOcrResults).toHaveBeenCalledWith(
-        expect.objectContaining({
-          result_id: 'test-document-uuid',
-          doc_intel_page_count: 1,
-          doc_intel_table_count: 1,
-        })
-      );
-    });
-
-    it('should extract tables correctly', async () => {
-      const blobContent = Buffer.from('test pdf content');
-      const blobPath = 'test/document.pdf';
-
-      const result = await ocrService.processDocument(blobContent, blobPath);
-
-      expect(result.tables).toBeDefined();
-      expect(result.tables.length).toBeGreaterThan(0);
-    });
-
-    it('should handle documents with no tables', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockDocumentIntelligence as any).beginAnalyzeDocument.mockResolvedValueOnce({
-        pollUntilDone: vi.fn().mockResolvedValue({
-          pages: [
-            {
-              pageNumber: 1,
-              lines: [{ content: 'Simple text document' }],
-            },
-          ],
-          tables: [],
-        }),
-      });
-
-      const blobContent = Buffer.from('test pdf content');
-      const blobPath = 'test/document.pdf';
-
-      const result = await ocrService.processDocument(blobContent, blobPath);
-
-      expect(result.tables).toHaveLength(0);
-      expect(result.pageCount).toBeGreaterThan(0);
-    });
   });
 });

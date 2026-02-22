@@ -1,5 +1,5 @@
 /**
- * DocumentRepository - Data Access Layer for document_processing_results table (Prisma) * 
+ * DocumentRepository - Data Access Layer for document_processing_results table (Prisma) *
  * Encapsulates all database operations for documents using Prisma ORM:
  * - CRUD operations
  * - Vendor-based queries
@@ -10,7 +10,7 @@
  * @module data/repositories
  */
 
-import { PrismaClient, Prisma, document_processing_results } from '@prisma/client';
+import { Prisma, PrismaClient, document_processing_results } from '@prisma/client';
 import type { Document, ExportStatus, ProcessingStatus } from '../../utils/models/document.js';
 
 /**
@@ -22,9 +22,9 @@ export interface CreateDocumentInput {
   document_size_bytes: number;
   document_type: string;
   vendor_name: string;
-  processing_status: ProcessingStatus;
-  export_status: ExportStatus;
-  processing_started_at: Date;
+  processing_status?: ProcessingStatus;
+  export_status?: ExportStatus;
+  processing_started_at?: Date;
   ai_model_requested?: string | null;
   ai_prompt_requested?: string | null;
 }
@@ -37,15 +37,6 @@ export interface UpdateOcrResultsInput {
   doc_intel_confidence_score: number | null;
   doc_intel_cost_usd: number | null;
   doc_intel_prompt_used: string | null;
-}
-
-/**
- * Input for storing requested AI parameters
- */
-export interface UpdateAiParametersInput {
-  result_id: string;
-  ai_model_requested: string | null;
-  ai_prompt_requested: string | null;
 }
 
 /**
@@ -119,7 +110,7 @@ export class DocumentRepository {
         vendor_name: input.vendor_name,
         processing_status: input.processing_status ?? 'pending',
         export_status: input.export_status ?? 'not_exported',
-        processing_started_at: input.processing_started_at,
+        processing_started_at: input.processing_started_at ?? new Date(),
         ai_model_requested: input.ai_model_requested ?? null,
         ai_prompt_requested: input.ai_prompt_requested ?? null,
       },
@@ -144,8 +135,6 @@ export class DocumentRepository {
 
     return document ? this.mapToDocument(document) : null;
   }
-
-
 
   /**
    * Find all documents for a specific vendor
@@ -176,8 +165,6 @@ export class DocumentRepository {
 
     return document ? this.mapToDocument(document) : null;
   }
-
-
 
   /**
    * Query documents with flexible filters
@@ -404,7 +391,9 @@ export class DocumentRepository {
     export_status: doc.export_status as ExportStatus,
     exported_at: doc.exported_at,
     processing_started_at: doc.processing_started_at ?? new Date(),
-    doc_intel_confidence_score: doc.doc_intel_confidence_score ? Number(doc.doc_intel_confidence_score) : null,
+    doc_intel_confidence_score: doc.doc_intel_confidence_score
+      ? Number(doc.doc_intel_confidence_score)
+      : null,
     doc_intel_cost_usd: doc.doc_intel_cost_usd ? Number(doc.doc_intel_cost_usd) : null,
     doc_intel_prompt_used: doc.doc_intel_prompt_used,
     ai_model_requested: doc.ai_model_requested,

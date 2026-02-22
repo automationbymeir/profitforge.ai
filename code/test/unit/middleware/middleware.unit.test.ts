@@ -1,9 +1,9 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { withAuth } from '../../../src/middleware/auth.js';
-import { withCors } from '../../../src/middleware/cors.js';
-import { withErrorHandler } from '../../../src/middleware/error-handler.js';
-import { withRateLimit } from '../../../src/middleware/rate-limit.js';
+import { withAuth } from '../../../src/utils/middleware/auth.js';
+import { withCors } from '../../../src/utils/middleware/cors.js';
+import { withErrorHandler } from '../../../src/utils/middleware/error-handler.js';
+import { withRateLimit } from '../../../src/utils/middleware/rate-limit.js';
 import * as usageTracker from '../../../src/utils/usageTracker.js';
 import {
   createMockContext,
@@ -288,8 +288,9 @@ describe('Middleware - Unit Tests', () => {
       const response = await wrappedHandler(mockRequest, mockContext);
 
       expect(response.status).toBe(500);
-      expect(mockContext.error).toHaveBeenCalledWith(
-        'Unhandled error in handler:',
+      // Error handler uses context.log, not context.error
+      expect(mockContext.log).toHaveBeenCalledWith(
+        '❌ Unhandled error in handler:',
         expect.objectContaining({
           error: 'Test error',
           method: 'POST',
@@ -340,8 +341,9 @@ describe('Middleware - Unit Tests', () => {
       const wrappedHandler = withErrorHandler(mockHandler);
       await wrappedHandler(mockRequest, mockContext);
 
-      expect(mockContext.error).toHaveBeenCalledWith(
-        'Unhandled error in handler:',
+      // Error handler uses context.log, not context.error
+      expect(mockContext.log).toHaveBeenCalledWith(
+        '❌ Unhandled error in handler:',
         expect.objectContaining({
           url: 'http://localhost/api/test/123',
           method: 'PUT',

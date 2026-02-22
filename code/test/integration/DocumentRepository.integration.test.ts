@@ -7,9 +7,9 @@
 
 import type { PrismaClient } from '@prisma/client';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { getPrismaClient } from '../../src/data/prisma-client.js';
 import type { CreateDocumentInput } from '../../src/data/repositories/DocumentRepository.prisma.js';
 import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
-import { getPrismaClient } from '../../src/data/prisma-client.js';
 import { cleanTestDatabase } from './common/utils';
 
 describe('DocumentRepository Integration Tests', () => {
@@ -124,37 +124,6 @@ describe('DocumentRepository Integration Tests', () => {
     });
   });
 
-  describe.skip('findByDocumentPath() - REMOVED', () => {
-    test('should retrieve documents by exact path', async () => {
-      // Arrange
-      const input: CreateDocumentInput = {
-        vendor_name: 'TestVendor',
-        document_name: 'invoice.pdf',
-        document_path: 'testvendor/inbox/2024/invoice.pdf',
-        document_size_bytes: 5120,
-        document_type: 'application/pdf',
-        processing_status: 'pending',
-      };
-      await repository.create(input);
-
-      // Act
-      const documents = await repository.findByDocumentPath('testvendor/inbox/2024/invoice.pdf');
-
-      // Assert
-      expect(documents).toHaveLength(1);
-      expect(documents[0].document_path).toBe('testvendor/inbox/2024/invoice.pdf');
-      expect(documents[0].vendor_name).toBe('TestVendor');
-    });
-
-    test('should return empty array for non-existent path', async () => {
-      // Act
-      const documents = await repository.findByDocumentPath('nonexistent/path.pdf');
-
-      // Assert
-      expect(documents).toEqual([]);
-    });
-  });
-
   describe('updateOcrResults()', () => {
     test('should update OCR results for existing document', async () => {
       // Arrange - Create document
@@ -171,11 +140,7 @@ describe('DocumentRepository Integration Tests', () => {
       // Act - Update OCR results
       await repository.updateOcrResults({
         result_id: resultId,
-        doc_intel_extracted_text: 'Sample OCR text from invoice',
-        doc_intel_structured_data: JSON.stringify({ total: 1500.5 }),
         doc_intel_confidence_score: 0.95,
-        doc_intel_page_count: 1,
-        doc_intel_table_count: 2,
         doc_intel_cost_usd: 0.01,
         doc_intel_prompt_used: 'invoice-extraction-v1',
       });
@@ -183,8 +148,7 @@ describe('DocumentRepository Integration Tests', () => {
       // Assert
       const updated = await repository.findById(resultId);
       expect(updated?.doc_intel_confidence_score).toBe(0.95);
-      expect(updated?.doc_intel_page_count).toBe(1);
-      expect(updated?.doc_intel_table_count).toBe(2);
+      expect(updated?.doc_intel_cost_usd).toBe(0.01);
       expect(updated?.processing_status).toBe('ocr_complete');
       expect(updated?.updated_at.getTime()).toBeGreaterThan(updated!.created_at.getTime());
     });
@@ -215,7 +179,9 @@ describe('DocumentRepository Integration Tests', () => {
         ai_model_cost_usd: 0.05,
         ai_confidence_score: 0.88,
         ai_completeness_score: 0.92,
-        product_count: 2,
+        ai_prompt_used: null,
+        ai_prompt_tokens: null,
+        ai_completion_tokens: null,
       });
 
       // Assert
@@ -223,7 +189,7 @@ describe('DocumentRepository Integration Tests', () => {
       expect(updated?.ai_mapping_result).toBe(mappedProducts);
       expect(updated?.ai_model_used).toBe('gpt-4o-2024-08-06');
       expect(updated?.ai_confidence_score).toBe(0.88);
-      expect(updated?.product_count).toBe(2);
+      // product_count removed - not in schema (calculated from relation)
       expect(updated?.processing_status).toBe('completed');
       expect(updated?.updated_at.getTime()).toBeGreaterThan(updated!.created_at.getTime());
     });
@@ -371,53 +337,6 @@ describe('DocumentRepository Integration Tests', () => {
     });
   });
 
-  describe.skip('createReprocessingVersion() - REMOVED', () => {
-    test('should create new version with parent-child relationship', async () => {
-      // Arrange - Create original document
-      const originalInput: CreateDocumentInput = {
-        vendor_name: 'TestVendor',
-        document_name: 'invoice.pdf',
-        document_path: 'testvendor/inbox/invoice.pdf',
-        document_size_bytes: 1024,
-        document_type: 'application/pdf',
-        processing_status: 'completed',
-      };
-      const originalId = await repository.create(originalInput);
-
-      // Update with OCR results
-      await repository.updateOcrResults({
-        result_id: originalId,
-        doc_intel_extracted_text: 'Original OCR text',
-        doc_intel_structured_data: '{"total": 100}',
-        doc_intel_confidence_score: 0.9,
-        doc_intel_page_count: 1,
-        doc_intel_table_count: 1,
-        doc_intel_cost_usd: 0.01,
-        doc_intel_prompt_used: 'v1',
-      });
-
-      // Act - Create reprocessing version
-      const newVersionId = await repository.createReprocessingVersion(originalId, originalId);
-
-      // Assert - New version exists
-      expect(newVersionId).toBeDefined();
-      expect(newVersionId).not.toBe(originalId);
-
-      // Assert - New version has correct data
-      const newVersion = await repository.findById(newVersionId);
-      expect(newVersion).toBeDefined();
-      expect(newVersion?.vendor_name).toBe('TestVendor');
-      expect(newVersion?.document_name).toBe('invoice.pdf');
-      expect(newVersion?.document_path).toBe('testvendor/inbox/invoice.pdf');
-      expect(newVersion?.processing_status).toBe('ocr_complete'); // Has OCR, ready for AI
-      expect(newVersion?.export_status).toBe('pending');
-      expect(newVersion?.parent_document_id).toBe(originalId);
-
-      // Assert - OCR data is reset
-      expect(newVersion?.ai_mapping_result).toBeNull();
-    });
-  });
-
   describe('deleteById()', () => {
     test('should delete document by ID and return count', async () => {
       // Arrange
@@ -508,39 +427,6 @@ describe('DocumentRepository Integration Tests', () => {
     test('should return 0 for vendor with no documents', async () => {
       // Act
       const deleteCount = await repository.deleteByVendor('NonExistentVendor');
-
-      // Assert
-      expect(deleteCount).toBe(0);
-    });
-  });
-
-  describe.skip('deleteByDocumentPath() - REMOVED', () => {
-    test('should delete documents by exact path', async () => {
-      // Arrange
-      const path = 'testvendor/inbox/invoice.pdf';
-      await repository.create({
-        vendor_name: 'TestVendor',
-        document_name: 'invoice.pdf',
-        document_path: path,
-        document_size_bytes: 1024,
-        document_type: 'application/pdf',
-        processing_status: 'pending',
-      });
-
-      // Act
-      const deleteCount = await repository.deleteByDocumentPath(path);
-
-      // Assert
-      expect(deleteCount).toBe(1);
-
-      // Verify deletion
-      const deleted = await repository.findByDocumentPath(path);
-      expect(deleted).toHaveLength(0);
-    });
-
-    test('should return 0 for non-existent path', async () => {
-      // Act
-      const deleteCount = await repository.deleteByDocumentPath('nonexistent/path.pdf');
 
       // Assert
       expect(deleteCount).toBe(0);

@@ -1,12 +1,12 @@
 import OpenAI from 'openai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.js';
-import type { VendorProductRepository } from '../../../src/data/repositories/VendorProductRepository.js';
-import type { Document } from '../../../src/functions/http/common/models/document.js';
+import type { DocumentRepository } from '../../../src/data/repositories/DocumentRepository.prisma.js';
+import type { VendorProductRepository } from '../../../src/data/repositories/VendorProductRepository.prisma.js';
 import type { QueueService } from '../../../src/functions/infra-adapters/queues.js';
 import { AIService, createAIService } from '../../../src/services/ai-service.js';
 import { DocumentService } from '../../../src/services/document-service.js';
-import { VendorService } from '../../../src/services/vendor-service.js';
+// import { VendorService } from '../../../src/services/vendor-service.js'; // REMOVED: VendorService no longer exists
+import type { Document } from '../../../src/utils/models/document.js';
 import { mockOpenAI, mockStorageService } from '../setup/mocks.js';
 
 // Mock dependencies

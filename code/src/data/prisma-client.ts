@@ -1,16 +1,16 @@
 /**
  * Prisma Client Singleton
- * 
+ *
  * Provides a singleton PrismaClient instance for Azure Functions.
  * Reuses the same client across function invocations to maintain
  * connection pooling and optimize performance in serverless environments.
- * 
+ *
  * Features:
  * - Singleton pattern for connection reuse
  * - Automatic retry for transient errors
  * - Logging for debugging
  * - Azure SQL Serverless compatibility
- * 
+ *
  * @module data/prisma-client
  */
 
@@ -30,20 +30,20 @@ function initializePrismaEnvironment(): void {
   if (!process.env.SQL_CONNECTION_STRING) {
     throw new Error('SQL_CONNECTION_STRING environment variable is required');
   }
-  
+
   // Set the connection string in Prisma's expected format
   const prismaConnectionString = getPrismaConnectionString();
   process.env.DATABASE_URL = prismaConnectionString;
-  
+
   console.log('[Prisma] Connection string initialized');
 }
 
 /**
  * Get or create the Prisma Client singleton.
  * Reuses the same client instance across Azure Function invocations.
- * 
+ *
  * Connection pooling is handled internally by Prisma's SQL Server connector.
- * 
+ *
  * @returns PrismaClient singleton instance
  */
 export function getPrismaClient(): PrismaClient {
@@ -66,12 +66,12 @@ export function getPrismaClient(): PrismaClient {
 /**
  * Execute a Prisma operation with automatic retry for transient errors.
  * Handles Azure SQL Serverless auto-pause reconnection and network issues.
- * 
+ *
  * @param operation - Async function that performs Prisma operations
  * @param retries - Number of retry attempts (default: 3)
  * @returns Result from the operation
  * @throws Error if all retries fail or non-transient error occurs
- * 
+ *
  * @example
  * ```typescript
  * const document = await withPrismaRetry(async (prisma) => {
@@ -106,10 +106,7 @@ export async function withPrismaRetry<T>(
       }
 
       // Non-transient error or no retries left
-      console.error(
-        `[Prisma] Operation failed after ${attempt} attempt(s):`,
-        lastError.message
-      );
+      console.error(`[Prisma] Operation failed after ${attempt} attempt(s):`, lastError.message);
       throw lastError;
     }
   }
@@ -121,7 +118,7 @@ export async function withPrismaRetry<T>(
 /**
  * Disconnect the Prisma Client.
  * Useful for cleanup in tests or shutdown hooks.
- * 
+ *
  * Note: Azure Functions typically don't need explicit disconnect
  * as the platform manages process lifecycle.
  */
@@ -135,7 +132,7 @@ export async function disconnectPrisma(): Promise<void> {
 /**
  * Check if Prisma Client is connected.
  * Useful for health checks and diagnostics.
- * 
+ *
  * @returns true if client exists and can execute queries
  */
 export async function isPrismaConnected(): Promise<boolean> {
