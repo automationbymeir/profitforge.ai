@@ -1,24 +1,24 @@
 /**
  * DocumentRepository Integration Tests
  *
- * Tests DocumentRepository with real Docker SQL Server database.
- * Validates CRUD operations, query filtering, reprocessing versions, and cascade deletes.
+ * Tests DocumentRepository with real Azure SQL Server database using Prisma.
+ * Validates CRUD operations, query filtering, and cascade deletes.
  */
 
-import type sql from 'mssql';
+import type { PrismaClient } from '@prisma/client';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import type { CreateDocumentInput } from '../../src/data/repositories/DocumentRepository.js';
-import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.js';
-import { getConnectionPool } from '../../src/utils/database.js';
+import type { CreateDocumentInput } from '../../src/data/repositories/DocumentRepository.prisma.js';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
+import { getPrismaClient } from '../../src/data/prisma-client.js';
 import { cleanTestDatabase } from './common/utils';
 
 describe('DocumentRepository Integration Tests', () => {
-  let pool: sql.ConnectionPool;
+  let prisma: PrismaClient;
   let repository: DocumentRepository;
 
   beforeEach(async () => {
-    pool = await getConnectionPool();
-    repository = new DocumentRepository(pool);
+    prisma = getPrismaClient();
+    repository = new DocumentRepository(prisma);
     await cleanTestDatabase();
   });
 
@@ -124,7 +124,7 @@ describe('DocumentRepository Integration Tests', () => {
     });
   });
 
-  describe('findByDocumentPath()', () => {
+  describe.skip('findByDocumentPath() - REMOVED', () => {
     test('should retrieve documents by exact path', async () => {
       // Arrange
       const input: CreateDocumentInput = {
@@ -371,7 +371,7 @@ describe('DocumentRepository Integration Tests', () => {
     });
   });
 
-  describe('createReprocessingVersion()', () => {
+  describe.skip('createReprocessingVersion() - REMOVED', () => {
     test('should create new version with parent-child relationship', async () => {
       // Arrange - Create original document
       const originalInput: CreateDocumentInput = {
@@ -514,7 +514,7 @@ describe('DocumentRepository Integration Tests', () => {
     });
   });
 
-  describe('deleteByDocumentPath()', () => {
+  describe.skip('deleteByDocumentPath() - REMOVED', () => {
     test('should delete documents by exact path', async () => {
       // Arrange
       const path = 'testvendor/inbox/invoice.pdf';

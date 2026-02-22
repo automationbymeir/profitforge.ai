@@ -6,8 +6,8 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.js';
-import { getConnectionPool } from '../../src/utils/database.js';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
+import { getPrismaClient } from '../../src/data/prisma-client.js';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
 
@@ -28,8 +28,8 @@ describe.skip('Integration: Delete Vendor Workflow', () => {
     // await uploadDocumentViaService(testVendor2);
 
     // Verify documents exist
-    const pool = await getConnectionPool();
-    const documentRepo = new DocumentRepository(pool);
+    const prisma = getPrismaClient();
+    const documentRepo = new DocumentRepository(prisma);
 
     const doc1 = await documentRepo.findByVendor(testVendor);
     const doc2 = await documentRepo.findByVendor(testVendor2);
@@ -81,8 +81,8 @@ describe.skip('Integration: Delete Vendor Workflow', () => {
     // const uploadResult = await uploadDocumentViaService(testVendor);
     // const originalId = uploadResult.resultId;
 
-    const pool = await getConnectionPool();
-    const documentRepo = new DocumentRepository(pool);
+    const prisma = getPrismaClient();
+    const documentRepo = new DocumentRepository(prisma);
 
     // Create reprocessed version (simulating reprocessing workflow)
     // const _reprocessedId = await documentRepo.createReprocessingVersion(originalId, null);

@@ -6,8 +6,8 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DocumentRepository } from '../../src/data/repositories/DocumentRepository';
-import { getConnectionPool } from '../../src/utils/database';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
+import { getPrismaClient } from '../../src/data/prisma-client';
 import { cleanTestDatabase } from './common/utils';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
@@ -21,8 +21,8 @@ describe('Integration: Reprocessing Workflow', () => {
 
   it('should create new version when reprocessing document', async () => {
     // Arrange - Create original document
-    const pool = await getConnectionPool();
-    const documentRepo = new DocumentRepository(pool);
+    const prisma = getPrismaClient();
+    const documentRepo = new DocumentRepository(prisma);
 
     const originalId = await documentRepo.create({
       vendor_name: testVendor,
@@ -68,8 +68,8 @@ describe('Integration: Reprocessing Workflow', () => {
 
   it('should support multiple reprocessing iterations', async () => {
     // Arrange - Create original
-    const pool = await getConnectionPool();
-    const documentRepo = new DocumentRepository(pool);
+    const prisma = getPrismaClient();
+    const documentRepo = new DocumentRepository(prisma);
 
     const originalId = await documentRepo.create({
       vendor_name: 'TEST_VENDOR',

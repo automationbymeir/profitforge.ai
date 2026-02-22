@@ -6,8 +6,8 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.js';
-import { getConnectionPool } from '../../src/utils/database.js';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
+import { getPrismaClient } from '../../src/data/prisma-client.js';
 import { cleanTestDatabase } from './common/utils';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
@@ -24,8 +24,8 @@ describe('Integration: Get Results Workflow', () => {
     await cleanTestDatabase();
 
     // Get repository
-    const pool = await getConnectionPool();
-    documentRepo = new DocumentRepository(pool);
+    const prisma = getPrismaClient();
+    documentRepo = new DocumentRepository(prisma);
 
     // Insert 3 test documents for the same vendor
     resultId1 = await documentRepo.create({

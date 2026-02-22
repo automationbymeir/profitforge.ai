@@ -13,8 +13,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DocumentRepository } from '../../src/data/repositories/DocumentRepository';
-import { getConnectionPool } from '../../src/utils/database';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
+import { getPrismaClient } from '../../src/data/prisma-client';
 import { mockDocumentIntelligence, mockOpenAI } from './common/fixtures/azure-ai-mocks';
 import { cleanTestDatabase } from './common/utils';
 
@@ -62,8 +62,8 @@ describe('Integration: Upload Workflow', () => {
     expect(data.vendorName).toBe(testVendor);
 
     // Verify database record created
-    const pool = await getConnectionPool();
-    const documentRepo = new DocumentRepository(pool);
+    const prisma = getPrismaClient();
+    const documentRepo = new DocumentRepository(prisma);
     const docs = await documentRepo.findByVendor(testVendor);
     expect(docs).toHaveLength(1);
     expect(docs[0].processing_status).toBe('pending');

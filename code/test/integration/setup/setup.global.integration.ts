@@ -19,7 +19,7 @@ import { ChildProcess } from 'child_process';
 import { config as loadEnv } from 'dotenv';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
-import { getConnectionPool } from '../../../src/utils/database.js';
+import { getPrismaClient } from '../../../src/data/prisma-client.js';
 import {
   registerSignalHandlers,
   startFunctions,
@@ -89,7 +89,8 @@ export default async function globalSetup() {
 
     for (let attempt = 1; attempt <= 30; attempt++) {
       try {
-        await getConnectionPool();
+        getPrismaClient();
+        break;
       } catch (_) {
         console.log(`[DB] Waiting for database to be ready (attempt ${attempt}/30)...`);
         await new Promise((resolve) => setTimeout(resolve, 2000));

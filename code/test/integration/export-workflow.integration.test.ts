@@ -5,10 +5,9 @@
  * Verifies products are exported to vendor_products table.
  */
 
-import sql from 'mssql';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.js';
-import { getConnectionPool } from '../../src/utils/database.js';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
+import { getPrismaClient } from '../../src/data/prisma-client.js';
 import { cleanTestDatabase } from './common/utils';
 
 const FUNCTION_BASE_URL = 'http://localhost:7071';
@@ -22,8 +21,8 @@ describe('Integration: Export/Confirm Workflow', () => {
 
   it('should export products to vendor_products table', async () => {
     // Arrange - Create document with products
-    const pool = await getConnectionPool();
-    const documentRepo = new DocumentRepository(pool);
+    const prisma = getPrismaClient();
+    const documentRepo = new DocumentRepository(prisma);
 
     const products = [
       { name: 'Product 1', sku: 'A001', price: 10.0, unit: 'case', description: 'Product 1 desc' },
@@ -65,18 +64,16 @@ describe('Integration: Export/Confirm Workflow', () => {
     const result = await response.json();
     expect(result.productsExported).toBe(2);
 
-    // Verify products in vendor_products table
-    const db = await getConnectionPool();
-    const productsResult = await db
-      .request()
-      .input('sourceDocId', sql.UniqueIdentifier, documentId)
-      .query(
-        'SELECT * FROM vvocr.vendor_products WHERE source_document_id = @sourceDocId ORDER BY sku ASC'
-      );
+    // Verify products in vendor_products table using Prisma
+    const prisma = getPrismaClient();
+    const products = await prisma.vendor_products.findMany({
+      where: { source_document_id: documentId },
+      orderBy: { sku: 'asc' },
+    });
 
-    expect(productsResult.recordset).toHaveLength(2);
-    expect(productsResult.recordset[0].vendor_name).toBe('TEST_VENDOR');
-    expect(productsResult.recordset[0].sku).toBe('A001');
+    expect(products).toHaveLength(2);
+    expect(products[0].vendor_name).toBe('TEST_VENDOR');
+    expect(products[0].sku).toBe('A001');
 
     // Verify export status updated to 'confirmed'
     const afterExport = await documentRepo.findById(documentId);
@@ -107,8 +104,8 @@ describe('Integration: Export/Confirm Workflow', () => {
 
   it('should reject confirmation if no products to export', async () => {
     // Arrange - Document with no products
-    const pool = await getConnectionPool();
-    const documentRepo = new DocumentRepository(pool);
+    const prisma = getPrismaClient();
+    const documentRepo = new DocumentRepository(prisma);
 
     const documentId = await documentRepo.create({
       vendor_name: 'TEST_VENDOR',
@@ -132,8 +129,8 @@ describe('Integration: Export/Confirm Workflow', () => {
 
   it('should handle double confirmation gracefully', async () => {
     // Arrange
-    const pool = await getConnectionPool();
-    const documentRepo = new DocumentRepository(pool);
+    const prisma = getPrismaClient();
+    const documentRepo = new DocumentRepository(prisma);
 
     const products = [{ name: 'Product 1', sku: 'A001', price: 10.0, unit: 'each' }];
     const documentId = await documentRepo.create({
@@ -162,13 +159,12 @@ describe('Integration: Export/Confirm Workflow', () => {
     expect(response1.status).toBe(200);
     expect(response2.status).toBe(200);
 
-    // Verify only 1 set of products exported (not duplicated)
-    const db = await getConnectionPool();
-    const productsResult = await db
-      .request()
-      .input('sourceDocId', sql.UniqueIdentifier, documentId)
-      .query('SELECT * FROM vvocr.vendor_products WHERE source_document_id = @sourceDocId');
+    // Verify only 1 set of products exported (not duplicated) using Prisma
+    const prisma = getPrismaClient();
+    const products = await prisma.vendor_products.findMany({
+      where: { source_document_id: documentId },
+    });
 
-    expect(productsResult.recordset).toHaveLength(1);
+    expect(products).toHaveLength(1);
   });
 });

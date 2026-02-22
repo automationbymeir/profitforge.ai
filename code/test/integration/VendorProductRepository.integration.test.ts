@@ -1,28 +1,28 @@
 /**
  * VendorProductRepository Integration Tests
  *
- * Tests VendorProductRepository with real Docker SQL Server database.
- * Validates bulk inserts with batching (500+ products), query operations, and cascade deletes.
+ * Tests VendorProductRepository with real Azure SQL Server database using Prisma.
+ * Validates bulk inserts, query operations, and cascade deletes.
  */
 
-import type sql from 'mssql';
+import type { PrismaClient } from '@prisma/client';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import type { CreateDocumentInput } from '../../src/data/repositories/DocumentRepository.js';
-import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.js';
-import type { CreateVendorProductInput } from '../../src/data/repositories/VendorProductRepository.js';
-import { VendorProductRepository } from '../../src/data/repositories/VendorProductRepository.js';
-import { getConnectionPool } from '../../src/utils/database.js';
+import type { CreateDocumentInput } from '../../src/data/repositories/DocumentRepository.prisma.js';
+import { DocumentRepository } from '../../src/data/repositories/DocumentRepository.prisma.js';
+import type { CreateVendorProductInput } from '../../src/data/repositories/VendorProductRepository.prisma.js';
+import { VendorProductRepository } from '../../src/data/repositories/VendorProductRepository.prisma.js';
+import { getPrismaClient } from '../../src/data/prisma-client.js';
 import { cleanTestDatabase } from './common/utils';
 
 describe('VendorProductRepository Integration Tests', () => {
-  let pool: sql.ConnectionPool;
+  let prisma: PrismaClient;
   let repository: VendorProductRepository;
   let documentRepository: DocumentRepository;
 
   beforeEach(async () => {
-    pool = await getConnectionPool();
-    repository = new VendorProductRepository(pool);
-    documentRepository = new DocumentRepository(pool);
+    prisma = getPrismaClient();
+    repository = new VendorProductRepository(prisma);
+    documentRepository = new DocumentRepository(prisma);
     await cleanTestDatabase();
   });
 

@@ -111,14 +111,6 @@ export class DocumentService {
   }
 
   /**
-   * Delete all runs and blobs for a vendor (alias for deleteDocument)
-   * Used by tests and cleanup utilities
-   */
-  async deleteByVendorName(vendorName: string): Promise<DeleteResult> {
-    return this.deleteDocument(vendorName);
-  }
-
-  /**
    * Get full document record by ID
    */
   async getDocument(resultId: string): Promise<import('../utils/models/document.js').Document> {
@@ -131,15 +123,6 @@ export class DocumentService {
     }
 
     return document;
-  }
-
-  /**
-   * Get latest processing run for a vendor
-   */
-  async getLatestRunByVendor(
-    vendorName: string
-  ): Promise<import('../utils/models/document.js').Document | null> {
-    return await this.documentRepo.findLatestByVendor(vendorName);
   }
 
   /**
@@ -160,18 +143,6 @@ export class DocumentService {
       limit: filters?.limit,
       offset: filters?.offset,
     });
-  }
-
-  /**
-   * Get vendor products for a specific vendor
-   *
-   * Used for testing and verification of exported products.
-   *
-   * @param vendorName - Vendor name to query
-   * @returns Array of vendor product records
-   */
-  async getVendorProducts(vendorName: string): Promise<string[]> {
-    return await this.documentRepo.getVendorProducts(vendorName);
   }
 }
 
