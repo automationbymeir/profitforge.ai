@@ -53,11 +53,14 @@ This branch migrates the data access layer from raw SQL queries (`mssql`) to **P
 5. DocumentRepository refactored to Prisma (20 methods)
 6. VendorProductRepository refactored to Prisma (6 methods)
 7. Package.json scripts added for Prisma tooling
+8. **Service layer updated** - All 6 services migrated to Prisma
+   - Updated imports from `.ts` to `.prisma.ts`
+   - Replaced `getConnectionPool()` with `getPrismaClient()`
+   - Added factory functions to repositories
+   - Build passes successfully
 
 ### 🔄 Next Steps (Not Yet Started)
 
-8. **Update service layer** - Switch from `getConnectionPool()` to `getPrismaClient()`
-   - Files to update: 6 service files
 9. **Update test infrastructure** - Refactor mocks and integration tests
    - Unit tests: Mock PrismaClient instead of ConnectionPool
    - Integration tests: Use Prisma for test setup/cleanup
