@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Field mapping configuration for vendor product export. Maps dynamic AI-extracted field names to fixed database schema.",
+  "rules": [
+    {
+      "targetField": "product_name",
+      "primaryAliases": [
+        "name",
+        "product",
+        "product_name",
+        "item_name",
+        "productname",
+        "item",
+        "description",
+        "type",
+        "product_type",
+        "item_type",
+        "producttype",
+        "itemtype"
+      ],
+      "fuzzyThreshold": 0.8,
+      "required": true,
+      "notes": "Primary product identifier name"
+    },
+    {
+      "targetField": "sku",
+      "primaryAliases": [
+        "sku",
+        "item_number",
+        "item_no",
+        "product_code",
+        "code",
+        "item#",
+        "product_id",
+        "part_number",
+        "partnumber",
+        "part_no"
+      ],
+      "fuzzyThreshold": 0.85,
+      "required": true,
+      "notes": "Stock keeping unit or item code"
+    },
+    {
+      "targetField": "price",
+      "primaryAliases": [
+        "price",
+        "unit_price",
+        "unitprice",
+        "cost",
+        "msrp",
+        "map",
+        "list_price",
+        "listprice",
+        "retail",
+        "retail_price"
+      ],
+      "fuzzyThreshold": 0.8,
+      "required": true,
+      "transform": "parseFloat",
+      "notes": "Product price as decimal number"
+    },
+    {
+      "targetField": "unit",
+      "primaryAliases": [
+        "unit",
+        "qty",
+        "quantity",
+        "pack_size",
+        "packsize",
+        "pack",
+        "uom",
+        "unit_of_measure",
+        "case_qty",
+        "caseqty"
+      ],
+      "fuzzyThreshold": 0.75,
+      "required": false,
+      "defaultValue": null,
+      "notes": "Quantity or unit of measure"
+    },
+    {
+      "targetField": "description",
+      "primaryAliases": [
+        "description",
+        "desc",
+        "details",
+        "notes",
+        "comments",
+        "product_description",
+        "long_description"
+      ],
+      "fuzzyThreshold": 0.7,
+      "required": false,
+      "defaultValue": null,
+      "notes": "Additional product description or details"
+    }
+  ],
+  "settings": {
+    "caseInsensitive": true,
+    "trimWhitespace": true,
+    "normalizeUnderscores": true,
+    "logMappingDecisions": true
+  }
+}

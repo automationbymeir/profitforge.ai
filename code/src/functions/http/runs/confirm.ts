@@ -23,6 +23,29 @@ async function confirmMappingHandlerCore(
     const runService = await createRunService();
     const result = await runService.confirmMapping(runId);
 
+    // Log mapping statistics for telemetry
+    if (result.mappingStats) {
+      context.log('📊 Field mapping statistics:', {
+        runId,
+        vendor: result.vendor,
+        exactMatches: result.mappingStats.exactMatches,
+        fuzzyMatches: result.mappingStats.fuzzyMatches,
+        defaultValues: result.mappingStats.defaultValues,
+        missingFields: result.mappingStats.missingFields,
+        avgConfidence: result.mappingStats.avgConfidence,
+        productsExported: result.productsExported,
+      });
+    }
+
+    // Log warnings if any
+    if (result.warnings && result.warnings.length > 0) {
+      context.log('⚠️  Field mapping warnings:', {
+        runId,
+        warningCount: result.warnings.length,
+        warnings: result.warnings,
+      });
+    }
+
     context.log(
       `✅ Exported ${result.productsExported} products to production for vendor ${result.vendor}`
     );
@@ -32,6 +55,8 @@ async function confirmMappingHandlerCore(
       documentId: result.documentId,
       vendor: result.vendor,
       productsExported: result.productsExported,
+      mappingStats: result.mappingStats,
+      warnings: result.warnings,
     });
   } catch (error: unknown) {
     // Handle custom error codes from service

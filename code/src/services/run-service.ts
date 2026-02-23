@@ -1,7 +1,11 @@
 import { DocumentRepository } from '../data/repositories/DocumentRepository.prisma.js';
-import { VendorProductRepository } from '../data/repositories/VendorProductRepository.prisma.js';
+import {
+  CreateVendorProductInput,
+  VendorProductRepository,
+} from '../data/repositories/VendorProductRepository.prisma.js';
 import { QueueService } from '../functions/infra-adapters/queues.js';
 import { Product } from '../utils/models/product.js';
+import { FieldMapper } from './field-mapper.js';
 import { StorageService } from './index.js';
 
 export interface CreateOCRRunResult {
@@ -32,6 +36,14 @@ export interface ConfirmResult {
   documentId: string;
   vendor: string;
   productsExported: number;
+  mappingStats?: {
+    exactMatches: number;
+    fuzzyMatches: number;
+    defaultValues: number;
+    missingFields: number;
+    avgConfidence: number;
+  };
+  warnings?: string[];
 }
 
 /**
@@ -51,17 +63,20 @@ export class RunService {
   private vendorProductRepo: VendorProductRepository;
   private queueService: QueueService;
   private storageService: StorageService;
+  private fieldMapper: FieldMapper;
 
   constructor(
     documentRepo: DocumentRepository,
     vendorProductRepo: VendorProductRepository,
     queueService: QueueService,
-    storageService: StorageService
+    storageService: StorageService,
+    fieldMapper: FieldMapper
   ) {
     this.documentRepo = documentRepo;
     this.vendorProductRepo = vendorProductRepo;
     this.queueService = queueService;
     this.storageService = storageService;
+    this.fieldMapper = fieldMapper;
   }
 
   /**
@@ -223,20 +238,50 @@ export class RunService {
     const mappingData = JSON.parse(document.ai_mapping_result);
     const products = mappingData.products || [];
 
-    // Insert products into production table using repository
-    const productsToInsert = products?.map((product: Product) => ({
+    if (products.length === 0) {
+      throw Object.assign(new Error('No products to export'), {
+        statusCode: 400,
+        details: {
+          message: 'No products found in AI mapping result',
+        },
+      });
+    }
+
+    // OPTIMIZATION: Map headers once from first product
+    // All products from same AI extraction share the same field names
+    const firstProduct = products[0] as Product;
+    const sourceFieldNames = Object.keys(firstProduct);
+    const headerMapping = this.fieldMapper.mapHeaders(sourceFieldNames);
+
+    // Validate header mapping before processing all products
+    if (headerMapping.errors.length > 0) {
+      throw Object.assign(new Error('Field mapping validation failed'), {
+        statusCode: 400,
+        details: {
+          message: 'Unable to map required fields from AI output to database schema',
+          errors: headerMapping.errors,
+          sourceFields: sourceFieldNames,
+        },
+      });
+    }
+
+    // Use FieldMapper to map products with intelligent field matching
+    const contextData = {
       vendor_id: document.vendor_name,
       vendor_name: document.vendor_name,
-      product_name: product.name,
-      sku: product.sku,
-      price: product.price,
-      unit: product.unit || undefined,
-      description: product.description || undefined,
       source_document_id: documentId,
       source_document_name: document.document_name,
-    }));
+    };
+
+    // Apply header mapping to all products (fast!)
+    const productsToInsert: CreateVendorProductInput[] = products.map((product: Product) =>
+      this.fieldMapper.applyMapping(product, headerMapping, contextData)
+    ) as CreateVendorProductInput[];
 
     const insertedCount = await this.vendorProductRepo.createBulk(productsToInsert);
+
+    // Calculate mapping statistics (only need decisions from header mapping)
+    const stats = this.fieldMapper.getMappingStats(headerMapping.decisions);
 
     // Update export status
     await this.documentRepo.updateExportStatus(documentId, 'confirmed');
@@ -245,6 +290,14 @@ export class RunService {
       documentId,
       vendor: document.vendor_name,
       productsExported: insertedCount,
+      mappingStats: {
+        exactMatches: stats.exact,
+        fuzzyMatches: stats.fuzzy,
+        defaultValues: stats.default,
+        missingFields: stats.missing,
+        avgConfidence: Math.round(stats.avgConfidence * 100) / 100,
+      },
+      warnings: headerMapping.warnings.length > 0 ? headerMapping.warnings : undefined,
     };
   }
 }
@@ -258,12 +311,14 @@ export async function createRunService(): Promise<RunService> {
     await import('../data/repositories/VendorProductRepository.prisma.js');
   const { QueueService } = await import('../functions/infra-adapters/queues.js');
   const { StorageService } = await import('../data/storage.js');
+  const { createFieldMapper } = await import('./field-mapper.js');
 
   const prisma = getPrismaClient();
   const documentRepo = new DocumentRepository(prisma);
   const vendorProductRepo = new VendorProductRepository(prisma);
   const queueService = new QueueService(getStorageConnectionString());
   const storageService = new StorageService(getStorageConnectionString());
+  const fieldMapper = createFieldMapper();
 
-  return new RunService(documentRepo, vendorProductRepo, queueService, storageService);
+  return new RunService(documentRepo, vendorProductRepo, queueService, storageService, fieldMapper);
 }
