@@ -5,10 +5,9 @@
 import {
   createDocumentRepository,
   DocumentRepository,
-} from '../../../src/data/repositories/DocumentRepository';
+} from '../../../src/data/repositories/DocumentRepository.prisma';
 import { createDocumentService, DocumentService, StorageService } from '../../../src/services';
 import { getStorageConnectionString } from '../../../src/utils/config';
-import { getDocuments } from './helpers';
 
 // Global service instances (created once and exported for reuse across test files)
 export const documentRepository: DocumentRepository = await createDocumentRepository();
@@ -42,7 +41,9 @@ export async function pollDocumentStatus(
   const startTime = Date.now();
 
   while (Date.now() - startTime < maxWaitMs) {
-    const status = await documentRepository.getStatus(runId);
+    const doc = await documentRepository.findById(runId);
+    if (!doc) throw new Error(`Run not found: ${runId}`);
+    const status = doc.processing_status;
 
     // Success - reached expected status
     if (status === expectedStatus) {
@@ -82,6 +83,7 @@ export async function pollUploadCompletion(blobPath: string) {
     `Timeout: Blob '${blobPath}' not found in container '${containerName}' after ${maxAttempts * 2000}ms`
   );
 }
+
 /**
  * Helper: Wait for document creation by vendor name
  *
@@ -99,9 +101,9 @@ export async function waitForDocumentCreation(vendorName: string) {
   let recordCreated = false;
   let recordId = '';
   while (attempts < maxAttempts && !recordCreated) {
-    const dbResult = await getDocuments({ vendor: vendorName });
-    if (dbResult.data.length > 0) {
-      recordId = dbResult.data[0].result_id;
+    const documents = await documentRepository.findByVendor(vendorName);
+    if (documents.length > 0) {
+      recordId = documents[0].result_id;
       recordCreated = true;
     } else {
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -118,19 +120,12 @@ export async function getBlobProperties(containerName: string, blobPath: string)
   return await storageService.getBlobProperties(containerName, blobPath);
 }
 
-/**
- * Helper: Get vendor products from database
- */
-export async function getVendorProducts(vendorName: string) {
-  return await documentService.getVendorProducts(vendorName);
-}
-
 export async function clean(vendorName: string) {
   try {
     const productsDeleted = await documentRepository.deleteVendorProducts(vendorName);
     console.log(`✅ Deleted ${productsDeleted} vendor products for ${vendorName}`);
 
-    const result = await documentService.deleteByVendorName(vendorName);
+    const result = await documentService.deleteDocument(vendorName);
     console.log(
       `✅ Cleaned up previous test data for ${vendorName}: ${result.documentsDeleted} records, ${result.blobsDeleted} blobs`
     );

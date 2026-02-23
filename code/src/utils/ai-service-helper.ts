@@ -8,8 +8,16 @@ interface TableCell {
   columnIndex: number;
 }
 
-interface Table {
+interface BoundingRegion {
+  pageNumber: number;
+  polygon?: number[];
+}
+
+export interface Table {
   cells: TableCell[];
+  rowCount: number;
+  columnCount: number;
+  boundingRegions?: BoundingRegion[];
 }
 
 export interface MappingResultJson {
@@ -46,6 +54,7 @@ export interface MappingResultJson {
     completionTokens: number;
     cost: number;
   };
+  processingTime?: number; // Optional: time taken to process this result
 }
 
 export function extractTableHeaders(
@@ -276,7 +285,7 @@ export function extractProductsFromTables(
 
 export function calculateJsonResult(
   normalizationResponse: ChatCompletion,
-  tables: Table[]
+  _tables: Table[]
 ): MappingResultJson {
   // Extract content from OpenAI response
   const content = normalizationResponse.choices[0]?.message?.content;
@@ -287,21 +296,36 @@ export function calculateJsonResult(
   }
 
   const normalizationResult = JSON.parse(content);
-  const canonicalHeaders = normalizationResult.canonicalHeaders || [];
 
-  if (!Array.isArray(canonicalHeaders) || canonicalHeaders.length === 0) {
-    console.error('No canonical headers in AI response');
-    throw new Error('AI response missing canonical headers');
+  // AI returns {columns: [], rows: []} format - use rows directly as products
+  const columns = normalizationResult.columns || [];
+  const rows = normalizationResult.rows || [];
+
+  if (!Array.isArray(columns) || columns.length === 0) {
+    console.error('No columns in AI response');
+    console.error('AI response:', JSON.stringify(normalizationResult, null, 2));
+    throw new Error('AI response missing columns');
   }
 
-  // Extract products using canonical headers
-  const products = extractProductsFromTables(tables, canonicalHeaders);
+  if (!Array.isArray(rows)) {
+    console.error('Invalid rows in AI response');
+    console.error('AI response:', JSON.stringify(normalizationResult, null, 2));
+    throw new Error('AI response missing or invalid rows array');
+  }
+
+  // Use the AI-extracted rows directly as products (AI already normalized them)
+  const products = rows;
+
+  // Create canonical headers from column names for compatibility
+  const canonicalHeaders = columns.map((col: string, idx: number) => ({
+    columnIndex: idx,
+    headerName: col,
+  }));
 
   // Calculate quality metrics
-  const headerNames = canonicalHeaders.map((h: { headerName: string }) => h.headerName);
   const { completenessScore, confidenceScore, metrics } = calculateQualityMetrics(
     products,
-    headerNames
+    columns
   );
 
   // Calculate costs
@@ -328,4 +352,248 @@ export function calculateJsonResult(
     },
   };
   return mappingResultJson;
+}
+
+/**
+ * Get header row cells from a table
+ */
+function getHeaderRow(table: Table): TableCell[] {
+  return table.cells.filter((cell) => cell.kind === 'columnHeader' && cell.rowIndex === 0);
+}
+
+/**
+ * Check if a table has a header row
+ */
+function hasHeaderRow(table: Table): boolean {
+  return table.cells.some((cell) => cell.kind === 'columnHeader');
+}
+
+/**
+ * Check if a cell is a header cell
+ */
+function isHeaderCell(cell: TableCell, _table?: Table): boolean {
+  return cell.kind === 'columnHeader';
+}
+
+/**
+ * Normalize header text for comparison
+ *
+ * Applies fuzzy matching transformations:
+ * - Lowercase for case-insensitive comparison
+ * - Remove special characters for flexible matching
+ * - Trim whitespace
+ *
+ * Note: OCR artifacts are already cleaned by cleanTableArtifacts()
+ *
+ * @param header - Header text to normalize
+ * @returns Normalized text suitable for comparison
+ */
+function normalizeHeader(header: string): string {
+  return header
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Check if two header rows match (same columns in same order)
+ * Uses fuzzy matching to handle OCR variations
+ */
+function headersMatch(headers1: TableCell[], headers2: TableCell[]): boolean {
+  if (headers1.length === 0 || headers2.length === 0) return false;
+  if (headers1.length !== headers2.length) return false;
+
+  // Sort by column index to ensure proper comparison
+  const sorted1 = [...headers1].sort((a, b) => a.columnIndex - b.columnIndex);
+  const sorted2 = [...headers2].sort((a, b) => a.columnIndex - b.columnIndex);
+
+  // Compare normalized header content
+  for (let i = 0; i < sorted1.length; i++) {
+    const h1 = normalizeHeader(sorted1[i].content || '');
+    const h2 = normalizeHeader(sorted2[i].content || '');
+    if (h1 !== h2) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Check if current table is a continuation of the previous table
+ * Uses header matching and page number heuristics
+ */
+function isContinuation(current: Table, previous: Table): boolean {
+  const currentHeaders = getHeaderRow(current);
+  const previousHeaders = getHeaderRow(previous);
+
+  // Same headers = continuation of same table
+  if (headersMatch(currentHeaders, previousHeaders)) {
+    // Additional check: if on consecutive pages, very likely a continuation
+    const prevPage = previous.boundingRegions?.[0]?.pageNumber;
+    const currPage = current.boundingRegions?.[0]?.pageNumber;
+    if (prevPage !== undefined && currPage !== undefined && currPage === prevPage + 1) {
+      console.log(
+        `  ✓ Tables on pages ${prevPage} and ${currPage} have matching headers - merging`
+      );
+    }
+    return true;
+  }
+
+  // No header row at all = likely a continuation
+  if (!hasHeaderRow(current)) {
+    const prevPage = previous.boundingRegions?.[0]?.pageNumber;
+    const currPage = current.boundingRegions?.[0]?.pageNumber;
+    if (prevPage !== undefined && currPage !== undefined && currPage === prevPage + 1) {
+      console.log(`  ✓ Table on page ${currPage} has no headers after page ${prevPage} - merging`);
+    }
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Merge a group of related tables into a single logical table
+ */
+function mergeTableGroup(tables: Table[]): Table {
+  if (tables.length === 1) return tables[0];
+
+  const baseTable = tables[0];
+  const allCells = [...baseTable.cells];
+
+  let rowOffset = baseTable.rowCount;
+
+  console.log(`  Merging ${tables.length} tables...`);
+
+  for (const table of tables.slice(1)) {
+    const dataRows = table.cells.filter((cell) => !isHeaderCell(cell, table));
+    // Offset row indices so they don't collide
+    const offsetRows = dataRows.map((cell) => ({
+      ...cell,
+      rowIndex: cell.rowIndex + rowOffset,
+    }));
+    allCells.push(...offsetRows);
+    rowOffset += table.rowCount;
+  }
+
+  return {
+    ...baseTable,
+    cells: allCells,
+    rowCount: rowOffset,
+    // Merge bounding regions to track all pages
+    boundingRegions: tables.flatMap((t) => t.boundingRegions || []),
+  };
+}
+
+/**
+ * Clean OCR artifacts from table cell content
+ *
+ * Removes common OCR noise that appears inconsistently across pages:
+ * - Checkbox states (:unselected:, :selected:)
+ * - Unicode checkboxes (☐, ☑, ✓, ✗)
+ * - Markdown checkboxes ([ ], [x])
+ * - Leading/trailing whitespace
+ *
+ * This ensures consistent data regardless of OCR variations.
+ *
+ * @param content - Raw cell content from OCR
+ * @returns Cleaned content with artifacts removed
+ */
+function cleanOcrArtifacts(content: string | undefined): string {
+  if (!content) return '';
+
+  return (
+    content
+      // Remove checkbox artifacts (常 appear in page headers/decorations)
+      .replace(/^:unselected:\s*/gi, '')
+      .replace(/^:selected:\s*/gi, '')
+      // Remove Unicode checkboxes
+      .replace(/^[\u2610\u2611\u2713\u2717]\s*/g, '')
+      // Remove markdown checkboxes
+      .replace(/^\[\s*\]\s*/g, '')
+      .replace(/^\[x\]\s*/gi, '')
+      // Clean whitespace
+      .trim()
+  );
+}
+
+/**
+ * Clean OCR artifacts from all cells in a table
+ *
+ * Mutates the table by cleaning cell content in-place.
+ * This is applied before any processing (merging, AI analysis, etc.)
+ *
+ * @param table - Table with potentially noisy OCR data
+ * @returns Same table with cleaned cell content
+ */
+function cleanTableArtifacts(table: Table): Table {
+  table.cells.forEach((cell) => {
+    if (cell.content) {
+      cell.content = cleanOcrArtifacts(cell.content);
+    }
+  });
+  return table;
+}
+
+/**
+ * Merge split tables that belong to the same logical table
+ *
+ * Azure Document Intelligence may split a single table across pages into multiple table objects.
+ * This function identifies and merges those splits based on:
+ * - Matching column headers (primary signal)
+ * - Consecutive page numbers (secondary signal)
+ * - Missing headers (continuation indicator)
+ *
+ * @param tables - Array of tables from Document Intelligence
+ * @returns Array of merged logical tables
+ */
+export function mergeSplitTables(tables: Table[]): Table[] {
+  if (tables.length <= 1) return tables;
+
+  console.log(`\n🔗 Merging split tables (${tables.length} input tables)...`);
+
+  // STEP 1: Clean OCR artifacts from ALL tables before processing
+  console.log(`🧹 Cleaning OCR artifacts from all table cells...`);
+  const cleanedTables = tables.map(cleanTableArtifacts);
+
+  const groups: Table[][] = [];
+  let currentGroup: Table[] = [];
+
+  for (let i = 0; i < cleanedTables.length; i++) {
+    const current = cleanedTables[i];
+    const previous = cleanedTables[i - 1];
+
+    const currPage = current.boundingRegions?.[0]?.pageNumber || '?';
+    const currHeaders = getHeaderRow(current);
+    const currHeaderText = currHeaders.map((h) => h.content).join(' | ') || '(no headers)';
+
+    if (previous && isContinuation(current, previous)) {
+      console.log(`  📎 Table ${i + 1} (page ${currPage}): MERGED with previous group`);
+      console.log(`     Headers: ${currHeaderText}`);
+      currentGroup.push(current);
+    } else {
+      if (currentGroup.length > 0) groups.push(currentGroup);
+
+      if (previous) {
+        const prevHeaders = getHeaderRow(previous);
+        const prevHeaderText = prevHeaders.map((h) => h.content).join(' | ') || '(no headers)';
+        console.log(`  🔀 Table ${i + 1} (page ${currPage}): NEW GROUP (different from previous)`);
+        console.log(`     Previous headers: ${prevHeaderText}`);
+        console.log(`     Current headers:  ${currHeaderText}`);
+        console.log(
+          `     Reason: ${!headersMatch(currHeaders, prevHeaders) ? 'Different headers' : 'Other logic'}`
+        );
+      } else {
+        console.log(`  🆕 Table ${i + 1} (page ${currPage}): FIRST TABLE`);
+        console.log(`     Headers: ${currHeaderText}`);
+      }
+
+      currentGroup = [current];
+    }
+  }
+  if (currentGroup.length > 0) groups.push(currentGroup);
+
+  const merged = groups.map(mergeTableGroup);
+  console.log(`✅ Merged into ${merged.length} logical tables\n`);
+
+  return merged;
 }

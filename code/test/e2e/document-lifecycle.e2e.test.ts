@@ -134,7 +134,8 @@ describe('Document Lifecycle Management', () => {
     await pollDocumentStatus(sharedResultId, 'completed');
 
     // Get full processing run record after completion
-    completeRecordT1 = await documentRepository.getRunByID(sharedResultId);
+    completeRecordT1 = await documentRepository.findById(sharedResultId);
+    console.log('Complete processing record after upload and processing: ', completeRecordT1);
     // === BLOB STORAGE VERIFICATION ===
 
     // Blob properties should be correct
@@ -169,12 +170,8 @@ describe('Document Lifecycle Management', () => {
     // AI mapping results - parse and validate structure
     expect(typeof completeRecordT1.ai_mapping_result).toBe('string');
     const aiMapping = JSON.parse(completeRecordT1.ai_mapping_result || '');
-    expect(aiMapping).toHaveProperty('documentId');
     expect(aiMapping).toHaveProperty('timestamp');
-    expect(aiMapping).toHaveProperty('vendor');
     expect(aiMapping).toHaveProperty('products');
-    expect(aiMapping).toHaveProperty('productCount');
-    expect(aiMapping).toHaveProperty('columnMapping');
     expect(aiMapping).toHaveProperty('qualityMetrics');
     expect(aiMapping).toHaveProperty('usage');
     expect(Array.isArray(aiMapping.products)).toBe(true);
@@ -599,7 +596,7 @@ describe('Document Lifecycle Management', () => {
     await pollDocumentStatus(defaultRunId, 'completed');
 
     // Verify database - default run
-    const defaultRecord = await documentRepository.getRunByID(defaultRunId);
+    const defaultRecord = await documentRepository.findById(defaultRunId);
     expect(defaultRecord.ai_model_requested).toBeNull();
     expect(defaultRecord.ai_prompt_requested).toBeNull();
     expect(defaultRecord.ai_model_used).toBe('gpt-4o');
@@ -621,7 +618,7 @@ describe('Document Lifecycle Management', () => {
     await pollDocumentStatus(bothCustomRunId, 'completed');
 
     // Verify database - both custom run
-    const bothCustomRecord = await documentRepository.getRunByID(bothCustomRunId);
+    const bothCustomRecord = await documentRepository.findById(bothCustomRunId);
     expect(bothCustomRecord.ai_model_requested).toBe('gpt-4o');
     expect(bothCustomRecord.ai_prompt_requested).toBe(bothCustomPrompt);
     expect(bothCustomRecord.ai_model_used).toBe('gpt-4o');

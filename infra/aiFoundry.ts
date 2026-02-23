@@ -25,7 +25,6 @@ export function createAIFoundryResources(
   });
 
   // GPT-4o Deployment in the Project (OpenAI Account sub-resource)
-  // ...
   const _gpt4oDeployment = new azurenative.cognitiveservices.Deployment('gpt4o', {
     deploymentName: 'gpt-4o',
     accountName: openaiAccountName,
@@ -40,6 +39,24 @@ export function createAIFoundryResources(
     sku: {
       name: 'GlobalStandard',
       capacity: 10, // 10k TPM
+    },
+  });
+
+  // GPT-4o-mini Deployment (for testing with higher rate limits)
+  const _gpt4oMiniDeployment = new azurenative.cognitiveservices.Deployment('gpt4oMini', {
+    deploymentName: 'gpt-4o-mini',
+    accountName: openaiAccountName,
+    resourceGroupName: resourceGroupName,
+    properties: {
+      model: {
+        format: 'OpenAI',
+        name: 'gpt-4o-mini',
+        version: '2024-07-18', // Latest stable version
+      },
+    },
+    sku: {
+      name: 'GlobalStandard',
+      capacity: 50, // Higher capacity for testing - 50k TPM
     },
   });
 

@@ -1,0 +1,854 @@
+{
+  "mergeAnalysis": {
+    "rawTableCount": 5,
+    "mergedTableCount": 5,
+    "compressionRatio": "5:5",
+    "mergedTables": [
+      {
+        "index": 0,
+        "rowCount": 12,
+        "columnCount": 4,
+        "cellCount": 48,
+        "pages": [
+          1
+        ]
+      },
+      {
+        "index": 1,
+        "rowCount": 11,
+        "columnCount": 4,
+        "cellCount": 44,
+        "pages": [
+          1
+        ]
+      },
+      {
+        "index": 2,
+        "rowCount": 10,
+        "columnCount": 4,
+        "cellCount": 40,
+        "pages": [
+          1
+        ]
+      },
+      {
+        "index": 3,
+        "rowCount": 4,
+        "columnCount": 4,
+        "cellCount": 16,
+        "pages": [
+          1
+        ]
+      },
+      {
+        "index": 4,
+        "rowCount": 3,
+        "columnCount": 4,
+        "cellCount": 12,
+        "pages": [
+          1
+        ]
+      }
+    ]
+  },
+  "aiProcessing": {
+    "tableResults": [
+      {
+        "timestamp": "2026-02-23T18:17:29.754Z",
+        "products": [
+          {
+            "product_name": "Large Quilted Hammock - Cabana Black",
+            "sku": "SQ-OB3",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Large Quilted Hammock - Cast Ash",
+            "sku": "SQ-CASH",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 319.99
+          },
+          {
+            "product_name": "Large Quilted Hammock - Cast Slate",
+            "sku": "SQ-CSLT",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 319.99
+          },
+          {
+            "product_name": "Large Quilted Hammock - Expand Calypso",
+            "sku": "SQ-CALYPSO",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 319.99
+          },
+          {
+            "product_name": "Large Quilted Hammock - Expressive Blush",
+            "sku": "SQ-EXPBLUSH",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 319.99
+          },
+          {
+            "product_name": "Large Quilted Hammock - Expressive Mist",
+            "sku": "SQ-EXPMST",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 319.99
+          },
+          {
+            "product_name": "Large Quilted Hammock - Expressive Sparrow",
+            "sku": "SQ-EXPSPAR",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 319.99
+          },
+          {
+            "product_name": "Large Quilted Hammock - Gateway Indigo",
+            "sku": "SQ-MN4",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 319.99
+          },
+          {
+            "product_name": "Large Quilted Hammock - Gateway Mist",
+            "sku": "SQ-HZ",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 319.99
+          },
+          {
+            "product_name": "Large Quilted Hammock - Midori Indigo",
+            "sku": "SQ-MN5",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Large Quilted Hammock - Regency Sand",
+            "sku": "SQ-NEU2",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 359.99
+          }
+        ],
+        "productCount": 11,
+        "canonicalHeaders": [
+          {
+            "columnIndex": 0,
+            "headerName": "product_name"
+          },
+          {
+            "columnIndex": 1,
+            "headerName": "sku"
+          },
+          {
+            "columnIndex": 2,
+            "headerName": "dimensions_mm"
+          },
+          {
+            "columnIndex": 3,
+            "headerName": "msrp_usd"
+          }
+        ],
+        "tableStructure": {},
+        "qualityMetrics": {
+          "completenessScore": 100,
+          "confidenceScore": 100,
+          "totalFields": 44,
+          "populatedFields": 44,
+          "emptyFields": 0,
+          "productsWithAllFields": 11,
+          "averageFieldsPerProduct": 4,
+          "fieldPopulationRates": {
+            "product_name": 100,
+            "sku": 100,
+            "dimensions_mm": 100,
+            "msrp_usd": 100
+          },
+          "completenessDistribution": {
+            "100%": 11,
+            "90-99%": 0,
+            "75-89%": 0,
+            "50-74%": 0,
+            "<50%": 0
+          },
+          "dataQualityIssues": {
+            "emptyOrNearlyEmptyProducts": 0,
+            "fieldsWithHighMissingRate": [],
+            "fieldsWithAllSameValue": [
+              "dimensions_mm"
+            ]
+          }
+        },
+        "usage": {
+          "promptTokens": 5942,
+          "completionTokens": 686,
+          "cost": 0.021714999999999998
+        },
+        "processingTime": 7621
+      },
+      {
+        "timestamp": "2026-02-23T18:17:37.000Z",
+        "products": [
+          {
+            "product_name": "Pillowtop Hammock - Cabana Black",
+            "sku": "DLXPTQOB2",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Pillowtop Hammock - Cast Ash",
+            "sku": "DLXPTQCASH",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Pillowtop Hammock - Cast Slate",
+            "sku": "DLXPTQCSLT",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Pillowtop Hammock - Expand Calypso",
+            "sku": "DLXPTQCAL",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Pillowtop Hammock - Expressive Blush",
+            "sku": "DLXPTQEB",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Pillowtop Hammock - Expressive Mist",
+            "sku": "DLXPTQEM",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Pillowtop Hammock - Expressive Sparrow",
+            "sku": "DLXPTQES",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Pillowtop Hammock - Gateway Indigo",
+            "sku": "DLXPTQMN4",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Pillowtop Hammock - Gateway Mist",
+            "sku": "DLXPTQHZ",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          },
+          {
+            "product_name": "Pillowtop Hammock - Regency Sand",
+            "sku": "DLXPTQNEU2",
+            "dimensions_mm": "2082 x 1397",
+            "msrp_usd": 399.99
+          }
+        ],
+        "productCount": 10,
+        "canonicalHeaders": [
+          {
+            "columnIndex": 0,
+            "headerName": "product_name"
+          },
+          {
+            "columnIndex": 1,
+            "headerName": "sku"
+          },
+          {
+            "columnIndex": 2,
+            "headerName": "dimensions_mm"
+          },
+          {
+            "columnIndex": 3,
+            "headerName": "msrp_usd"
+          }
+        ],
+        "tableStructure": {},
+        "qualityMetrics": {
+          "completenessScore": 100,
+          "confidenceScore": 100,
+          "totalFields": 40,
+          "populatedFields": 40,
+          "emptyFields": 0,
+          "productsWithAllFields": 10,
+          "averageFieldsPerProduct": 4,
+          "fieldPopulationRates": {
+            "product_name": 100,
+            "sku": 100,
+            "dimensions_mm": 100,
+            "msrp_usd": 100
+          },
+          "completenessDistribution": {
+            "100%": 10,
+            "90-99%": 0,
+            "75-89%": 0,
+            "50-74%": 0,
+            "<50%": 0
+          },
+          "dataQualityIssues": {
+            "emptyOrNearlyEmptyProducts": 0,
+            "fieldsWithHighMissingRate": [],
+            "fieldsWithAllSameValue": [
+              "dimensions_mm",
+              "msrp_usd"
+            ]
+          }
+        },
+        "usage": {
+          "promptTokens": 5507,
+          "completionTokens": 633,
+          "cost": 0.0200975
+        },
+        "processingTime": 7246
+      },
+      {
+        "timestamp": "2026-02-23T18:18:28.878Z",
+        "products": [
+          {
+            "product_name": "Large Tufted Hammock - Beaming Lagoon",
+            "sku": "TBML",
+            "dimensions_mm": "1981 x 1397",
+            "price_usd": 449.99
+          },
+          {
+            "product_name": "Large Tufted Hammock - Beaming Mojave",
+            "sku": "TBMM",
+            "dimensions_mm": "1981 x 1397",
+            "price_usd": 449.99
+          },
+          {
+            "product_name": "Large Tufted Hammock - Canvas Capri",
+            "sku": "TMN2",
+            "dimensions_mm": "1981 x 1397",
+            "price_usd": 449.99
+          },
+          {
+            "product_name": "Large Tufted Hammock - Canvas Jockey Red",
+            "sku": "TEQ",
+            "dimensions_mm": "1981 x 1397",
+            "price_usd": 449.99
+          },
+          {
+            "product_name": "Large Tufted Hammock - Cast Ash",
+            "sku": "TCASH",
+            "dimensions_mm": "1981 x 1397",
+            "price_usd": 449.99
+          },
+          {
+            "product_name": "Large Tufted Hammock - Cast Slate",
+            "sku": "TCSLT",
+            "dimensions_mm": "1981 x 1397",
+            "price_usd": 449.99
+          },
+          {
+            "product_name": "Large Tufted Hammock - Dappled Delft",
+            "sku": "TDAPPLED",
+            "dimensions_mm": "1981 x 1397",
+            "price_usd": 589.99
+          },
+          {
+            "product_name": "Large Tufted Hammock - Dappled Linen",
+            "sku": "TDAPPLEL",
+            "dimensions_mm": "1981 x 1397",
+            "price_usd": 589.99
+          },
+          {
+            "product_name": "Large Tufted Hammock - Luxe Indigo",
+            "sku": "TMN4",
+            "dimensions_mm": "1981 x 1397",
+            "price_usd": 529.99
+          }
+        ],
+        "productCount": 9,
+        "canonicalHeaders": [
+          {
+            "columnIndex": 0,
+            "headerName": "product_name"
+          },
+          {
+            "columnIndex": 1,
+            "headerName": "sku"
+          },
+          {
+            "columnIndex": 2,
+            "headerName": "dimensions_mm"
+          },
+          {
+            "columnIndex": 3,
+            "headerName": "price_usd"
+          }
+        ],
+        "tableStructure": {},
+        "qualityMetrics": {
+          "completenessScore": 100,
+          "confidenceScore": 100,
+          "totalFields": 36,
+          "populatedFields": 36,
+          "emptyFields": 0,
+          "productsWithAllFields": 9,
+          "averageFieldsPerProduct": 4,
+          "fieldPopulationRates": {
+            "product_name": 100,
+            "sku": 100,
+            "dimensions_mm": 100,
+            "price_usd": 100
+          },
+          "completenessDistribution": {
+            "100%": 9,
+            "90-99%": 0,
+            "75-89%": 0,
+            "50-74%": 0,
+            "<50%": 0
+          },
+          "dataQualityIssues": {
+            "emptyOrNearlyEmptyProducts": 0,
+            "fieldsWithHighMissingRate": [],
+            "fieldsWithAllSameValue": [
+              "dimensions_mm"
+            ]
+          }
+        },
+        "usage": {
+          "promptTokens": 5046,
+          "completionTokens": 565,
+          "cost": 0.018265
+        },
+        "processingTime": 51876
+      },
+      {
+        "timestamp": "2026-02-23T18:18:32.188Z",
+        "products": [
+          {
+            "product_name": "Large Softweave Hammock - Antique Beige",
+            "sku": "SQ-WEAVE ANTBGE",
+            "dimensions_mm": "2082.8x1397",
+            "unit_price_usd": 279.99
+          },
+          {
+            "product_name": "Large Softweave Hammock - Light Green",
+            "sku": "SQ-WEAVE-LTGRN",
+            "dimensions_mm": "2082.8x1397",
+            "unit_price_usd": 279.99
+          },
+          {
+            "product_name": "Large Softweave Hammock - Navy",
+            "sku": "SQ-WEAVE-NAVY",
+            "dimensions_mm": "2082.8x1397",
+            "unit_price_usd": 279.99
+          }
+        ],
+        "productCount": 3,
+        "canonicalHeaders": [
+          {
+            "columnIndex": 0,
+            "headerName": "product_name"
+          },
+          {
+            "columnIndex": 1,
+            "headerName": "sku"
+          },
+          {
+            "columnIndex": 2,
+            "headerName": "dimensions_mm"
+          },
+          {
+            "columnIndex": 3,
+            "headerName": "unit_price_usd"
+          }
+        ],
+        "tableStructure": {},
+        "qualityMetrics": {
+          "completenessScore": 100,
+          "confidenceScore": 100,
+          "totalFields": 12,
+          "populatedFields": 12,
+          "emptyFields": 0,
+          "productsWithAllFields": 3,
+          "averageFieldsPerProduct": 4,
+          "fieldPopulationRates": {
+            "product_name": 100,
+            "sku": 100,
+            "dimensions_mm": 100,
+            "unit_price_usd": 100
+          },
+          "completenessDistribution": {
+            "100%": 3,
+            "90-99%": 0,
+            "75-89%": 0,
+            "50-74%": 0,
+            "<50%": 0
+          },
+          "dataQualityIssues": {
+            "emptyOrNearlyEmptyProducts": 0,
+            "fieldsWithHighMissingRate": [],
+            "fieldsWithAllSameValue": [
+              "dimensions_mm",
+              "unit_price_usd"
+            ]
+          }
+        },
+        "usage": {
+          "promptTokens": 2274,
+          "completionTokens": 240,
+          "cost": 0.008085
+        },
+        "processingTime": 3309
+      },
+      {
+        "timestamp": "2026-02-23T18:18:34.221Z",
+        "products": [
+          {
+            "product_name": "Quick Dry Hammock - Augustine Shadow",
+            "sku": "PS13ASHAD",
+            "dimensions_mm": "2082x1397",
+            "msrp_usd": 269.99
+          },
+          {
+            "product_name": "Quick Dry Hammock - Way Navy",
+            "sku": "PS13WN",
+            "dimensions_mm": "2082x1397",
+            "msrp_usd": 269.99
+          }
+        ],
+        "productCount": 2,
+        "canonicalHeaders": [
+          {
+            "columnIndex": 0,
+            "headerName": "product_name"
+          },
+          {
+            "columnIndex": 1,
+            "headerName": "sku"
+          },
+          {
+            "columnIndex": 2,
+            "headerName": "dimensions_mm"
+          },
+          {
+            "columnIndex": 3,
+            "headerName": "msrp_usd"
+          }
+        ],
+        "tableStructure": {},
+        "qualityMetrics": {
+          "completenessScore": 100,
+          "confidenceScore": 100,
+          "totalFields": 8,
+          "populatedFields": 8,
+          "emptyFields": 0,
+          "productsWithAllFields": 2,
+          "averageFieldsPerProduct": 4,
+          "fieldPopulationRates": {
+            "product_name": 100,
+            "sku": 100,
+            "dimensions_mm": 100,
+            "msrp_usd": 100
+          },
+          "completenessDistribution": {
+            "100%": 2,
+            "90-99%": 0,
+            "75-89%": 0,
+            "50-74%": 0,
+            "<50%": 0
+          },
+          "dataQualityIssues": {
+            "emptyOrNearlyEmptyProducts": 0,
+            "fieldsWithHighMissingRate": [],
+            "fieldsWithAllSameValue": [
+              "dimensions_mm",
+              "msrp_usd"
+            ]
+          }
+        },
+        "usage": {
+          "promptTokens": 1794,
+          "completionTokens": 182,
+          "cost": 0.006305000000000001
+        },
+        "processingTime": 2032
+      }
+    ],
+    "aggregatedResult": {
+      "timestamp": "2026-02-23T18:18:34.221Z",
+      "products": [
+        {
+          "product_name": "Large Quilted Hammock - Cabana Black",
+          "sku": "SQ-OB3",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Large Quilted Hammock - Cast Ash",
+          "sku": "SQ-CASH",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 319.99
+        },
+        {
+          "product_name": "Large Quilted Hammock - Cast Slate",
+          "sku": "SQ-CSLT",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 319.99
+        },
+        {
+          "product_name": "Large Quilted Hammock - Expand Calypso",
+          "sku": "SQ-CALYPSO",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 319.99
+        },
+        {
+          "product_name": "Large Quilted Hammock - Expressive Blush",
+          "sku": "SQ-EXPBLUSH",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 319.99
+        },
+        {
+          "product_name": "Large Quilted Hammock - Expressive Mist",
+          "sku": "SQ-EXPMST",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 319.99
+        },
+        {
+          "product_name": "Large Quilted Hammock - Expressive Sparrow",
+          "sku": "SQ-EXPSPAR",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 319.99
+        },
+        {
+          "product_name": "Large Quilted Hammock - Gateway Indigo",
+          "sku": "SQ-MN4",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 319.99
+        },
+        {
+          "product_name": "Large Quilted Hammock - Gateway Mist",
+          "sku": "SQ-HZ",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 319.99
+        },
+        {
+          "product_name": "Large Quilted Hammock - Midori Indigo",
+          "sku": "SQ-MN5",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Large Quilted Hammock - Regency Sand",
+          "sku": "SQ-NEU2",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 359.99
+        },
+        {
+          "product_name": "Pillowtop Hammock - Cabana Black",
+          "sku": "DLXPTQOB2",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Pillowtop Hammock - Cast Ash",
+          "sku": "DLXPTQCASH",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Pillowtop Hammock - Cast Slate",
+          "sku": "DLXPTQCSLT",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Pillowtop Hammock - Expand Calypso",
+          "sku": "DLXPTQCAL",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Pillowtop Hammock - Expressive Blush",
+          "sku": "DLXPTQEB",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Pillowtop Hammock - Expressive Mist",
+          "sku": "DLXPTQEM",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Pillowtop Hammock - Expressive Sparrow",
+          "sku": "DLXPTQES",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Pillowtop Hammock - Gateway Indigo",
+          "sku": "DLXPTQMN4",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Pillowtop Hammock - Gateway Mist",
+          "sku": "DLXPTQHZ",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Pillowtop Hammock - Regency Sand",
+          "sku": "DLXPTQNEU2",
+          "dimensions_mm": "2082 x 1397",
+          "msrp_usd": 399.99
+        },
+        {
+          "product_name": "Large Tufted Hammock - Beaming Lagoon",
+          "sku": "TBML",
+          "dimensions_mm": "1981 x 1397",
+          "price_usd": 449.99
+        },
+        {
+          "product_name": "Large Tufted Hammock - Beaming Mojave",
+          "sku": "TBMM",
+          "dimensions_mm": "1981 x 1397",
+          "price_usd": 449.99
+        },
+        {
+          "product_name": "Large Tufted Hammock - Canvas Capri",
+          "sku": "TMN2",
+          "dimensions_mm": "1981 x 1397",
+          "price_usd": 449.99
+        },
+        {
+          "product_name": "Large Tufted Hammock - Canvas Jockey Red",
+          "sku": "TEQ",
+          "dimensions_mm": "1981 x 1397",
+          "price_usd": 449.99
+        },
+        {
+          "product_name": "Large Tufted Hammock - Cast Ash",
+          "sku": "TCASH",
+          "dimensions_mm": "1981 x 1397",
+          "price_usd": 449.99
+        },
+        {
+          "product_name": "Large Tufted Hammock - Cast Slate",
+          "sku": "TCSLT",
+          "dimensions_mm": "1981 x 1397",
+          "price_usd": 449.99
+        },
+        {
+          "product_name": "Large Tufted Hammock - Dappled Delft",
+          "sku": "TDAPPLED",
+          "dimensions_mm": "1981 x 1397",
+          "price_usd": 589.99
+        },
+        {
+          "product_name": "Large Tufted Hammock - Dappled Linen",
+          "sku": "TDAPPLEL",
+          "dimensions_mm": "1981 x 1397",
+          "price_usd": 589.99
+        },
+        {
+          "product_name": "Large Tufted Hammock - Luxe Indigo",
+          "sku": "TMN4",
+          "dimensions_mm": "1981 x 1397",
+          "price_usd": 529.99
+        },
+        {
+          "product_name": "Large Softweave Hammock - Antique Beige",
+          "sku": "SQ-WEAVE ANTBGE",
+          "dimensions_mm": "2082.8x1397",
+          "unit_price_usd": 279.99
+        },
+        {
+          "product_name": "Large Softweave Hammock - Light Green",
+          "sku": "SQ-WEAVE-LTGRN",
+          "dimensions_mm": "2082.8x1397",
+          "unit_price_usd": 279.99
+        },
+        {
+          "product_name": "Large Softweave Hammock - Navy",
+          "sku": "SQ-WEAVE-NAVY",
+          "dimensions_mm": "2082.8x1397",
+          "unit_price_usd": 279.99
+        },
+        {
+          "product_name": "Quick Dry Hammock - Augustine Shadow",
+          "sku": "PS13ASHAD",
+          "dimensions_mm": "2082x1397",
+          "msrp_usd": 269.99
+        },
+        {
+          "product_name": "Quick Dry Hammock - Way Navy",
+          "sku": "PS13WN",
+          "dimensions_mm": "2082x1397",
+          "msrp_usd": 269.99
+        }
+      ],
+      "productCount": 35,
+      "canonicalHeaders": [
+        {
+          "columnIndex": 0,
+          "headerName": "product_name"
+        },
+        {
+          "columnIndex": 1,
+          "headerName": "sku"
+        },
+        {
+          "columnIndex": 2,
+          "headerName": "dimensions_mm"
+        },
+        {
+          "columnIndex": 3,
+          "headerName": "msrp_usd"
+        }
+      ],
+      "tableStructure": {
+        "mergedTableCount": 5,
+        "rawTableCount": 5
+      },
+      "qualityMetrics": {
+        "completenessScore": 100,
+        "confidenceScore": 100,
+        "totalFields": 140,
+        "populatedFields": 140,
+        "emptyFields": 0,
+        "productsWithAllFields": 35,
+        "averageFieldsPerProduct": 4,
+        "fieldPopulationRates": {
+          "product_name": 100,
+          "sku": 100,
+          "dimensions_mm": 100,
+          "msrp_usd": 100
+        },
+        "completenessDistribution": {
+          "100%": 11,
+          "90-99%": 0,
+          "75-89%": 0,
+          "50-74%": 0,
+          "<50%": 0
+        },
+        "dataQualityIssues": {
+          "emptyOrNearlyEmptyProducts": 0,
+          "fieldsWithHighMissingRate": [],
+          "fieldsWithAllSameValue": [
+            "dimensions_mm"
+          ]
+        }
+      },
+      "usage": {
+        "promptTokens": 20563,
+        "completionTokens": 2306,
+        "cost": 0.0744675
+      },
+      "processingTime": 72084
+    },
+    "totalProcessingTime": 72084
+  },
+  "qualityAnalysis": {
+    "overallCompleteness": 100,
+    "overallConfidence": 100,
+    "productCount": 35,
+    "avgFieldsPerProduct": 4,
+    "topIssues": [
+      "Same value: dimensions_mm"
+    ]
+  }
+}
