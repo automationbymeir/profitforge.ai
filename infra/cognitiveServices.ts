@@ -44,13 +44,12 @@ export function createCognitiveServices(
   });
 
   // Create a new AIServices account for OpenAI
-  // NOTE: AIServices not available in israelcentral - using eastus2 for best availability
   const openAiAccount = new azurenative.cognitiveservices.Account(`${stack}-openai-account`, {
     resourceGroupName,
     location,
     kind: 'AIServices',
     sku: {
-      name: sku,
+      name: 'S0',
     },
     properties: {
       publicNetworkAccess: 'Enabled',

@@ -4,7 +4,7 @@
         "stack": "organization/ai-pipeline/demo",
         "latest": {
             "manifest": {
-                "time": "2026-02-25T12:37:44.047619276+02:00",
+                "time": "2026-02-25T14:57:07.144425317+02:00",
                 "magic": "dc383bdf9ea4c699d9c5133da3d55c6806482041e2bc63c49ba6ea42b49dc40a",
                 "version": "v3.223.0"
             },
@@ -22,7 +22,7 @@
                     "outputs": {
                         "appInsightsInstrumentationKey": {
                             "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
-                            "ciphertext": "v1:yyav0d/IDNDhR638:4Hl67XwE8SNkqTWqGFDB0l5XiIp2hjNPhZVTBQ5SdbDU9V0Ee+BMYI5IImPh+izNEwcrGVXf"
+                            "ciphertext": "v1:fB6fQbEW+ZnrsAsL:JnhrM8Fvckg/TO6cBnp+6DLB+AvVVO9C8346pVev/P2BXP+L3gwzKqYHC+BgHAgF1QOrp2Ag"
                         },
                         "appInsightsName": "demo-vvocr-insights12ebdfe1",
                         "docIntelAccountName": "demo-doc-intel96f3f811",
@@ -34,20 +34,20 @@
                         "outputAppLocation": "israelcentral",
                         "outputDatabaseConnectionString": {
                             "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
-                            "ciphertext": "v1:8pPYZddhH0zYnv88:OD2AneW4o6NYCvVa64rNhmUa2cl5Dd6Rplh76Ip0VN6h1k8IeMhNRoD1XG2Dt7N3rrVzT8NWNoWSdna66c+SFoR/csL6QZtnPlJ6mCpAsDpE9ILhKGt5vjuILVnS+b0Z0nHnTjT97gsdbLpygNYhMkv3TZ2Klwqyeq3C+6HRHXwkZX2qibAScCrFKxb1Ghh4lXz8JRet/v2pNAreglOEHlfhddxpU2PinVG4a3K+uIMaDYIIr/T5v5hjsfn/zQjYnl9u5j5nksTJCn2bSyjsiUVQnaZi7y2tNYtmeUc4Gu8="
+                            "ciphertext": "v1:KhrU6At6ukEwH+Q9:gn10OPufUm31uFDiuSHXGZn+t/3UFVSt7xDtcUxeBhjq41xbK6USBPx1RwRO5aj1kEWYAKjoY3c8O5rLMOf/S2ormLFLVqHCVuXMwC8KomTE6UcmhkMgDQ9cxwcQymxykR3r7eKgmHymehUniEqd8/vIGcmIvsRDPs/oQZnNvRCHjndMM2zEtsLDyhREb4w94X1GTImkauNX5scPNa2IMx8Q3VQVBpDoNfJrWgkFlwCmD6nmKrFfCK9gm/b6+QFX7xGEc/WNEM/ifY8lcMbT21XA+hEJ1ePxIU7ZsUaAsXY="
                         },
                         "outputDocumentIntelligenceKey": {
                             "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
-                            "ciphertext": "v1:afnsY3CMMW4DDiFe:zeLkC+GOH9lYheE6TZe9UZbtfxNDRdG7uzyKs4YkRNSImSZgS7Hsp/5ADh1envph9uxeEBkGIRh5MEBOQA60m+JVq1VibEygJYmoB5McWjWXO7jLZQJsMuw0LpTQdIbHoyPyQTne"
+                            "ciphertext": "v1:JeTo95rlIe3qQ+Nl:VWouGav1xNIHDQPhxpuQo3ZzQBogP8H9+HV0sHL1IWzAJQsARvsREx1yZMQrfP57Ta3u2KS5od7QhZeEgsmFKytIBTvz8OwQPoVhkb+KFwa5lAupgQJyC3kNREzgPcPPwf+OzcyA"
                         },
                         "outputLocation": "eastus",
                         "outputOpenAIKey": {
                             "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
-                            "ciphertext": "v1:81EG5fOZQvtmeQJN:6WpDgDaq/j85hPwivbrFRpNE5ldn8KklFoigDWwnMQLvhYLB/zPzHIbAyvklKIjEhN9ieL6IKTJE19zD+qaUz/kULlcIE2w/ukrAGs6p0pl1j7ACot32wp8nN79t2y+DVjIk5ZxK"
+                            "ciphertext": "v1:ygaSKwSmJn7Os4MW:YNESAq08Mzs7oIvTSSKm60qhxEHagXxnb1Ly50cBkWJflYdIkxy1bAZlRv8skpkW7iR5riYBuVXsC05CDPfHfLN2owXtwZntYbisDrTIzjdaA/4abq0xeyEqzeY4aiN7t6l19JAJ"
                         },
                         "outputStorageConnectionString": {
                             "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
-                            "ciphertext": "v1:WaxOBceiW4VtBrmW:Vyh/cZMazk8TSWE947yg2oW5JKpyf7Y7+iCGVJNHaXhxRslApjDx8qZ/HQhwDrKvp+0P+rchqtluq49hobfELUmoH6zGcdvQYZP3ji/T2KzqpUO04LH8sRy6s08kLaxzbafEiqv1YK4WXTVcpfbDjGwHT7RC6sy9+T4T9YPJVeoPp5/rfXao+/qEYd2t+JIEVVwjdgHyH3/6ht/sfxu+kYm/gjOceFzXETyL+qDxKsxw+yNRDhULye7fuc9Lc8i5fgcUw94POl2QglSRCFE="
+                            "ciphertext": "v1:nMviO/bNac2Pyv6K:zUOv5P6IAqrvvrzkfemvRsKU73ingXQMB7UiGtpC3bA8RQgkdPX/8SNTvw7xC5Sprbbqbt3L9+JN2SFOsO/ku8GZZSEMaFmdghhfNo1/0R/0/YNYdOWSPmnA6DBSja7bAW6Tstu3qLpj3SPUdfEPWVh55JzSgnsj/MPJcc7q/Fd32LB0kowAqMWTwy6PJaaaHgP7GaG+FvvVEeMihHGnzWb0uXAWdznHkErPmUm8zcNM9rPiMh2bqZXwPQQhCnDbrbs3QBRTBq2uTA+mwFg="
                         },
                         "sqlDatabaseName": "demo-vvocr-db",
                         "sqlServerFqdn": "demo-vvocr-sql4fed2d65.database.windows.net",
@@ -74,625 +74,17 @@
                     "type": "pulumi:providers:azure-native",
                     "inputs": {
                         "__internal": {},
-                        "appLocation": "israelcentral",
                         "location": "eastus",
+                        "serverLocation": "israelcentral",
                         "version": "3.12.0"
                     },
                     "outputs": {
-                        "appLocation": "israelcentral",
                         "location": "eastus",
+                        "serverLocation": "israelcentral",
                         "version": "3.12.0"
                     },
                     "created": "2026-02-25T10:17:32.579936468Z",
-                    "modified": "2026-02-25T10:34:54.561908746Z"
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:cognitiveservices:Account::demo-doc-intel",
-                    "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.CognitiveServices/accounts/demo-doc-intel96f3f811",
-                    "type": "azure-native:cognitiveservices:Account",
-                    "inputs": {
-                        "__createBeforeDelete": true,
-                        "accountName": "demo-doc-intel96f3f811",
-                        "azureApiVersion": "2024-10-01",
-                        "kind": "FormRecognizer",
-                        "location": "eastus",
-                        "properties": {
-                            "publicNetworkAccess": "Enabled"
-                        },
-                        "resourceGroupName": "ai-pipeline-demo-rg",
-                        "sku": {
-                            "name": "S0"
-                        }
-                    },
-                    "outputs": {
-                        "azureApiVersion": "2024-10-01",
-                        "etag": "\"5b06ce85-0000-0100-0000-699ecc690000\"",
-                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.CognitiveServices/accounts/demo-doc-intel96f3f811",
-                        "kind": "FormRecognizer",
-                        "location": "eastus",
-                        "name": "demo-doc-intel96f3f811",
-                        "properties": {
-                            "callRateLimit": {
-                                "rules": [
-                                    {
-                                        "count": 500,
-                                        "key": "container.billing",
-                                        "matchPatterns": [
-                                            {
-                                                "method": "*",
-                                                "path": "billing/*"
-                                            }
-                                        ],
-                                        "renewalPeriod": 10
-                                    },
-                                    {
-                                        "count": 15,
-                                        "key": "formrecognizer.analyze",
-                                        "matchPatterns": [
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/custom/models/{id}/analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/custom/models/{modelId}/analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/prebuilt/businessCard/analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/prebuilt/idDocument/analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/prebuilt/invoice/analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/layout/analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/prebuilt/receipt/analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/prebuilt/receipt/asyncBatchAnalyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/documentModels/{modelId}:analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/read"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/documentClassifiers/{classifierId}:analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentModels/{modelId}:analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentModels/{modelId}:analyze?_overload=analyzeDocument"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentClassifiers/{classifierId}:analyze"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentClassifiers/{classifierId}:analyze?_overload=classifyDocument"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentModels/{modelId}:analyzeBatch"
-                                            }
-                                        ],
-                                        "renewalPeriod": 1
-                                    },
-                                    {
-                                        "count": 50,
-                                        "dynamicThrottlingEnabled": true,
-                                        "key": "formrecognizer.get.object",
-                                        "matchPatterns": [
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/custom/models/{modelId}/analyzeResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/prebuilt/businessCard/analyzeResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/prebuilt/idDocument/analyzeResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/prebuilt/invoice/analyzeResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/prebuilt/receipt/analyzeResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/prebuilt/receipt/operations/{operationId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/documentModels/{modelId}/analyzeResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/layout/analyzeResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/custom/models/{modelId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/custom/models/{modelId}/copyResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/operations/{operationId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/custom/models/{modelId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/custom/models/{id}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/documentModels/{modelId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/documentClassifiers/{classifierId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/documentClassifiers/{classifierId}/analyzeResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/documentModels/{modelId}/analyzeResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/operations/{operationId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/operations/{operationId}?_overload={_overload}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/documentModels/{modelId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/documentClassifiers/{classifierId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/documentClassifiers/{classifierId}/analyzeResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/documentModels/{modelId}/analyzeBatchResults/{resultId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/documentModels/{modelId}/analyzeResults/{resultId}/figures/{figureId}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/documentModels/{modelId}/analyzeResults/{resultId}/pdf"
-                                            }
-                                        ],
-                                        "renewalPeriod": 1
-                                    },
-                                    {
-                                        "count": 10,
-                                        "dynamicThrottlingEnabled": true,
-                                        "key": "formrecognizer.list.objects",
-                                        "matchPatterns": [
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/operations"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/info"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/documentModels"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/custom/models"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/documentClassifiers"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/documentModels"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/operations"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/info"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/documentClassifiers"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/documentModels/{modelId}/analyzeBatchResults"
-                                            }
-                                        ],
-                                        "renewalPeriod": 1
-                                    },
-                                    {
-                                        "count": 5,
-                                        "dynamicThrottlingEnabled": true,
-                                        "key": "formrecognizer.model.management",
-                                        "matchPatterns": [
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/custom/models"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/custom/models/compose"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/custom/models/copyAuthorization"
-                                            },
-                                            {
-                                                "method": "DELETE",
-                                                "path": "formrecognizer/custom/models/{id}"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "formrecognizer/custom/models/{id}/keys"
-                                            },
-                                            {
-                                                "method": "DELETE",
-                                                "path": "formrecognizer/custom/models/{modelId}"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/custom/models/{modelId}/copy"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/documentModels/{modelId}:copyTo"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/documentModels:authorizeCopy"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/documentModels:build"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/documentModels:compose"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/custom/train"
-                                            },
-                                            {
-                                                "method": "DELETE",
-                                                "path": "formrecognizer/custom/models/{modelId}"
-                                            },
-                                            {
-                                                "method": "DELETE",
-                                                "path": "formrecognizer/documentModels/{modelId}"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "formrecognizer/documentClassifiers:build"
-                                            },
-                                            {
-                                                "method": "DELETE",
-                                                "path": "formrecognizer/documentClassifiers/{classifierId}"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentModels:authorizeCopy"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentModels/{modelId}:copyTo"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentModels:build"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentModels:compose"
-                                            },
-                                            {
-                                                "method": "DELETE",
-                                                "path": "documentintelligence/documentModels/{modelId}"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentClassifiers:build"
-                                            },
-                                            {
-                                                "method": "DELETE",
-                                                "path": "documentintelligence/documentClassifiers/{classifierId}"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentClassifiers/{classifierId}:copyTo"
-                                            },
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/documentClassifiers:authorizeCopy"
-                                            }
-                                        ],
-                                        "renewalPeriod": 1
-                                    },
-                                    {
-                                        "count": 15,
-                                        "key": "formrecognizer.chat.build",
-                                        "matchPatterns": [
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/chat:build"
-                                            }
-                                        ],
-                                        "renewalPeriod": 1
-                                    },
-                                    {
-                                        "count": 5,
-                                        "key": "formrecognizer.chat.complete",
-                                        "matchPatterns": [
-                                            {
-                                                "method": "POST",
-                                                "path": "documentintelligence/chat/{chatId}:complete"
-                                            }
-                                        ],
-                                        "renewalPeriod": 60
-                                    },
-                                    {
-                                        "count": 100,
-                                        "key": "formrecognizer.labeling",
-                                        "matchPatterns": [
-                                            {
-                                                "method": "*",
-                                                "path": "documentintelligence/labelingProjects/*"
-                                            },
-                                            {
-                                                "method": "*",
-                                                "path": "documentintelligence/classificationProjects/*"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/labelingProjects"
-                                            },
-                                            {
-                                                "method": "GET",
-                                                "path": "documentintelligence/classificationProjects"
-                                            }
-                                        ],
-                                        "renewalPeriod": 1
-                                    },
-                                    {
-                                        "count": 5,
-                                        "dynamicThrottlingEnabled": true,
-                                        "key": "default",
-                                        "matchPatterns": [
-                                            {
-                                                "method": "*",
-                                                "path": "*"
-                                            }
-                                        ],
-                                        "renewalPeriod": 1
-                                    }
-                                ]
-                            },
-                            "capabilities": [
-                                {
-                                    "name": "DynamicThrottling"
-                                },
-                                {
-                                    "name": "VirtualNetworks"
-                                },
-                                {
-                                    "name": "EnabledApimVnet",
-                                    "value": "true"
-                                },
-                                {
-                                    "name": "CustomerManagedKey"
-                                },
-                                {
-                                    "name": "Container",
-                                    "value": "FormRecognizer.Forms,FormRecognizer.FormRecognizerCustomSupervised,FormRecognizer.FormRecognizerLayout,FormRecognizer.formrecognizerreadlayout,FormRecognizer.FormRecognizerId,FormRecognizer.FormRecognizerInvoice,FormRecognizer.FormRecognizerReceipt,FormRecognizer.FormRecognizerBusinessCard,FormRecognizer.FormRecognizerRead,FormRecognizer.FormRecognizerKvp"
-                                }
-                            ],
-                            "dateCreated": "2026-02-25T10:17:44.4467395Z",
-                            "endpoint": "https://eastus.api.cognitive.microsoft.com/",
-                            "endpoints": {
-                                "Container": "https://eastus.api.cognitive.microsoft.com/",
-                                "FormRecognizer": "https://eastus.api.cognitive.microsoft.com/"
-                            },
-                            "internalId": "74ac23a8e50148138fee8cfd99772729",
-                            "isMigrated": false,
-                            "privateEndpointConnections": [],
-                            "provisioningState": "Succeeded",
-                            "publicNetworkAccess": "Enabled"
-                        },
-                        "sku": {
-                            "name": "S0"
-                        },
-                        "systemData": {
-                            "createdAt": "2026-02-25T10:17:37.0740696Z",
-                            "createdBy": "eitan.ickovics@novasuccessioncapital.com",
-                            "createdByType": "User",
-                            "lastModifiedAt": "2026-02-25T10:17:37.0740696Z",
-                            "lastModifiedBy": "eitan.ickovics@novasuccessioncapital.com",
-                            "lastModifiedByType": "User"
-                        },
-                        "type": "Microsoft.CognitiveServices/accounts"
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
-                    "propertyDependencies": {
-                        "kind": [],
-                        "location": [],
-                        "properties": [],
-                        "resourceGroupName": [],
-                        "sku": []
-                    },
-                    "created": "2026-02-25T10:18:21.299388471Z",
-                    "modified": "2026-02-25T10:18:21.299388471Z",
-                    "sourcePosition": "project:///infra/cognitiveServices.ts#30,27",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/cognitiveServices.ts#30,27"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#52,50"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:operationalinsights:Workspace::demo-vvocr-log-analytics",
-                    "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.OperationalInsights/workspaces/demo-vvocr-log-analyticsf5771565",
-                    "type": "azure-native:operationalinsights:Workspace",
-                    "inputs": {
-                        "__createBeforeDelete": true,
-                        "azureApiVersion": "2023-09-01",
-                        "location": "eastus",
-                        "resourceGroupName": "ai-pipeline-demo-rg",
-                        "retentionInDays": 30,
-                        "sku": {
-                            "name": "PerGB2018"
-                        },
-                        "workspaceName": "demo-vvocr-log-analyticsf5771565"
-                    },
-                    "outputs": {
-                        "azureApiVersion": "2023-09-01",
-                        "createdDate": "2026-02-25T10:18:56.6969379Z",
-                        "customerId": "4763a7f7-80c2-4b86-a46d-9c95fff7f46d",
-                        "etag": "\"400395f9-0000-0100-0000-699ecca70000\"",
-                        "features": {
-                            "enableLogAccessUsingOnlyResourcePermissions": true
-                        },
-                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.OperationalInsights/workspaces/demo-vvocr-log-analyticsf5771565",
-                        "location": "eastus",
-                        "modifiedDate": "2026-02-25T10:19:19.0759595Z",
-                        "name": "demo-vvocr-log-analyticsf5771565",
-                        "provisioningState": "Succeeded",
-                        "publicNetworkAccessForIngestion": "Enabled",
-                        "publicNetworkAccessForQuery": "Enabled",
-                        "retentionInDays": 30,
-                        "sku": {
-                            "lastSkuUpdate": "2026-02-25T10:18:56.6969379Z",
-                            "name": "PerGB2018"
-                        },
-                        "type": "Microsoft.OperationalInsights/workspaces",
-                        "workspaceCapping": {
-                            "dailyQuotaGb": -1,
-                            "dataIngestionStatus": "RespectQuota",
-                            "quotaNextResetTime": "2026-02-25T11:00:00Z"
-                        }
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
-                    "propertyDependencies": {
-                        "location": [],
-                        "resourceGroupName": [],
-                        "retentionInDays": [],
-                        "sku": []
-                    },
-                    "created": "2026-02-25T10:19:27.920021338Z",
-                    "modified": "2026-02-25T10:19:27.920021338Z",
-                    "sourcePosition": "project:///infra/applicationInsights.ts#19,33",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/applicationInsights.ts#19,33"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#44,64"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
+                    "modified": "2026-02-25T12:49:15.117322846Z"
                 },
                 {
                     "urn": "urn:pulumi:demo::ai-pipeline::azure-native:storage:StorageAccount::demo-blobstorage",
@@ -788,7 +180,325 @@
                             "sourcePosition": "project:///infra/storage.ts#23,23"
                         },
                         {
-                            "sourcePosition": "project:///index.ts#41,27"
+                            "sourcePosition": "project:///index.ts#40,27"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:cognitiveservices:Account::demo-doc-intel",
+                    "custom": true,
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.CognitiveServices/accounts/demo-doc-intel96f3f811",
+                    "type": "azure-native:cognitiveservices:Account",
+                    "inputs": {
+                        "__createBeforeDelete": true,
+                        "accountName": "demo-doc-intel96f3f811",
+                        "azureApiVersion": "2024-10-01",
+                        "kind": "FormRecognizer",
+                        "location": "eastus",
+                        "properties": {
+                            "publicNetworkAccess": "Enabled"
+                        },
+                        "resourceGroupName": "ai-pipeline-demo-rg",
+                        "sku": {
+                            "name": "F0"
+                        }
+                    },
+                    "outputs": {
+                        "azureApiVersion": "2024-10-01",
+                        "etag": "\"5d06dbb9-0000-0100-0000-699eeff40000\"",
+                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.CognitiveServices/accounts/demo-doc-intel96f3f811",
+                        "kind": "FormRecognizer",
+                        "location": "eastus",
+                        "name": "demo-doc-intel96f3f811",
+                        "properties": {
+                            "callRateLimit": {
+                                "rules": [
+                                    {
+                                        "count": 30,
+                                        "key": "default",
+                                        "matchPatterns": [
+                                            {
+                                                "method": "*",
+                                                "path": "*"
+                                            }
+                                        ],
+                                        "renewalPeriod": 60
+                                    }
+                                ]
+                            },
+                            "capabilities": [
+                                {
+                                    "name": "VirtualNetworks"
+                                },
+                                {
+                                    "name": "EnabledApimVnet",
+                                    "value": "true"
+                                },
+                                {
+                                    "name": "CustomerManagedKey"
+                                },
+                                {
+                                    "name": "Container",
+                                    "value": "FormRecognizer.Forms,FormRecognizer.FormRecognizerCustomSupervised,FormRecognizer.FormRecognizerLayout,FormRecognizer.formrecognizerreadlayout,FormRecognizer.FormRecognizerId,FormRecognizer.FormRecognizerInvoice,FormRecognizer.FormRecognizerReceipt,FormRecognizer.FormRecognizerBusinessCard,FormRecognizer.FormRecognizerRead,FormRecognizer.FormRecognizerKvp"
+                                }
+                            ],
+                            "dateCreated": "2026-02-25T10:17:44.4467395Z",
+                            "endpoint": "https://eastus.api.cognitive.microsoft.com/",
+                            "endpoints": {
+                                "Container": "https://eastus.api.cognitive.microsoft.com/",
+                                "FormRecognizer": "https://eastus.api.cognitive.microsoft.com/"
+                            },
+                            "internalId": "74ac23a8e50148138fee8cfd99772729",
+                            "isMigrated": false,
+                            "privateEndpointConnections": [],
+                            "provisioningState": "Succeeded",
+                            "publicNetworkAccess": "Enabled",
+                            "skuChangeInfo": {
+                                "countOfDowngrades": 1,
+                                "countOfUpgradesAfterDowngrades": 0,
+                                "lastChangeDate": "2026-02-25T12:49:22.4160062Z"
+                            }
+                        },
+                        "sku": {
+                            "name": "F0"
+                        },
+                        "systemData": {
+                            "createdAt": "2026-02-25T10:17:37.0740696Z",
+                            "createdBy": "eitan.ickovics@novasuccessioncapital.com",
+                            "createdByType": "User",
+                            "lastModifiedAt": "2026-02-25T12:49:18.5875258Z",
+                            "lastModifiedBy": "eitan.ickovics@novasuccessioncapital.com",
+                            "lastModifiedByType": "User"
+                        },
+                        "type": "Microsoft.CognitiveServices/accounts"
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
+                    "propertyDependencies": {
+                        "kind": [],
+                        "location": [],
+                        "properties": [],
+                        "resourceGroupName": [],
+                        "sku": []
+                    },
+                    "created": "2026-02-25T10:18:21.299388471Z",
+                    "modified": "2026-02-25T12:50:08.375339818Z",
+                    "sourcePosition": "project:///infra/cognitiveServices.ts#23,27",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/cognitiveServices.ts#23,27"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#53,50"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql",
+                    "custom": true,
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65",
+                    "type": "azure-native:sql:Server",
+                    "inputs": {
+                        "__createBeforeDelete": true,
+                        "administratorLogin": "sqladmin",
+                        "administratorLoginPassword": {
+                            "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
+                            "ciphertext": "v1:Q81BoS0MQJd2VQe7:SdxJegNRH+4QPWU/vy5htgIB4adyyRgHEeflFAHxu1mz6qXVyNj/aSBZYHE7rAg0MAk="
+                        },
+                        "azureApiVersion": "2023-08-01",
+                        "location": "israelcentral",
+                        "minimalTlsVersion": "1.2",
+                        "publicNetworkAccess": "Enabled",
+                        "resourceGroupName": "ai-pipeline-demo-rg",
+                        "serverName": "demo-vvocr-sql4fed2d65",
+                        "version": "12.0"
+                    },
+                    "outputs": {
+                        "administratorLogin": "sqladmin",
+                        "azureApiVersion": "2023-08-01",
+                        "externalGovernanceStatus": "Disabled",
+                        "fullyQualifiedDomainName": "demo-vvocr-sql4fed2d65.database.windows.net",
+                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65",
+                        "kind": "v12.0",
+                        "location": "israelcentral",
+                        "minimalTlsVersion": "1.2",
+                        "name": "demo-vvocr-sql4fed2d65",
+                        "privateEndpointConnections": [],
+                        "publicNetworkAccess": "Enabled",
+                        "restrictOutboundNetworkAccess": "Disabled",
+                        "state": "Ready",
+                        "type": "Microsoft.Sql/servers",
+                        "version": "12.0"
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
+                    "propertyDependencies": {
+                        "administratorLogin": [],
+                        "administratorLoginPassword": [],
+                        "location": [],
+                        "minimalTlsVersion": [],
+                        "publicNetworkAccess": [],
+                        "resourceGroupName": [],
+                        "version": []
+                    },
+                    "created": "2026-02-25T10:35:45.449474281Z",
+                    "modified": "2026-02-25T10:35:45.449474281Z",
+                    "sourcePosition": "project:///infra/database.ts#25,21",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/database.ts#25,21"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#25,50"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:web:AppServicePlan::demo-function-plan",
+                    "custom": true,
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Web/serverfarms/demo-function-plan",
+                    "type": "azure-native:web:AppServicePlan",
+                    "inputs": {
+                        "azureApiVersion": "2024-04-01",
+                        "hyperV": false,
+                        "isXenon": false,
+                        "kind": "functionapp",
+                        "location": "israelcentral",
+                        "name": "demo-function-plan",
+                        "perSiteScaling": false,
+                        "reserved": false,
+                        "resourceGroupName": "ai-pipeline-demo-rg",
+                        "sku": {
+                            "name": "Y1",
+                            "tier": "Dynamic"
+                        },
+                        "zoneRedundant": false
+                    },
+                    "outputs": {
+                        "azureApiVersion": "2024-04-01",
+                        "elasticScaleEnabled": false,
+                        "geoRegion": "Israel Central",
+                        "hyperV": false,
+                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Web/serverfarms/demo-function-plan",
+                        "isSpot": false,
+                        "isXenon": false,
+                        "kind": "functionapp",
+                        "location": "Israel Central",
+                        "maximumElasticWorkerCount": 1,
+                        "maximumNumberOfWorkers": 0,
+                        "name": "demo-function-plan",
+                        "numberOfSites": 0,
+                        "numberOfWorkers": 0,
+                        "perSiteScaling": false,
+                        "provisioningState": "Succeeded",
+                        "reserved": false,
+                        "resourceGroup": "ai-pipeline-demo-rg",
+                        "sku": {
+                            "capacity": 0,
+                            "family": "Y",
+                            "name": "Y1",
+                            "size": "Y1",
+                            "tier": "Dynamic"
+                        },
+                        "status": "Ready",
+                        "subscription": "909cad6a-af4c-4b4a-8412-5c3ecacf96a7",
+                        "targetWorkerCount": 0,
+                        "targetWorkerSizeId": 0,
+                        "type": "Microsoft.Web/serverfarms",
+                        "zoneRedundant": false
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
+                    "propertyDependencies": {
+                        "hyperV": [],
+                        "isXenon": [],
+                        "kind": [],
+                        "location": [],
+                        "name": [],
+                        "perSiteScaling": [],
+                        "reserved": [],
+                        "resourceGroupName": [],
+                        "sku": [],
+                        "zoneRedundant": []
+                    },
+                    "created": "2026-02-25T10:35:01.189106164Z",
+                    "modified": "2026-02-25T10:35:01.189106164Z",
+                    "sourcePosition": "project:///infra/functions.ts#49,26",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/functions.ts#49,26"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#56,56"
                         },
                         {},
                         {
@@ -2923,13 +2633,13 @@
                     },
                     "created": "2026-02-25T10:17:49.525304016Z",
                     "modified": "2026-02-25T10:17:49.525304016Z",
-                    "sourcePosition": "project:///infra/cognitiveServices.ts#71,25",
+                    "sourcePosition": "project:///infra/cognitiveServices.ts#48,25",
                     "stackTrace": [
                         {
-                            "sourcePosition": "project:///infra/cognitiveServices.ts#71,25"
+                            "sourcePosition": "project:///infra/cognitiveServices.ts#48,25"
                         },
                         {
-                            "sourcePosition": "project:///index.ts#52,50"
+                            "sourcePosition": "project:///index.ts#53,50"
                         },
                         {},
                         {
@@ -2957,103 +2667,22 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:storage:BlobContainer::demo-uploads",
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:storage:Queue::demo-ai-mapping-queue",
                     "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/blobServices/default/containers/uploads",
-                    "type": "azure-native:storage:BlobContainer",
-                    "inputs": {
-                        "accountName": "demopvstorage",
-                        "azureApiVersion": "2024-01-01",
-                        "containerName": "uploads",
-                        "publicAccess": "None",
-                        "resourceGroupName": "ai-pipeline-demo-rg"
-                    },
-                    "outputs": {
-                        "azureApiVersion": "2024-01-01",
-                        "defaultEncryptionScope": "$account-encryption-key",
-                        "deleted": false,
-                        "denyEncryptionScopeOverride": false,
-                        "etag": "\"0x8DE745984F6DA51\"",
-                        "hasImmutabilityPolicy": false,
-                        "hasLegalHold": false,
-                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/blobServices/default/containers/uploads",
-                        "lastModifiedTime": "2026-02-25T10:34:56.0000000Z",
-                        "leaseState": "Available",
-                        "leaseStatus": "Unlocked",
-                        "legalHold": {
-                            "hasLegalHold": false,
-                            "tags": []
-                        },
-                        "name": "uploads",
-                        "publicAccess": "None",
-                        "remainingRetentionDays": 0,
-                        "type": "Microsoft.Storage/storageAccounts/blobServices/containers"
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "dependencies": [
-                        "urn:pulumi:demo::ai-pipeline::azure-native:storage:StorageAccount::demo-blobstorage"
-                    ],
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
-                    "propertyDependencies": {
-                        "accountName": [
-                            "urn:pulumi:demo::ai-pipeline::azure-native:storage:StorageAccount::demo-blobstorage"
-                        ],
-                        "containerName": [],
-                        "publicAccess": [],
-                        "resourceGroupName": []
-                    },
-                    "created": "2026-02-25T10:34:57.997790546Z",
-                    "modified": "2026-02-25T10:34:57.997790546Z",
-                    "sourcePosition": "project:///infra/storage.ts#37,28",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/storage.ts#37,28"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#41,27"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:storage:Queue::demo-ocr-queue",
-                    "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/queueServices/default/queues/ocr-queue",
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/queueServices/default/queues/ai-mapping-queue",
                     "type": "azure-native:storage:Queue",
                     "inputs": {
                         "accountName": "demopvstorage",
                         "azureApiVersion": "2024-01-01",
-                        "queueName": "ocr-queue",
+                        "queueName": "ai-mapping-queue",
                         "resourceGroupName": "ai-pipeline-demo-rg"
                     },
                     "outputs": {
                         "approximateMessageCount": 0,
                         "azureApiVersion": "2024-01-01",
-                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/queueServices/default/queues/ocr-queue",
+                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/queueServices/default/queues/ai-mapping-queue",
                         "metadata": {},
-                        "name": "ocr-queue",
+                        "name": "ai-mapping-queue",
                         "type": "Microsoft.Storage/storageAccounts/queueServices/queues"
                     },
                     "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
@@ -3068,15 +2697,15 @@
                         "queueName": [],
                         "resourceGroupName": []
                     },
-                    "created": "2026-02-25T10:34:57.406932328Z",
-                    "modified": "2026-02-25T10:34:57.406932328Z",
-                    "sourcePosition": "project:///infra/storage.ts#52,20",
+                    "created": "2026-02-25T10:34:57.497485918Z",
+                    "modified": "2026-02-25T10:34:57.497485918Z",
+                    "sourcePosition": "project:///infra/storage.ts#45,26",
                     "stackTrace": [
                         {
-                            "sourcePosition": "project:///infra/storage.ts#52,20"
+                            "sourcePosition": "project:///infra/storage.ts#45,26"
                         },
                         {
-                            "sourcePosition": "project:///index.ts#41,27"
+                            "sourcePosition": "project:///index.ts#40,27"
                         },
                         {},
                         {
@@ -3157,7 +2786,7 @@
                             "sourcePosition": "project:///infra/storage.ts#66,25"
                         },
                         {
-                            "sourcePosition": "project:///index.ts#41,27"
+                            "sourcePosition": "project:///index.ts#40,27"
                         },
                         {},
                         {
@@ -3185,22 +2814,22 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:storage:Queue::demo-ai-mapping-queue",
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:storage:Queue::demo-ocr-queue",
                     "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/queueServices/default/queues/ai-mapping-queue",
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/queueServices/default/queues/ocr-queue",
                     "type": "azure-native:storage:Queue",
                     "inputs": {
                         "accountName": "demopvstorage",
                         "azureApiVersion": "2024-01-01",
-                        "queueName": "ai-mapping-queue",
+                        "queueName": "ocr-queue",
                         "resourceGroupName": "ai-pipeline-demo-rg"
                     },
                     "outputs": {
                         "approximateMessageCount": 0,
                         "azureApiVersion": "2024-01-01",
-                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/queueServices/default/queues/ai-mapping-queue",
+                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/queueServices/default/queues/ocr-queue",
                         "metadata": {},
-                        "name": "ai-mapping-queue",
+                        "name": "ocr-queue",
                         "type": "Microsoft.Storage/storageAccounts/queueServices/queues"
                     },
                     "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
@@ -3215,15 +2844,793 @@
                         "queueName": [],
                         "resourceGroupName": []
                     },
-                    "created": "2026-02-25T10:34:57.497485918Z",
-                    "modified": "2026-02-25T10:34:57.497485918Z",
-                    "sourcePosition": "project:///infra/storage.ts#45,26",
+                    "created": "2026-02-25T10:34:57.406932328Z",
+                    "modified": "2026-02-25T10:34:57.406932328Z",
+                    "sourcePosition": "project:///infra/storage.ts#52,20",
                     "stackTrace": [
                         {
-                            "sourcePosition": "project:///infra/storage.ts#45,26"
+                            "sourcePosition": "project:///infra/storage.ts#52,20"
                         },
                         {
-                            "sourcePosition": "project:///index.ts#41,27"
+                            "sourcePosition": "project:///index.ts#40,27"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:storage:BlobContainer::demo-uploads",
+                    "custom": true,
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/blobServices/default/containers/uploads",
+                    "type": "azure-native:storage:BlobContainer",
+                    "inputs": {
+                        "accountName": "demopvstorage",
+                        "azureApiVersion": "2024-01-01",
+                        "containerName": "uploads",
+                        "publicAccess": "None",
+                        "resourceGroupName": "ai-pipeline-demo-rg"
+                    },
+                    "outputs": {
+                        "azureApiVersion": "2024-01-01",
+                        "defaultEncryptionScope": "$account-encryption-key",
+                        "deleted": false,
+                        "denyEncryptionScopeOverride": false,
+                        "etag": "\"0x8DE745984F6DA51\"",
+                        "hasImmutabilityPolicy": false,
+                        "hasLegalHold": false,
+                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/blobServices/default/containers/uploads",
+                        "lastModifiedTime": "2026-02-25T10:34:56.0000000Z",
+                        "leaseState": "Available",
+                        "leaseStatus": "Unlocked",
+                        "legalHold": {
+                            "hasLegalHold": false,
+                            "tags": []
+                        },
+                        "name": "uploads",
+                        "publicAccess": "None",
+                        "remainingRetentionDays": 0,
+                        "type": "Microsoft.Storage/storageAccounts/blobServices/containers"
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "dependencies": [
+                        "urn:pulumi:demo::ai-pipeline::azure-native:storage:StorageAccount::demo-blobstorage"
+                    ],
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
+                    "propertyDependencies": {
+                        "accountName": [
+                            "urn:pulumi:demo::ai-pipeline::azure-native:storage:StorageAccount::demo-blobstorage"
+                        ],
+                        "containerName": [],
+                        "publicAccess": [],
+                        "resourceGroupName": []
+                    },
+                    "created": "2026-02-25T10:34:57.997790546Z",
+                    "modified": "2026-02-25T10:34:57.997790546Z",
+                    "sourcePosition": "project:///infra/storage.ts#37,28",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/storage.ts#37,28"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#40,27"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:sql:Database::demo-vvocr-db",
+                    "custom": true,
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65/databases/demo-vvocr-db",
+                    "type": "azure-native:sql:Database",
+                    "inputs": {
+                        "autoPauseDelay": 15,
+                        "azureApiVersion": "2023-08-01",
+                        "databaseName": "demo-vvocr-db",
+                        "location": "israelcentral",
+                        "maxSizeBytes": 1073741824,
+                        "minCapacity": 0.5,
+                        "resourceGroupName": "ai-pipeline-demo-rg",
+                        "serverName": "demo-vvocr-sql4fed2d65",
+                        "sku": {
+                            "capacity": 1,
+                            "family": "Gen5",
+                            "name": "GP_S_Gen5",
+                            "tier": "GeneralPurpose"
+                        }
+                    },
+                    "outputs": {
+                        "autoPauseDelay": 15,
+                        "availabilityZone": "NoPreference",
+                        "azureApiVersion": "2023-08-01",
+                        "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+                        "collation": "SQL_Latin1_General_CP1_CI_AS",
+                        "creationDate": "2026-02-25T10:36:29.177Z",
+                        "currentBackupStorageRedundancy": "Zone",
+                        "currentServiceObjectiveName": "GP_S_Gen5_1",
+                        "currentSku": {
+                            "capacity": 1,
+                            "family": "Gen5",
+                            "name": "GP_S_Gen5",
+                            "tier": "GeneralPurpose"
+                        },
+                        "databaseId": "40385fa8-fbcc-479d-91dc-b02102916c8f",
+                        "earliestRestoreDate": "2026-02-25T10:41:20Z",
+                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65/databases/demo-vvocr-db",
+                        "isInfraEncryptionEnabled": false,
+                        "isLedgerOn": false,
+                        "kind": "v12.0,user,vcore,serverless",
+                        "location": "israelcentral",
+                        "maintenanceConfigurationId": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/providers/Microsoft.Maintenance/publicMaintenanceConfigurations/SQL_Default",
+                        "maxLogSizeBytes": 193273528320,
+                        "maxSizeBytes": 1073741824,
+                        "minCapacity": 0.5,
+                        "name": "demo-vvocr-db",
+                        "readScale": "Disabled",
+                        "requestedBackupStorageRedundancy": "Zone",
+                        "requestedServiceObjectiveName": "GP_S_Gen5_1",
+                        "resumedDate": "2026-02-25T12:49:20.433Z",
+                        "sku": {
+                            "capacity": 1,
+                            "family": "Gen5",
+                            "name": "GP_S_Gen5",
+                            "tier": "GeneralPurpose"
+                        },
+                        "status": "Online",
+                        "type": "Microsoft.Sql/servers/databases",
+                        "zoneRedundant": false
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "dependencies": [
+                        "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
+                    ],
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
+                    "propertyDependencies": {
+                        "autoPauseDelay": [],
+                        "location": [],
+                        "maxSizeBytes": [],
+                        "minCapacity": [],
+                        "resourceGroupName": [],
+                        "serverName": [
+                            "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
+                        ],
+                        "sku": []
+                    },
+                    "created": "2026-02-25T10:36:35.777550433Z",
+                    "modified": "2026-02-25T12:49:36.42640662Z",
+                    "sourcePosition": "project:///infra/database.ts#44,23",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/database.ts#44,23"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#25,50"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:sql:FirewallRule::demo-allow-azure",
+                    "custom": true,
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65/firewallRules/demo-allow-azure",
+                    "type": "azure-native:sql:FirewallRule",
+                    "inputs": {
+                        "azureApiVersion": "2023-08-01",
+                        "endIpAddress": "255.255.255.255",
+                        "firewallRuleName": "demo-allow-azure",
+                        "resourceGroupName": "ai-pipeline-demo-rg",
+                        "serverName": "demo-vvocr-sql4fed2d65",
+                        "startIpAddress": "0.0.0.0"
+                    },
+                    "outputs": {
+                        "azureApiVersion": "2023-08-01",
+                        "endIpAddress": "255.255.255.255",
+                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65/firewallRules/demo-allow-azure",
+                        "name": "demo-allow-azure",
+                        "startIpAddress": "0.0.0.0",
+                        "type": "Microsoft.Sql/servers/firewallRules"
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "dependencies": [
+                        "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
+                    ],
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
+                    "propertyDependencies": {
+                        "endIpAddress": [],
+                        "resourceGroupName": [],
+                        "serverName": [
+                            "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
+                        ],
+                        "startIpAddress": []
+                    },
+                    "created": "2026-02-25T10:35:49.298804205Z",
+                    "modified": "2026-02-25T10:35:49.298804205Z",
+                    "sourcePosition": "project:///infra/database.ts#36,3",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/database.ts#36,3"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#25,50"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::pulumi:providers:command::default_1_1_3",
+                    "custom": true,
+                    "id": "639d6827-a117-42fa-afff-45c40d528225",
+                    "type": "pulumi:providers:command",
+                    "inputs": {
+                        "__internal": {},
+                        "__pulumi-go-provider-version": "1.1.0",
+                        "version": "1.1.3"
+                    },
+                    "outputs": {
+                        "__pulumi-go-provider-version": "1.1.0",
+                        "version": "1.1.3"
+                    },
+                    "created": "2026-02-25T10:36:36.1173806Z",
+                    "modified": "2026-02-25T10:36:36.1173806Z"
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::command:local:Command::wait-for-db",
+                    "custom": true,
+                    "id": "wait-for-db68ca1c24",
+                    "type": "command:local:Command",
+                    "inputs": {
+                        "create": "sleep 45"
+                    },
+                    "outputs": {
+                        "create": "sleep 45",
+                        "stderr": "",
+                        "stdout": ""
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "dependencies": [
+                        "urn:pulumi:demo::ai-pipeline::azure-native:sql:Database::demo-vvocr-db"
+                    ],
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:command::default_1_1_3::639d6827-a117-42fa-afff-45c40d528225",
+                    "propertyDependencies": {
+                        "create": []
+                    },
+                    "created": "2026-02-25T10:37:20.364335443Z",
+                    "modified": "2026-02-25T10:37:20.364335443Z",
+                    "sourcePosition": "project:///infra/database.ts#60,21",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/database.ts#60,21"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#25,50"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ],
+                    "replaceOnChanges": [
+                        "triggers[*]"
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::pulumi:providers:mssql::mssql-provider",
+                    "custom": true,
+                    "id": "444227c6-d7ce-4853-9c99-1396baecefd4",
+                    "type": "pulumi:providers:mssql",
+                    "inputs": {
+                        "__internal": {
+                            "pluginDownloadURL": "github://api.github.com/pulumiverse/pulumi-mssql"
+                        },
+                        "hostname": "demo-vvocr-sql4fed2d65.database.windows.net",
+                        "port": "1433",
+                        "sqlAuth": {
+                            "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
+                            "ciphertext": "v1:EDJ6Sy5cOiv0pwiD:qjyNGhM0yqxJlT7SVzsusw6WxMsLrFujPvZ1B3R+WkzJCVQ9VNyqkorDHvRoeSp4McNEsN00gA6Mn6h1gJRcAMY4a16A1xUYrMm8Fc9wY4jrvCYYmFSKjg6KrT/kYD0="
+                        },
+                        "version": "0.1.0"
+                    },
+                    "outputs": {
+                        "hostname": "demo-vvocr-sql4fed2d65.database.windows.net",
+                        "port": "1433",
+                        "sqlAuth": {
+                            "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
+                            "ciphertext": "v1:ZJr4aaGCLDfwW/vl:Knyb/rjrcY2Te4hJqtdia1AIQ9RCdJfEYTWjq2Q5aWOpZNweufxN5rKr9ThkqUzNnTY2ONTQUxUJJk0ZgxuD7jhkiMKcTO76i9oi4WoOXrFdR81JMpUBwZVP58RDHTE="
+                        },
+                        "version": "0.1.0"
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "dependencies": [
+                        "urn:pulumi:demo::ai-pipeline::command:local:Command::wait-for-db",
+                        "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
+                    ],
+                    "propertyDependencies": {
+                        "hostname": [
+                            "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
+                        ],
+                        "port": [],
+                        "sqlAuth": []
+                    },
+                    "created": "2026-02-25T10:37:20.75134918Z",
+                    "modified": "2026-02-25T10:37:20.75134918Z",
+                    "sourcePosition": "project:///node_modules/@pulumiverse/provider.ts#52,9",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumiverse/provider.ts#52,9"
+                        },
+                        {
+                            "sourcePosition": "project:///infra/database.ts#72,25"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#25,50"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::mssql:index/script:Script::deploy-schema",
+                    "custom": true,
+                    "id": "script",
+                    "type": "mssql:index/script:Script",
+                    "inputs": {
+                        "databaseId": "5",
+                        "readScript": "SELECT '64984ce8e7c54bc78fa99e04f93c0c54' as [hash]",
+                        "state": {
+                            "hash": "64984ce8e7c54bc78fa99e04f93c0c54"
+                        },
+                        "updateScript": "-- =============================================\n-- VVOCR SCHEMA - Document Processing POC\n-- Matches client's expected schema for isolated POC work\n-- Last updated: 2026-02-07 (removed calculated fields and moved large data to blob)\n-- =============================================\n\n-- Create schema if it doesn't exist\nIF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'vvocr')\nBEGIN\n    EXEC('CREATE SCHEMA vvocr');\nEND\n\n-- =============================================\n-- 1. Document Processing Results\n-- Main table for storing OCR/AI processing outputs\n-- Note: Large data (extracted text, structured data) stored in blob storage\n-- =============================================\nIF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'document_processing_results' AND schema_id = SCHEMA_ID('vvocr'))\nBEGIN\n    CREATE TABLE vvocr.document_processing_results (\n        result_id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n        \n        -- Document metadata\n        document_name NVARCHAR(500) NOT NULL,\n        document_path NVARCHAR(1000),\n        document_size_bytes BIGINT,\n        document_type NVARCHAR(50), -- PDF, Excel, CSV, etc.\n        uploaded_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        -- Processing status\n        processing_status NVARCHAR(50) DEFAULT 'pending', -- pending, ocr_complete, completed, failed\n        processing_started_at DATETIME2 NULL,\n        processing_completed_at DATETIME2 NULL,\n        \n        -- Document Intelligence (Azure Form Recognizer) results\n        -- Note: Large OCR data (extracted_text, structured_data) stored in blob at <vendor_name>/ocr.json\n        doc_intel_confidence_score DECIMAL(5,4) NULL,\n        doc_intel_prompt_used NVARCHAR(MAX) NULL, -- Prompt used for schema inspection (future use)\n        doc_intel_cost_usd DECIMAL(10,6) NULL,\n        \n        -- AI Model results (GPT-4o, Llama, Mistral, etc.)\n        ai_model_requested NVARCHAR(100) NULL, -- User-requested model for this run\n        ai_prompt_requested NVARCHAR(MAX) NULL, -- User-requested custom prompt (max 10k chars enforced by app)\n        ai_model_used NVARCHAR(100) NULL, -- e.g., 'gpt-4o', 'llama-3-1-405b'\n        ai_mapping_result NVARCHAR(MAX) NULL, -- Product mapping JSON result\n        ai_prompt_used NVARCHAR(MAX) NULL, -- Exact prompt sent to LLM\n        ai_confidence_score DECIMAL(5,2) NULL, -- Overall confidence score (0-100)\n        ai_completeness_score DECIMAL(5,2) NULL, -- Data completeness score (0-100)\n        ai_prompt_tokens INT NULL,\n        ai_completion_tokens INT NULL,\n        ai_model_cost_usd DECIMAL(10,6) NULL,\n        \n        -- Validation\n        requires_manual_review BIT DEFAULT 0,\n        manual_review_reason NVARCHAR(500) NULL,\n        reviewed_by NVARCHAR(100) NULL,\n        reviewed_at DATETIME2 NULL,\n        \n        -- Vendor information\n        vendor_name NVARCHAR(200) NOT NULL,\n        \n        -- Export status\n        export_status NVARCHAR(50) DEFAULT 'not_exported', -- not_exported, confirmed, exported, rejected\n        exported_at DATETIME2 NULL,\n        \n        -- Metadata\n        error_message NVARCHAR(MAX) NULL,\n        created_at DATETIME2 DEFAULT GETUTCDATE(),\n        updated_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        -- Indexes\n        INDEX IX_document_processing_status (processing_status),\n        INDEX IX_document_uploaded_at (uploaded_at),\n        INDEX IX_document_requires_review (requires_manual_review),\n        INDEX IX_document_vendor_name (vendor_name),\n        INDEX IX_document_path (document_path)\n    );\nEND\n\n-- =============================================\n-- 6. Vendor Products (Production Table)\n-- Confirmed/exported product catalog data\n-- =============================================\nIF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'vendor_products' AND schema_id = SCHEMA_ID('vvocr'))\nBEGIN\n    CREATE TABLE vvocr.vendor_products (\n        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n        vendor_id NVARCHAR(100) NOT NULL,\n        vendor_name NVARCHAR(200) NOT NULL,\n        \n        -- Product information (minimal required schema)\n        product_name NVARCHAR(500),\n        sku NVARCHAR(200),\n        price DECIMAL(18,4),\n        unit NVARCHAR(100),\n        description NVARCHAR(MAX),\n        \n        -- Source tracking\n        source_document_id UNIQUEIDENTIFIER NOT NULL,\n        source_document_name NVARCHAR(500),\n        \n        -- Metadata\n        created_at DATETIME2 DEFAULT GETUTCDATE(),\n        updated_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        INDEX IX_vendor_products_vendor_id (vendor_id),\n        INDEX IX_vendor_products_sku (sku),\n        INDEX IX_vendor_products_source_doc (source_document_id)\n    );\nEND\n\n-- example how to alter table to add new column for storing user's requested AI model (if not already exists)\n-- -- Add ai_model_requested column (stores user's requested model)\n-- IF NOT EXISTS (\n--     SELECT * FROM sys.columns \n--     WHERE object_id = OBJECT_ID('vvocr.document_processing_results') \n--     AND name = 'ai_model_requested'\n-- )\n-- BEGIN\n--     ALTER TABLE vvocr.document_processing_results\n--     ADD ai_model_requested NVARCHAR(100) NULL;\n    \n--     PRINT 'Added column: ai_model_requested';\n-- END\n-- ELSE\n-- BEGIN\n--     PRINT 'Column ai_model_requested already exists';\n-- END\n-- GO\n\nPRINT 'VVOCR tables created successfully!';\n\n"
+                    },
+                    "outputs": {
+                        "databaseId": "5",
+                        "id": "script",
+                        "readScript": "SELECT '64984ce8e7c54bc78fa99e04f93c0c54' as [hash]",
+                        "state": {
+                            "hash": "64984ce8e7c54bc78fa99e04f93c0c54"
+                        },
+                        "updateScript": "-- =============================================\n-- VVOCR SCHEMA - Document Processing POC\n-- Matches client's expected schema for isolated POC work\n-- Last updated: 2026-02-07 (removed calculated fields and moved large data to blob)\n-- =============================================\n\n-- Create schema if it doesn't exist\nIF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'vvocr')\nBEGIN\n    EXEC('CREATE SCHEMA vvocr');\nEND\n\n-- =============================================\n-- 1. Document Processing Results\n-- Main table for storing OCR/AI processing outputs\n-- Note: Large data (extracted text, structured data) stored in blob storage\n-- =============================================\nIF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'document_processing_results' AND schema_id = SCHEMA_ID('vvocr'))\nBEGIN\n    CREATE TABLE vvocr.document_processing_results (\n        result_id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n        \n        -- Document metadata\n        document_name NVARCHAR(500) NOT NULL,\n        document_path NVARCHAR(1000),\n        document_size_bytes BIGINT,\n        document_type NVARCHAR(50), -- PDF, Excel, CSV, etc.\n        uploaded_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        -- Processing status\n        processing_status NVARCHAR(50) DEFAULT 'pending', -- pending, ocr_complete, completed, failed\n        processing_started_at DATETIME2 NULL,\n        processing_completed_at DATETIME2 NULL,\n        \n        -- Document Intelligence (Azure Form Recognizer) results\n        -- Note: Large OCR data (extracted_text, structured_data) stored in blob at <vendor_name>/ocr.json\n        doc_intel_confidence_score DECIMAL(5,4) NULL,\n        doc_intel_prompt_used NVARCHAR(MAX) NULL, -- Prompt used for schema inspection (future use)\n        doc_intel_cost_usd DECIMAL(10,6) NULL,\n        \n        -- AI Model results (GPT-4o, Llama, Mistral, etc.)\n        ai_model_requested NVARCHAR(100) NULL, -- User-requested model for this run\n        ai_prompt_requested NVARCHAR(MAX) NULL, -- User-requested custom prompt (max 10k chars enforced by app)\n        ai_model_used NVARCHAR(100) NULL, -- e.g., 'gpt-4o', 'llama-3-1-405b'\n        ai_mapping_result NVARCHAR(MAX) NULL, -- Product mapping JSON result\n        ai_prompt_used NVARCHAR(MAX) NULL, -- Exact prompt sent to LLM\n        ai_confidence_score DECIMAL(5,2) NULL, -- Overall confidence score (0-100)\n        ai_completeness_score DECIMAL(5,2) NULL, -- Data completeness score (0-100)\n        ai_prompt_tokens INT NULL,\n        ai_completion_tokens INT NULL,\n        ai_model_cost_usd DECIMAL(10,6) NULL,\n        \n        -- Validation\n        requires_manual_review BIT DEFAULT 0,\n        manual_review_reason NVARCHAR(500) NULL,\n        reviewed_by NVARCHAR(100) NULL,\n        reviewed_at DATETIME2 NULL,\n        \n        -- Vendor information\n        vendor_name NVARCHAR(200) NOT NULL,\n        \n        -- Export status\n        export_status NVARCHAR(50) DEFAULT 'not_exported', -- not_exported, confirmed, exported, rejected\n        exported_at DATETIME2 NULL,\n        \n        -- Metadata\n        error_message NVARCHAR(MAX) NULL,\n        created_at DATETIME2 DEFAULT GETUTCDATE(),\n        updated_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        -- Indexes\n        INDEX IX_document_processing_status (processing_status),\n        INDEX IX_document_uploaded_at (uploaded_at),\n        INDEX IX_document_requires_review (requires_manual_review),\n        INDEX IX_document_vendor_name (vendor_name),\n        INDEX IX_document_path (document_path)\n    );\nEND\n\n-- =============================================\n-- 6. Vendor Products (Production Table)\n-- Confirmed/exported product catalog data\n-- =============================================\nIF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'vendor_products' AND schema_id = SCHEMA_ID('vvocr'))\nBEGIN\n    CREATE TABLE vvocr.vendor_products (\n        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n        vendor_id NVARCHAR(100) NOT NULL,\n        vendor_name NVARCHAR(200) NOT NULL,\n        \n        -- Product information (minimal required schema)\n        product_name NVARCHAR(500),\n        sku NVARCHAR(200),\n        price DECIMAL(18,4),\n        unit NVARCHAR(100),\n        description NVARCHAR(MAX),\n        \n        -- Source tracking\n        source_document_id UNIQUEIDENTIFIER NOT NULL,\n        source_document_name NVARCHAR(500),\n        \n        -- Metadata\n        created_at DATETIME2 DEFAULT GETUTCDATE(),\n        updated_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        INDEX IX_vendor_products_vendor_id (vendor_id),\n        INDEX IX_vendor_products_sku (sku),\n        INDEX IX_vendor_products_source_doc (source_document_id)\n    );\nEND\n\n-- example how to alter table to add new column for storing user's requested AI model (if not already exists)\n-- -- Add ai_model_requested column (stores user's requested model)\n-- IF NOT EXISTS (\n--     SELECT * FROM sys.columns \n--     WHERE object_id = OBJECT_ID('vvocr.document_processing_results') \n--     AND name = 'ai_model_requested'\n-- )\n-- BEGIN\n--     ALTER TABLE vvocr.document_processing_results\n--     ADD ai_model_requested NVARCHAR(100) NULL;\n    \n--     PRINT 'Added column: ai_model_requested';\n-- END\n-- ELSE\n-- BEGIN\n--     PRINT 'Column ai_model_requested already exists';\n-- END\n-- GO\n\nPRINT 'VVOCR tables created successfully!';\n\n"
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "dependencies": [
+                        "urn:pulumi:demo::ai-pipeline::azure-native:sql:Database::demo-vvocr-db"
+                    ],
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:mssql::mssql-provider::444227c6-d7ce-4853-9c99-1396baecefd4",
+                    "propertyDependencies": {
+                        "databaseId": [
+                            "urn:pulumi:demo::ai-pipeline::azure-native:sql:Database::demo-vvocr-db"
+                        ],
+                        "readScript": [],
+                        "state": [],
+                        "updateScript": []
+                    },
+                    "created": "2026-02-25T10:37:22.928956234Z",
+                    "modified": "2026-02-25T10:37:22.928956234Z",
+                    "sourcePosition": "project:///infra/database.ts#101,3",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/database.ts#101,3"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#25,50"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:cognitiveservices:Deployment::demo-gpt4oMini",
+                    "custom": true,
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.CognitiveServices/accounts/demo-openai-account548ccbff/deployments/gpt-4o-mini",
+                    "type": "azure-native:cognitiveservices:Deployment",
+                    "inputs": {
+                        "accountName": "demo-openai-account548ccbff",
+                        "azureApiVersion": "2024-10-01",
+                        "deploymentName": "gpt-4o-mini",
+                        "properties": {
+                            "model": {
+                                "format": "OpenAI",
+                                "name": "gpt-4o-mini",
+                                "version": "2024-07-18"
+                            }
+                        },
+                        "resourceGroupName": "ai-pipeline-demo-rg",
+                        "sku": {
+                            "capacity": 20,
+                            "name": "GlobalStandard"
+                        }
+                    },
+                    "outputs": {
+                        "azureApiVersion": "2024-10-01",
+                        "etag": "\"4bd2d280-325b-4c68-8db3-8670b71ddc03\"",
+                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.CognitiveServices/accounts/demo-openai-account548ccbff/deployments/gpt-4o-mini",
+                        "name": "gpt-4o-mini",
+                        "properties": {
+                            "capabilities": {
+                                "_H_azureml-throttling-key": "oai-01ab62e80b80496692b538421a1ef693",
+                                "agentsV2": "true",
+                                "area": "US",
+                                "assistants": "true",
+                                "chatCompletion": "true",
+                                "jsonObjectResponse": "true",
+                                "maxContextToken": "128000",
+                                "maxOutputToken": "16384",
+                                "responses": "true"
+                            },
+                            "currentCapacity": 20,
+                            "model": {
+                                "format": "OpenAI",
+                                "name": "gpt-4o-mini",
+                                "version": "2024-07-18"
+                            },
+                            "provisioningState": "Succeeded",
+                            "raiPolicyName": "Microsoft.DefaultV2",
+                            "rateLimits": [
+                                {
+                                    "count": 200,
+                                    "key": "request",
+                                    "renewalPeriod": 60
+                                },
+                                {
+                                    "count": 20000,
+                                    "key": "token",
+                                    "renewalPeriod": 60
+                                }
+                            ],
+                            "versionUpgradeOption": "OnceNewDefaultVersionAvailable"
+                        },
+                        "sku": {
+                            "capacity": 20,
+                            "name": "GlobalStandard"
+                        },
+                        "systemData": {
+                            "createdAt": "2026-02-25T10:35:01.7706891Z",
+                            "createdBy": "eitan.ickovics@novasuccessioncapital.com",
+                            "createdByType": "User",
+                            "lastModifiedAt": "2026-02-25T12:55:23.065841Z",
+                            "lastModifiedBy": "eitan.ickovics@novasuccessioncapital.com",
+                            "lastModifiedByType": "User"
+                        },
+                        "type": "Microsoft.CognitiveServices/accounts/deployments"
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "dependencies": [
+                        "urn:pulumi:demo::ai-pipeline::azure-native:cognitiveservices:Account::demo-openai-account"
+                    ],
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
+                    "propertyDependencies": {
+                        "accountName": [
+                            "urn:pulumi:demo::ai-pipeline::azure-native:cognitiveservices:Account::demo-openai-account"
+                        ],
+                        "deploymentName": [],
+                        "properties": [],
+                        "resourceGroupName": [],
+                        "sku": []
+                    },
+                    "created": "2026-02-25T10:35:04.399426373Z",
+                    "modified": "2026-02-25T12:55:24.541340533Z",
+                    "sourcePosition": "project:///infra/cognitiveServices.ts#68,34",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/cognitiveServices.ts#68,34"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#53,50"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:storage:Blob::demo-functions-zip",
+                    "custom": true,
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/blobServices/default/containers/demo-deployments/blobs/demo-functions.zip",
+                    "type": "azure-native:storage:Blob",
+                    "inputs": {
+                        "accountName": "demopvstorage",
+                        "blobName": "demo-functions.zip",
+                        "containerName": "demo-deployments",
+                        "resourceGroupName": "ai-pipeline-demo-rg",
+                        "source": {
+                            "4dabf18193072939515e22adb298388d": "0def7320c3a5731c473e5ecbe6d01bc7",
+                            "hash": "8996625657a50f04c0f871fad1efbc3066d94d8387a612fecae3f0ef87bfe5d5",
+                            "path": "./code"
+                        },
+                        "type": "Block"
+                    },
+                    "outputs": {
+                        "accessTier": "Hot",
+                        "accountName": "demopvstorage",
+                        "blobName": "demo-functions.zip",
+                        "containerName": "demo-deployments",
+                        "contentMd5": "eym6/nGUM+UJvjlIUEUxug==",
+                        "contentType": "application/octet-stream",
+                        "metadata": {},
+                        "name": "demo-functions.zip",
+                        "resourceGroupName": "ai-pipeline-demo-rg",
+                        "type": "Block",
+                        "url": "https://demopvstorage.blob.core.windows.net/demo-deployments/demo-functions.zip"
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "dependencies": [
+                        "urn:pulumi:demo::ai-pipeline::azure-native:storage:StorageAccount::demo-blobstorage",
+                        "urn:pulumi:demo::ai-pipeline::azure-native:storage:BlobContainer::demo-deployments"
+                    ],
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
+                    "propertyDependencies": {
+                        "accountName": [
+                            "urn:pulumi:demo::ai-pipeline::azure-native:storage:StorageAccount::demo-blobstorage"
+                        ],
+                        "blobName": [],
+                        "containerName": [
+                            "urn:pulumi:demo::ai-pipeline::azure-native:storage:BlobContainer::demo-deployments"
+                        ],
+                        "resourceGroupName": [],
+                        "source": [],
+                        "type": []
+                    },
+                    "created": "2026-02-25T12:57:07.143497757Z",
+                    "modified": "2026-02-25T12:57:07.143497757Z",
+                    "sourcePosition": "project:///infra/storage.ts#74,20",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/storage.ts#74,20"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#40,27"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
+                        },
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
+                        },
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
+                        },
+                        {
+                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
+                        }
+                    ]
+                },
+                {
+                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:operationalinsights:Workspace::demo-vvocr-log-analytics",
+                    "custom": true,
+                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.OperationalInsights/workspaces/demo-vvocr-log-analyticsf5771565",
+                    "type": "azure-native:operationalinsights:Workspace",
+                    "inputs": {
+                        "__createBeforeDelete": true,
+                        "azureApiVersion": "2023-09-01",
+                        "location": "eastus",
+                        "resourceGroupName": "ai-pipeline-demo-rg",
+                        "retentionInDays": 30,
+                        "sku": {
+                            "name": "PerGB2018"
+                        },
+                        "workspaceName": "demo-vvocr-log-analyticsf5771565"
+                    },
+                    "outputs": {
+                        "azureApiVersion": "2023-09-01",
+                        "createdDate": "2026-02-25T10:18:56.6969379Z",
+                        "customerId": "4763a7f7-80c2-4b86-a46d-9c95fff7f46d",
+                        "etag": "\"400395f9-0000-0100-0000-699ecca70000\"",
+                        "features": {
+                            "enableLogAccessUsingOnlyResourcePermissions": true
+                        },
+                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.OperationalInsights/workspaces/demo-vvocr-log-analyticsf5771565",
+                        "location": "eastus",
+                        "modifiedDate": "2026-02-25T10:19:19.0759595Z",
+                        "name": "demo-vvocr-log-analyticsf5771565",
+                        "provisioningState": "Succeeded",
+                        "publicNetworkAccessForIngestion": "Enabled",
+                        "publicNetworkAccessForQuery": "Enabled",
+                        "retentionInDays": 30,
+                        "sku": {
+                            "lastSkuUpdate": "2026-02-25T10:18:56.6969379Z",
+                            "name": "PerGB2018"
+                        },
+                        "type": "Microsoft.OperationalInsights/workspaces",
+                        "workspaceCapping": {
+                            "dailyQuotaGb": -1,
+                            "dataIngestionStatus": "RespectQuota",
+                            "quotaNextResetTime": "2026-02-25T11:00:00Z"
+                        }
+                    },
+                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
+                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
+                    "propertyDependencies": {
+                        "location": [],
+                        "resourceGroupName": [],
+                        "retentionInDays": [],
+                        "sku": []
+                    },
+                    "created": "2026-02-25T10:19:27.920021338Z",
+                    "modified": "2026-02-25T10:19:27.920021338Z",
+                    "sourcePosition": "project:///infra/applicationInsights.ts#19,33",
+                    "stackTrace": [
+                        {
+                            "sourcePosition": "project:///infra/applicationInsights.ts#19,33"
+                        },
+                        {
+                            "sourcePosition": "project:///index.ts#44,64"
                         },
                         {},
                         {
@@ -3319,109 +3726,6 @@
                         },
                         {
                             "sourcePosition": "project:///index.ts#44,64"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:web:AppServicePlan::demo-function-plan",
-                    "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Web/serverfarms/demo-function-plan",
-                    "type": "azure-native:web:AppServicePlan",
-                    "inputs": {
-                        "azureApiVersion": "2024-04-01",
-                        "hyperV": false,
-                        "isXenon": false,
-                        "kind": "functionapp",
-                        "location": "israelcentral",
-                        "name": "demo-function-plan",
-                        "perSiteScaling": false,
-                        "reserved": false,
-                        "resourceGroupName": "ai-pipeline-demo-rg",
-                        "sku": {
-                            "name": "Y1",
-                            "tier": "Dynamic"
-                        },
-                        "zoneRedundant": false
-                    },
-                    "outputs": {
-                        "azureApiVersion": "2024-04-01",
-                        "elasticScaleEnabled": false,
-                        "geoRegion": "Israel Central",
-                        "hyperV": false,
-                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Web/serverfarms/demo-function-plan",
-                        "isSpot": false,
-                        "isXenon": false,
-                        "kind": "functionapp",
-                        "location": "Israel Central",
-                        "maximumElasticWorkerCount": 1,
-                        "maximumNumberOfWorkers": 0,
-                        "name": "demo-function-plan",
-                        "numberOfSites": 0,
-                        "numberOfWorkers": 0,
-                        "perSiteScaling": false,
-                        "provisioningState": "Succeeded",
-                        "reserved": false,
-                        "resourceGroup": "ai-pipeline-demo-rg",
-                        "sku": {
-                            "capacity": 0,
-                            "family": "Y",
-                            "name": "Y1",
-                            "size": "Y1",
-                            "tier": "Dynamic"
-                        },
-                        "status": "Ready",
-                        "subscription": "909cad6a-af4c-4b4a-8412-5c3ecacf96a7",
-                        "targetWorkerCount": 0,
-                        "targetWorkerSizeId": 0,
-                        "type": "Microsoft.Web/serverfarms",
-                        "zoneRedundant": false
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
-                    "propertyDependencies": {
-                        "hyperV": [],
-                        "isXenon": [],
-                        "kind": [],
-                        "location": [],
-                        "name": [],
-                        "perSiteScaling": [],
-                        "reserved": [],
-                        "resourceGroupName": [],
-                        "sku": [],
-                        "zoneRedundant": []
-                    },
-                    "created": "2026-02-25T10:35:01.189106164Z",
-                    "modified": "2026-02-25T10:35:01.189106164Z",
-                    "sourcePosition": "project:///infra/functions.ts#49,26",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/functions.ts#49,26"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#55,56"
                         },
                         {},
                         {
@@ -3573,699 +3877,6 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:cognitiveservices:Deployment::demo-gpt4oMini",
-                    "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.CognitiveServices/accounts/demo-openai-account548ccbff/deployments/gpt-4o-mini",
-                    "type": "azure-native:cognitiveservices:Deployment",
-                    "inputs": {
-                        "accountName": "demo-openai-account548ccbff",
-                        "azureApiVersion": "2024-10-01",
-                        "deploymentName": "gpt-4o-mini",
-                        "properties": {
-                            "model": {
-                                "format": "OpenAI",
-                                "name": "gpt-4o-mini",
-                                "version": "2024-07-18"
-                            }
-                        },
-                        "resourceGroupName": "ai-pipeline-demo-rg",
-                        "sku": {
-                            "capacity": 50,
-                            "name": "GlobalStandard"
-                        }
-                    },
-                    "outputs": {
-                        "azureApiVersion": "2024-10-01",
-                        "etag": "\"619f3c3b-bef6-4b33-88c3-e8ed25f3209f\"",
-                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.CognitiveServices/accounts/demo-openai-account548ccbff/deployments/gpt-4o-mini",
-                        "name": "gpt-4o-mini",
-                        "properties": {
-                            "capabilities": {
-                                "_H_azureml-throttling-key": "oai-01ab62e80b80496692b538421a1ef693",
-                                "agentsV2": "true",
-                                "area": "US",
-                                "assistants": "true",
-                                "chatCompletion": "true",
-                                "jsonObjectResponse": "true",
-                                "maxContextToken": "128000",
-                                "maxOutputToken": "16384",
-                                "responses": "true"
-                            },
-                            "currentCapacity": 50,
-                            "model": {
-                                "format": "OpenAI",
-                                "name": "gpt-4o-mini",
-                                "version": "2024-07-18"
-                            },
-                            "provisioningState": "Succeeded",
-                            "raiPolicyName": "Microsoft.DefaultV2",
-                            "rateLimits": [
-                                {
-                                    "count": 500,
-                                    "key": "request",
-                                    "renewalPeriod": 60
-                                },
-                                {
-                                    "count": 50000,
-                                    "key": "token",
-                                    "renewalPeriod": 60
-                                }
-                            ],
-                            "versionUpgradeOption": "OnceNewDefaultVersionAvailable"
-                        },
-                        "sku": {
-                            "capacity": 50,
-                            "name": "GlobalStandard"
-                        },
-                        "systemData": {
-                            "createdAt": "2026-02-25T10:35:01.7706891Z",
-                            "createdBy": "eitan.ickovics@novasuccessioncapital.com",
-                            "createdByType": "User",
-                            "lastModifiedAt": "2026-02-25T10:35:01.7706891Z",
-                            "lastModifiedBy": "eitan.ickovics@novasuccessioncapital.com",
-                            "lastModifiedByType": "User"
-                        },
-                        "type": "Microsoft.CognitiveServices/accounts/deployments"
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "dependencies": [
-                        "urn:pulumi:demo::ai-pipeline::azure-native:cognitiveservices:Deployment::demo-gpt4o",
-                        "urn:pulumi:demo::ai-pipeline::azure-native:cognitiveservices:Account::demo-openai-account"
-                    ],
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
-                    "propertyDependencies": {
-                        "accountName": [
-                            "urn:pulumi:demo::ai-pipeline::azure-native:cognitiveservices:Account::demo-openai-account"
-                        ],
-                        "deploymentName": [],
-                        "properties": [],
-                        "resourceGroupName": [],
-                        "sku": []
-                    },
-                    "created": "2026-02-25T10:35:04.399426373Z",
-                    "modified": "2026-02-25T10:35:04.399426373Z",
-                    "sourcePosition": "project:///infra/cognitiveServices.ts#129,34",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/cognitiveServices.ts#129,34"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#52,50"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql",
-                    "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65",
-                    "type": "azure-native:sql:Server",
-                    "inputs": {
-                        "__createBeforeDelete": true,
-                        "administratorLogin": "sqladmin",
-                        "administratorLoginPassword": {
-                            "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
-                            "ciphertext": "v1:+ygTzmTwuHJTu1h7:jenxdP3waWQpSuLO0rasTNC3GRcqsUEo2wfYfoDHxP2LLKBmXL2+R/gz737cMJzzSHI="
-                        },
-                        "azureApiVersion": "2023-08-01",
-                        "location": "israelcentral",
-                        "minimalTlsVersion": "1.2",
-                        "publicNetworkAccess": "Enabled",
-                        "resourceGroupName": "ai-pipeline-demo-rg",
-                        "serverName": "demo-vvocr-sql4fed2d65",
-                        "version": "12.0"
-                    },
-                    "outputs": {
-                        "administratorLogin": "sqladmin",
-                        "azureApiVersion": "2023-08-01",
-                        "externalGovernanceStatus": "Disabled",
-                        "fullyQualifiedDomainName": "demo-vvocr-sql4fed2d65.database.windows.net",
-                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65",
-                        "kind": "v12.0",
-                        "location": "israelcentral",
-                        "minimalTlsVersion": "1.2",
-                        "name": "demo-vvocr-sql4fed2d65",
-                        "privateEndpointConnections": [],
-                        "publicNetworkAccess": "Enabled",
-                        "restrictOutboundNetworkAccess": "Disabled",
-                        "state": "Ready",
-                        "type": "Microsoft.Sql/servers",
-                        "version": "12.0"
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
-                    "propertyDependencies": {
-                        "administratorLogin": [],
-                        "administratorLoginPassword": [],
-                        "location": [],
-                        "minimalTlsVersion": [],
-                        "publicNetworkAccess": [],
-                        "resourceGroupName": [],
-                        "version": []
-                    },
-                    "created": "2026-02-25T10:35:45.449474281Z",
-                    "modified": "2026-02-25T10:35:45.449474281Z",
-                    "sourcePosition": "project:///infra/database.ts#25,21",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/database.ts#25,21"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#26,50"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:sql:FirewallRule::demo-allow-azure",
-                    "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65/firewallRules/demo-allow-azure",
-                    "type": "azure-native:sql:FirewallRule",
-                    "inputs": {
-                        "azureApiVersion": "2023-08-01",
-                        "endIpAddress": "255.255.255.255",
-                        "firewallRuleName": "demo-allow-azure",
-                        "resourceGroupName": "ai-pipeline-demo-rg",
-                        "serverName": "demo-vvocr-sql4fed2d65",
-                        "startIpAddress": "0.0.0.0"
-                    },
-                    "outputs": {
-                        "azureApiVersion": "2023-08-01",
-                        "endIpAddress": "255.255.255.255",
-                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65/firewallRules/demo-allow-azure",
-                        "name": "demo-allow-azure",
-                        "startIpAddress": "0.0.0.0",
-                        "type": "Microsoft.Sql/servers/firewallRules"
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "dependencies": [
-                        "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
-                    ],
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
-                    "propertyDependencies": {
-                        "endIpAddress": [],
-                        "resourceGroupName": [],
-                        "serverName": [
-                            "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
-                        ],
-                        "startIpAddress": []
-                    },
-                    "created": "2026-02-25T10:35:49.298804205Z",
-                    "modified": "2026-02-25T10:35:49.298804205Z",
-                    "sourcePosition": "project:///infra/database.ts#36,3",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/database.ts#36,3"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#26,50"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:storage:Blob::demo-functions-zip",
-                    "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Storage/storageAccounts/demopvstorage/blobServices/default/containers/demo-deployments/blobs/demo-functions.zip",
-                    "type": "azure-native:storage:Blob",
-                    "inputs": {
-                        "accountName": "demopvstorage",
-                        "blobName": "demo-functions.zip",
-                        "containerName": "demo-deployments",
-                        "resourceGroupName": "ai-pipeline-demo-rg",
-                        "source": {
-                            "4dabf18193072939515e22adb298388d": "0def7320c3a5731c473e5ecbe6d01bc7",
-                            "hash": "bc5ebdb883f208c832e11e4b520a19530d2f68d35c875e0da48985514fe743c9",
-                            "path": "./code"
-                        },
-                        "type": "Block"
-                    },
-                    "outputs": {
-                        "accessTier": "Hot",
-                        "accountName": "demopvstorage",
-                        "blobName": "demo-functions.zip",
-                        "containerName": "demo-deployments",
-                        "contentMd5": "GetNOB1b0U+fWRG8Dcli6Q==",
-                        "contentType": "application/octet-stream",
-                        "metadata": {},
-                        "name": "demo-functions.zip",
-                        "resourceGroupName": "ai-pipeline-demo-rg",
-                        "type": "Block",
-                        "url": "https://demopvstorage.blob.core.windows.net/demo-deployments/demo-functions.zip"
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "dependencies": [
-                        "urn:pulumi:demo::ai-pipeline::azure-native:storage:StorageAccount::demo-blobstorage",
-                        "urn:pulumi:demo::ai-pipeline::azure-native:storage:BlobContainer::demo-deployments"
-                    ],
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
-                    "propertyDependencies": {
-                        "accountName": [
-                            "urn:pulumi:demo::ai-pipeline::azure-native:storage:StorageAccount::demo-blobstorage"
-                        ],
-                        "blobName": [],
-                        "containerName": [
-                            "urn:pulumi:demo::ai-pipeline::azure-native:storage:BlobContainer::demo-deployments"
-                        ],
-                        "resourceGroupName": [],
-                        "source": [],
-                        "type": []
-                    },
-                    "created": "2026-02-25T10:36:17.273267545Z",
-                    "modified": "2026-02-25T10:36:17.273267545Z",
-                    "sourcePosition": "project:///infra/storage.ts#74,20",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/storage.ts#74,20"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#41,27"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::azure-native:sql:Database::demo-vvocr-db",
-                    "custom": true,
-                    "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65/databases/demo-vvocr-db",
-                    "type": "azure-native:sql:Database",
-                    "inputs": {
-                        "autoPauseDelay": 60,
-                        "azureApiVersion": "2023-08-01",
-                        "databaseName": "demo-vvocr-db",
-                        "location": "israelcentral",
-                        "maxSizeBytes": 2147483648,
-                        "minCapacity": 0.5,
-                        "resourceGroupName": "ai-pipeline-demo-rg",
-                        "serverName": "demo-vvocr-sql4fed2d65",
-                        "sku": {
-                            "capacity": 1,
-                            "family": "Gen5",
-                            "name": "GP_S_Gen5",
-                            "tier": "GeneralPurpose"
-                        }
-                    },
-                    "outputs": {
-                        "autoPauseDelay": 60,
-                        "availabilityZone": "NoPreference",
-                        "azureApiVersion": "2023-08-01",
-                        "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
-                        "collation": "SQL_Latin1_General_CP1_CI_AS",
-                        "creationDate": "2026-02-25T10:36:29.177Z",
-                        "currentBackupStorageRedundancy": "Zone",
-                        "currentServiceObjectiveName": "GP_S_Gen5_1",
-                        "currentSku": {
-                            "capacity": 1,
-                            "family": "Gen5",
-                            "name": "GP_S_Gen5",
-                            "tier": "GeneralPurpose"
-                        },
-                        "databaseId": "40385fa8-fbcc-479d-91dc-b02102916c8f",
-                        "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Sql/servers/demo-vvocr-sql4fed2d65/databases/demo-vvocr-db",
-                        "isInfraEncryptionEnabled": false,
-                        "isLedgerOn": false,
-                        "kind": "v12.0,user,vcore,serverless",
-                        "location": "israelcentral",
-                        "maintenanceConfigurationId": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/providers/Microsoft.Maintenance/publicMaintenanceConfigurations/SQL_Default",
-                        "maxLogSizeBytes": 193273528320,
-                        "maxSizeBytes": 2147483648,
-                        "minCapacity": 0.5,
-                        "name": "demo-vvocr-db",
-                        "readScale": "Disabled",
-                        "requestedBackupStorageRedundancy": "Zone",
-                        "requestedServiceObjectiveName": "GP_S_Gen5_1",
-                        "sku": {
-                            "capacity": 1,
-                            "family": "Gen5",
-                            "name": "GP_S_Gen5",
-                            "tier": "GeneralPurpose"
-                        },
-                        "status": "Online",
-                        "type": "Microsoft.Sql/servers/databases",
-                        "zoneRedundant": false
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "dependencies": [
-                        "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
-                    ],
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::7c6b53f1-2d4d-4b06-9904-e575541303c0",
-                    "propertyDependencies": {
-                        "autoPauseDelay": [],
-                        "location": [],
-                        "maxSizeBytes": [],
-                        "minCapacity": [],
-                        "resourceGroupName": [],
-                        "serverName": [
-                            "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
-                        ],
-                        "sku": []
-                    },
-                    "created": "2026-02-25T10:36:35.777550433Z",
-                    "modified": "2026-02-25T10:36:35.777550433Z",
-                    "sourcePosition": "project:///infra/database.ts#44,23",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/database.ts#44,23"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#26,50"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::pulumi:providers:command::default_1_1_3",
-                    "custom": true,
-                    "id": "639d6827-a117-42fa-afff-45c40d528225",
-                    "type": "pulumi:providers:command",
-                    "inputs": {
-                        "__internal": {},
-                        "__pulumi-go-provider-version": "1.1.0",
-                        "version": "1.1.3"
-                    },
-                    "outputs": {
-                        "__pulumi-go-provider-version": "1.1.0",
-                        "version": "1.1.3"
-                    },
-                    "created": "2026-02-25T10:36:36.1173806Z",
-                    "modified": "2026-02-25T10:36:36.1173806Z"
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::command:local:Command::wait-for-db",
-                    "custom": true,
-                    "id": "wait-for-db68ca1c24",
-                    "type": "command:local:Command",
-                    "inputs": {
-                        "create": "sleep 45"
-                    },
-                    "outputs": {
-                        "create": "sleep 45",
-                        "stderr": "",
-                        "stdout": ""
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "dependencies": [
-                        "urn:pulumi:demo::ai-pipeline::azure-native:sql:Database::demo-vvocr-db"
-                    ],
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:command::default_1_1_3::639d6827-a117-42fa-afff-45c40d528225",
-                    "propertyDependencies": {
-                        "create": []
-                    },
-                    "created": "2026-02-25T10:37:20.364335443Z",
-                    "modified": "2026-02-25T10:37:20.364335443Z",
-                    "sourcePosition": "project:///infra/database.ts#60,21",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/database.ts#60,21"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#26,50"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ],
-                    "replaceOnChanges": [
-                        "triggers[*]"
-                    ]
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::pulumi:providers:mssql::mssql-provider",
-                    "custom": true,
-                    "id": "444227c6-d7ce-4853-9c99-1396baecefd4",
-                    "type": "pulumi:providers:mssql",
-                    "inputs": {
-                        "__internal": {
-                            "pluginDownloadURL": "github://api.github.com/pulumiverse/pulumi-mssql"
-                        },
-                        "hostname": "demo-vvocr-sql4fed2d65.database.windows.net",
-                        "port": "1433",
-                        "sqlAuth": {
-                            "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
-                            "ciphertext": "v1:iGdCx0cVLEkN2BGG:e/5KMSsbPLnkyqK7dQLEHmOeN1PsTE48Fsq/SUkTMK7IqnXlw6VxfmrVWBmwXx72Rf2XCpy1rIscgSOg1d1yQB39qOTP50ARsj6SyDHnsON94E2YmR6gcTnvdb8wGFw="
-                        },
-                        "version": "0.1.0"
-                    },
-                    "outputs": {
-                        "hostname": "demo-vvocr-sql4fed2d65.database.windows.net",
-                        "port": "1433",
-                        "sqlAuth": {
-                            "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
-                            "ciphertext": "v1:tpdpa7vUw7wkxxa7:+SXU2lvCFw2Uh2YZYnT0h6mW2DtqiGX0HUK3J7/6m+Tbh0g/ByI2xwo9ixSdw1W910ElDvwY1v8Vn1UGTGZuAKQqc0OG9QjFZFovbal5hRj8iQ/UiW4QZ8LuDTViiM0="
-                        },
-                        "version": "0.1.0"
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "dependencies": [
-                        "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql",
-                        "urn:pulumi:demo::ai-pipeline::command:local:Command::wait-for-db"
-                    ],
-                    "propertyDependencies": {
-                        "hostname": [
-                            "urn:pulumi:demo::ai-pipeline::azure-native:sql:Server::demo-vvocr-sql"
-                        ],
-                        "port": [],
-                        "sqlAuth": []
-                    },
-                    "created": "2026-02-25T10:37:20.75134918Z",
-                    "modified": "2026-02-25T10:37:20.75134918Z",
-                    "sourcePosition": "project:///node_modules/@pulumiverse/provider.ts#52,9",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumiverse/provider.ts#52,9"
-                        },
-                        {
-                            "sourcePosition": "project:///infra/database.ts#72,25"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#26,50"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
-                },
-                {
-                    "urn": "urn:pulumi:demo::ai-pipeline::mssql:index/script:Script::deploy-schema",
-                    "custom": true,
-                    "id": "script",
-                    "type": "mssql:index/script:Script",
-                    "inputs": {
-                        "databaseId": "5",
-                        "readScript": "SELECT '64984ce8e7c54bc78fa99e04f93c0c54' as [hash]",
-                        "state": {
-                            "hash": "64984ce8e7c54bc78fa99e04f93c0c54"
-                        },
-                        "updateScript": "-- =============================================\n-- VVOCR SCHEMA - Document Processing POC\n-- Matches client's expected schema for isolated POC work\n-- Last updated: 2026-02-07 (removed calculated fields and moved large data to blob)\n-- =============================================\n\n-- Create schema if it doesn't exist\nIF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'vvocr')\nBEGIN\n    EXEC('CREATE SCHEMA vvocr');\nEND\n\n-- =============================================\n-- 1. Document Processing Results\n-- Main table for storing OCR/AI processing outputs\n-- Note: Large data (extracted text, structured data) stored in blob storage\n-- =============================================\nIF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'document_processing_results' AND schema_id = SCHEMA_ID('vvocr'))\nBEGIN\n    CREATE TABLE vvocr.document_processing_results (\n        result_id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n        \n        -- Document metadata\n        document_name NVARCHAR(500) NOT NULL,\n        document_path NVARCHAR(1000),\n        document_size_bytes BIGINT,\n        document_type NVARCHAR(50), -- PDF, Excel, CSV, etc.\n        uploaded_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        -- Processing status\n        processing_status NVARCHAR(50) DEFAULT 'pending', -- pending, ocr_complete, completed, failed\n        processing_started_at DATETIME2 NULL,\n        processing_completed_at DATETIME2 NULL,\n        \n        -- Document Intelligence (Azure Form Recognizer) results\n        -- Note: Large OCR data (extracted_text, structured_data) stored in blob at <vendor_name>/ocr.json\n        doc_intel_confidence_score DECIMAL(5,4) NULL,\n        doc_intel_prompt_used NVARCHAR(MAX) NULL, -- Prompt used for schema inspection (future use)\n        doc_intel_cost_usd DECIMAL(10,6) NULL,\n        \n        -- AI Model results (GPT-4o, Llama, Mistral, etc.)\n        ai_model_requested NVARCHAR(100) NULL, -- User-requested model for this run\n        ai_prompt_requested NVARCHAR(MAX) NULL, -- User-requested custom prompt (max 10k chars enforced by app)\n        ai_model_used NVARCHAR(100) NULL, -- e.g., 'gpt-4o', 'llama-3-1-405b'\n        ai_mapping_result NVARCHAR(MAX) NULL, -- Product mapping JSON result\n        ai_prompt_used NVARCHAR(MAX) NULL, -- Exact prompt sent to LLM\n        ai_confidence_score DECIMAL(5,2) NULL, -- Overall confidence score (0-100)\n        ai_completeness_score DECIMAL(5,2) NULL, -- Data completeness score (0-100)\n        ai_prompt_tokens INT NULL,\n        ai_completion_tokens INT NULL,\n        ai_model_cost_usd DECIMAL(10,6) NULL,\n        \n        -- Validation\n        requires_manual_review BIT DEFAULT 0,\n        manual_review_reason NVARCHAR(500) NULL,\n        reviewed_by NVARCHAR(100) NULL,\n        reviewed_at DATETIME2 NULL,\n        \n        -- Vendor information\n        vendor_name NVARCHAR(200) NOT NULL,\n        \n        -- Export status\n        export_status NVARCHAR(50) DEFAULT 'not_exported', -- not_exported, confirmed, exported, rejected\n        exported_at DATETIME2 NULL,\n        \n        -- Metadata\n        error_message NVARCHAR(MAX) NULL,\n        created_at DATETIME2 DEFAULT GETUTCDATE(),\n        updated_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        -- Indexes\n        INDEX IX_document_processing_status (processing_status),\n        INDEX IX_document_uploaded_at (uploaded_at),\n        INDEX IX_document_requires_review (requires_manual_review),\n        INDEX IX_document_vendor_name (vendor_name),\n        INDEX IX_document_path (document_path)\n    );\nEND\n\n-- =============================================\n-- 6. Vendor Products (Production Table)\n-- Confirmed/exported product catalog data\n-- =============================================\nIF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'vendor_products' AND schema_id = SCHEMA_ID('vvocr'))\nBEGIN\n    CREATE TABLE vvocr.vendor_products (\n        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n        vendor_id NVARCHAR(100) NOT NULL,\n        vendor_name NVARCHAR(200) NOT NULL,\n        \n        -- Product information (minimal required schema)\n        product_name NVARCHAR(500),\n        sku NVARCHAR(200),\n        price DECIMAL(18,4),\n        unit NVARCHAR(100),\n        description NVARCHAR(MAX),\n        \n        -- Source tracking\n        source_document_id UNIQUEIDENTIFIER NOT NULL,\n        source_document_name NVARCHAR(500),\n        \n        -- Metadata\n        created_at DATETIME2 DEFAULT GETUTCDATE(),\n        updated_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        INDEX IX_vendor_products_vendor_id (vendor_id),\n        INDEX IX_vendor_products_sku (sku),\n        INDEX IX_vendor_products_source_doc (source_document_id)\n    );\nEND\n\n-- example how to alter table to add new column for storing user's requested AI model (if not already exists)\n-- -- Add ai_model_requested column (stores user's requested model)\n-- IF NOT EXISTS (\n--     SELECT * FROM sys.columns \n--     WHERE object_id = OBJECT_ID('vvocr.document_processing_results') \n--     AND name = 'ai_model_requested'\n-- )\n-- BEGIN\n--     ALTER TABLE vvocr.document_processing_results\n--     ADD ai_model_requested NVARCHAR(100) NULL;\n    \n--     PRINT 'Added column: ai_model_requested';\n-- END\n-- ELSE\n-- BEGIN\n--     PRINT 'Column ai_model_requested already exists';\n-- END\n-- GO\n\nPRINT 'VVOCR tables created successfully!';\n\n"
-                    },
-                    "outputs": {
-                        "databaseId": "5",
-                        "id": "script",
-                        "readScript": "SELECT '64984ce8e7c54bc78fa99e04f93c0c54' as [hash]",
-                        "state": {
-                            "hash": "64984ce8e7c54bc78fa99e04f93c0c54"
-                        },
-                        "updateScript": "-- =============================================\n-- VVOCR SCHEMA - Document Processing POC\n-- Matches client's expected schema for isolated POC work\n-- Last updated: 2026-02-07 (removed calculated fields and moved large data to blob)\n-- =============================================\n\n-- Create schema if it doesn't exist\nIF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'vvocr')\nBEGIN\n    EXEC('CREATE SCHEMA vvocr');\nEND\n\n-- =============================================\n-- 1. Document Processing Results\n-- Main table for storing OCR/AI processing outputs\n-- Note: Large data (extracted text, structured data) stored in blob storage\n-- =============================================\nIF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'document_processing_results' AND schema_id = SCHEMA_ID('vvocr'))\nBEGIN\n    CREATE TABLE vvocr.document_processing_results (\n        result_id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n        \n        -- Document metadata\n        document_name NVARCHAR(500) NOT NULL,\n        document_path NVARCHAR(1000),\n        document_size_bytes BIGINT,\n        document_type NVARCHAR(50), -- PDF, Excel, CSV, etc.\n        uploaded_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        -- Processing status\n        processing_status NVARCHAR(50) DEFAULT 'pending', -- pending, ocr_complete, completed, failed\n        processing_started_at DATETIME2 NULL,\n        processing_completed_at DATETIME2 NULL,\n        \n        -- Document Intelligence (Azure Form Recognizer) results\n        -- Note: Large OCR data (extracted_text, structured_data) stored in blob at <vendor_name>/ocr.json\n        doc_intel_confidence_score DECIMAL(5,4) NULL,\n        doc_intel_prompt_used NVARCHAR(MAX) NULL, -- Prompt used for schema inspection (future use)\n        doc_intel_cost_usd DECIMAL(10,6) NULL,\n        \n        -- AI Model results (GPT-4o, Llama, Mistral, etc.)\n        ai_model_requested NVARCHAR(100) NULL, -- User-requested model for this run\n        ai_prompt_requested NVARCHAR(MAX) NULL, -- User-requested custom prompt (max 10k chars enforced by app)\n        ai_model_used NVARCHAR(100) NULL, -- e.g., 'gpt-4o', 'llama-3-1-405b'\n        ai_mapping_result NVARCHAR(MAX) NULL, -- Product mapping JSON result\n        ai_prompt_used NVARCHAR(MAX) NULL, -- Exact prompt sent to LLM\n        ai_confidence_score DECIMAL(5,2) NULL, -- Overall confidence score (0-100)\n        ai_completeness_score DECIMAL(5,2) NULL, -- Data completeness score (0-100)\n        ai_prompt_tokens INT NULL,\n        ai_completion_tokens INT NULL,\n        ai_model_cost_usd DECIMAL(10,6) NULL,\n        \n        -- Validation\n        requires_manual_review BIT DEFAULT 0,\n        manual_review_reason NVARCHAR(500) NULL,\n        reviewed_by NVARCHAR(100) NULL,\n        reviewed_at DATETIME2 NULL,\n        \n        -- Vendor information\n        vendor_name NVARCHAR(200) NOT NULL,\n        \n        -- Export status\n        export_status NVARCHAR(50) DEFAULT 'not_exported', -- not_exported, confirmed, exported, rejected\n        exported_at DATETIME2 NULL,\n        \n        -- Metadata\n        error_message NVARCHAR(MAX) NULL,\n        created_at DATETIME2 DEFAULT GETUTCDATE(),\n        updated_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        -- Indexes\n        INDEX IX_document_processing_status (processing_status),\n        INDEX IX_document_uploaded_at (uploaded_at),\n        INDEX IX_document_requires_review (requires_manual_review),\n        INDEX IX_document_vendor_name (vendor_name),\n        INDEX IX_document_path (document_path)\n    );\nEND\n\n-- =============================================\n-- 6. Vendor Products (Production Table)\n-- Confirmed/exported product catalog data\n-- =============================================\nIF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'vendor_products' AND schema_id = SCHEMA_ID('vvocr'))\nBEGIN\n    CREATE TABLE vvocr.vendor_products (\n        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n        vendor_id NVARCHAR(100) NOT NULL,\n        vendor_name NVARCHAR(200) NOT NULL,\n        \n        -- Product information (minimal required schema)\n        product_name NVARCHAR(500),\n        sku NVARCHAR(200),\n        price DECIMAL(18,4),\n        unit NVARCHAR(100),\n        description NVARCHAR(MAX),\n        \n        -- Source tracking\n        source_document_id UNIQUEIDENTIFIER NOT NULL,\n        source_document_name NVARCHAR(500),\n        \n        -- Metadata\n        created_at DATETIME2 DEFAULT GETUTCDATE(),\n        updated_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        INDEX IX_vendor_products_vendor_id (vendor_id),\n        INDEX IX_vendor_products_sku (sku),\n        INDEX IX_vendor_products_source_doc (source_document_id)\n    );\nEND\n\n-- example how to alter table to add new column for storing user's requested AI model (if not already exists)\n-- -- Add ai_model_requested column (stores user's requested model)\n-- IF NOT EXISTS (\n--     SELECT * FROM sys.columns \n--     WHERE object_id = OBJECT_ID('vvocr.document_processing_results') \n--     AND name = 'ai_model_requested'\n-- )\n-- BEGIN\n--     ALTER TABLE vvocr.document_processing_results\n--     ADD ai_model_requested NVARCHAR(100) NULL;\n    \n--     PRINT 'Added column: ai_model_requested';\n-- END\n-- ELSE\n-- BEGIN\n--     PRINT 'Column ai_model_requested already exists';\n-- END\n-- GO\n\nPRINT 'VVOCR tables created successfully!';\n\n"
-                    },
-                    "parent": "urn:pulumi:demo::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-demo",
-                    "dependencies": [
-                        "urn:pulumi:demo::ai-pipeline::azure-native:sql:Database::demo-vvocr-db"
-                    ],
-                    "provider": "urn:pulumi:demo::ai-pipeline::pulumi:providers:mssql::mssql-provider::444227c6-d7ce-4853-9c99-1396baecefd4",
-                    "propertyDependencies": {
-                        "databaseId": [
-                            "urn:pulumi:demo::ai-pipeline::azure-native:sql:Database::demo-vvocr-db"
-                        ],
-                        "readScript": [],
-                        "state": [],
-                        "updateScript": []
-                    },
-                    "created": "2026-02-25T10:37:22.928956234Z",
-                    "modified": "2026-02-25T10:37:22.928956234Z",
-                    "sourcePosition": "project:///infra/database.ts#101,3",
-                    "stackTrace": [
-                        {
-                            "sourcePosition": "project:///infra/database.ts#101,3"
-                        },
-                        {
-                            "sourcePosition": "project:///index.ts#26,50"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3009,23"
-                        },
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/pulumi/vendor/ts-node@7.0.1/index.js#3011,12"
-                        },
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/cmd/run/run.ts#543,33"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/runtime/stack.ts#78,28"
-                        },
-                        {
-                            "sourcePosition": "project:///node_modules/@pulumi/resource.ts#1467,22"
-                        }
-                    ]
-                },
-                {
                     "urn": "urn:pulumi:demo::ai-pipeline::azure-native:web:WebApp::demo-function-app",
                     "custom": true,
                     "id": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Web/sites/demo-vvocr-functions",
@@ -4283,7 +3894,7 @@
                         "serverFarmId": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Web/serverfarms/demo-function-plan",
                         "siteConfig": {
                             "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
-                            "ciphertext": "v1:/JAfQsVQ1+/oErt5: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"
+                            "ciphertext": "v1:vvL5+HfvnGjx6bYP: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"
                         }
                     },
                     "outputs": {
@@ -4339,7 +3950,7 @@
                         "serverFarmId": "/subscriptions/909cad6a-af4c-4b4a-8412-5c3ecacf96a7/resourceGroups/ai-pipeline-demo-rg/providers/Microsoft.Web/serverfarms/demo-function-plan",
                         "siteConfig": {
                             "4dabf18193072939515e22adb298388d": "1b47061264138c4ac30d75fd1eb44270",
-                            "ciphertext": "v1:fHCbj9EFZlP8jNpA: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"
+                            "ciphertext": "v1:FaMGgH1Y2eCE/6Qe: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"
                         },
                         "sku": "Dynamic",
                         "state": "Running",

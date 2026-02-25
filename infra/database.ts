@@ -49,7 +49,7 @@ export function createDatabaseResources(
       name: 'GP_S_Gen5',
       tier: 'GeneralPurpose',
       family: 'Gen5',
-      capacity: isDemoMode ? 0.5 : 1, // Demo: 0.5 vCore, otherwise 1 vCore
+      capacity: 1, // Demo: 0.5 vCore, otherwise 1 vCore
     },
     autoPauseDelay: isDemoMode ? 15 : 60, // Demo: 15min, otherwise 60min
     minCapacity: 0.5, // Minimum 0.5 vCore

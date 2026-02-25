@@ -38,17 +38,6 @@ export function createApplicationInsightsResources(
     ingestionMode: 'LogAnalytics',
   });
 
-  // Log cost monitoring recommendation for demo mode
-  if (isDemoMode && stack) {
-    pulumi.log.info(
-      `Demo mode enabled. Please configure cost alerts in Azure Portal:\n` +
-        `1. Navigate to Cost Management + Billing > Budgets\n` +
-        `2. Create budget for resource group: ${resourceGroupName}\n` +
-        `3. Recommended monthly budget: $20-30 for demo stack\n` +
-        `4. Set alert at 80% and 100% thresholds`
-    );
-  }
-
   return {
     appInsights,
     logAnalyticsWorkspace,

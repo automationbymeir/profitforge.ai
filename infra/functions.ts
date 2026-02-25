@@ -17,13 +17,13 @@ export interface FunctionAppResources {
 export function createFunctionAppResources(
   storageConnectionString: pulumi.Input<string>,
   functionBlobUrl: pulumi.Input<string>,
-  keyVaultUri: pulumi.Input<string>,
+  // keyVaultUri: pulumi.Input<string>,
   documentIntelligenceEndpoint: pulumi.Input<string>,
   documentIntelligenceKey: pulumi.Input<string>,
   aiProjectEndpoint: pulumi.Input<string>,
   aiProjectKey: pulumi.Input<string>,
   sqlConnectionString: pulumi.Input<string>,
-  appInsightsConnectionString: pulumi.Input<string>,
+  // appInsightsConnectionString: pulumi.Input<string>,
   stack: string,
   location: string
 ): FunctionAppResources {
@@ -76,8 +76,8 @@ export function createFunctionAppResources(
         { name: 'WEBSITE_RUN_FROM_PACKAGE', value: functionBlobUrl },
 
         // Application Insights (Monitoring)
-        { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString },
-        { name: 'APPINSIGHTS_SAMPLING_PERCENTAGE', value: '20' }, // Sample 20% to reduce costs
+        // { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString },
+        // { name: 'APPINSIGHTS_SAMPLING_PERCENTAGE', value: '20' }, // Sample 20% to reduce costs
 
         // Storage settings for blob trigger and upload
         { name: 'STORAGE_CONNECTION_STRING', value: storageConnectionString },

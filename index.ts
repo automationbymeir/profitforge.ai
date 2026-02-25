@@ -1,5 +1,4 @@
 import * as pulumi from '@pulumi/pulumi';
-import { createApplicationInsightsResources } from './infra/applicationInsights';
 import { createCognitiveServices } from './infra/cognitiveServices';
 import { getLocation, getResourceGroup, getServerLocation, isDemoMode } from './infra/config';
 import { createDatabaseResources } from './infra/database';
@@ -41,12 +40,12 @@ const {
 } = createStorageResources(resourceGroup, location, stack);
 
 // --- Application Insights (Monitoring) ---
-const appInsightsResources = createApplicationInsightsResources(
-  resourceGroup,
-  location,
-  stack,
-  isDemoMode
-);
+// const appInsightsResources = createApplicationInsightsResources(
+//   resourceGroup,
+//   location,
+//   stack,
+//   isDemoMode
+// );
 
 const cognitiveServicesLocation = location === 'israelcentral' ? 'uaenorth' : location;
 
@@ -57,13 +56,11 @@ const cognitiveServices = createCognitiveServices(resourceGroup, cognitiveServic
 const functionAppResources = createFunctionAppResources(
   storageConnectionString,
   functionBlobUrl,
-  '', // Empty KeyVault URI for now (can add later if needed)
   cognitiveServices.docIntelEndpoint,
   cognitiveServices.docIntelPrimaryKey,
   pulumi.interpolate`https://${cognitiveServices.openAiAccountName}.openai.azure.com`,
   cognitiveServices.openAiPrimaryKey,
   databaseResources.connectionString,
-  appInsightsResources.appInsights.connectionString,
   stack,
   appLocation
 );
@@ -86,12 +83,12 @@ export const docIntelAccountName = cognitiveServices.docIntelAccountName;
 export const docIntelEndpoint = cognitiveServices.docIntelEndpoint;
 export const openAiAccountName = cognitiveServices.openAiAccountName;
 
-// --- Monitoring Outputs ---
-export const appInsightsName = appInsightsResources.appInsights.name;
-export const appInsightsInstrumentationKey = pulumi.secret(
-  appInsightsResources.appInsights.instrumentationKey
-);
-export const logAnalyticsWorkspaceId = appInsightsResources.logAnalyticsWorkspace.customerId;
+// // --- Monitoring Outputs ---
+// export const appInsightsName = appInsightsResources.appInsights.name;
+// export const appInsightsInstrumentationKey = pulumi.secret(
+//   appInsightsResources.appInsights.instrumentationKey
+// );
+// export const logAnalyticsWorkspaceId = appInsightsResources.logAnalyticsWorkspace.customerId;
 
 // --- Secrets (marked as secret outputs for runtime use) ---
 export const outputDocumentIntelligenceKey = pulumi.secret(cognitiveServices.docIntelPrimaryKey);
