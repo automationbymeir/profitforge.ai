@@ -1,7 +1,7 @@
 {
     "version": 3,
     "checkpoint": {
-        "stack": "organization/ai-pipeline/staging",
+        "stack": "organization/profitforge-ai/staging",
         "latest": {
             "manifest": {
                 "time": "2026-02-15T18:22:25.568634911+02:00",
@@ -16,7 +16,7 @@
             },
             "resources": [
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "urn": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "custom": false,
                     "type": "pulumi:pulumi:Stack",
                     "outputs": {
@@ -69,7 +69,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0",
+                    "urn": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0",
                     "custom": true,
                     "id": "f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "type": "pulumi:providers:azure-native",
@@ -90,7 +90,7 @@
                     "modified": "2026-02-10T16:05:27.529882094Z"
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:sql:Server::staging-vvocr-sql",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:sql:Server::staging-vvocr-sql",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Sql/servers/staging-vvocr-sql644131c1",
                     "type": "azure-native:sql:Server",
@@ -126,8 +126,8 @@
                         "type": "Microsoft.Sql/servers",
                         "version": "12.0"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "administratorLogin": [],
                         "administratorLoginPassword": [],
@@ -173,7 +173,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Storage/storageAccounts/stagingpvstorage",
                     "type": "azure-native:storage:StorageAccount",
@@ -246,8 +246,8 @@
                         "tags": {},
                         "type": "Microsoft.Storage/storageAccounts"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "accessTier": [],
                         "accountName": [],
@@ -294,7 +294,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:web:AppServicePlan::staging-function-plan",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:web:AppServicePlan::staging-function-plan",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Web/serverfarms/staging-function-plan",
                     "type": "azure-native:web:AppServicePlan",
@@ -347,8 +347,8 @@
                         "type": "Microsoft.Web/serverfarms",
                         "zoneRedundant": false
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "hyperV": [],
                         "isXenon": [],
@@ -397,7 +397,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:operationalinsights:Workspace::staging-vvocr-log-analytics",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:operationalinsights:Workspace::staging-vvocr-log-analytics",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.OperationalInsights/workspaces/staging-vvocr-log-analytics1df4fbc1",
                     "type": "azure-native:operationalinsights:Workspace",
@@ -439,8 +439,8 @@
                             "quotaNextResetTime": "2026-02-10T16:00:00Z"
                         }
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "location": [],
                         "resourceGroupName": [],
@@ -483,7 +483,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:sql:FirewallRule::staging-allow-azure",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:sql:FirewallRule::staging-allow-azure",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Sql/servers/staging-vvocr-sql644131c1/firewallRules/staging-allow-azure",
                     "type": "azure-native:sql:FirewallRule",
@@ -503,16 +503,16 @@
                         "startIpAddress": "0.0.0.0",
                         "type": "Microsoft.Sql/servers/firewallRules"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:sql:Server::staging-vvocr-sql"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:sql:Server::staging-vvocr-sql"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "endIpAddress": [],
                         "resourceGroupName": [],
                         "serverName": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:sql:Server::staging-vvocr-sql"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:sql:Server::staging-vvocr-sql"
                         ],
                         "startIpAddress": []
                     },
@@ -552,7 +552,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:sql:Database::staging-vvocr-db",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:sql:Database::staging-vvocr-db",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Sql/servers/staging-vvocr-sql644131c1/databases/staging-vvocr-db",
                     "type": "azure-native:sql:Database",
@@ -612,11 +612,11 @@
                         "type": "Microsoft.Sql/servers/databases",
                         "zoneRedundant": false
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:sql:Server::staging-vvocr-sql"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:sql:Server::staging-vvocr-sql"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "autoPauseDelay": [],
                         "location": [],
@@ -624,7 +624,7 @@
                         "minCapacity": [],
                         "resourceGroupName": [],
                         "serverName": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:sql:Server::staging-vvocr-sql"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:sql:Server::staging-vvocr-sql"
                         ],
                         "sku": []
                     },
@@ -664,7 +664,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:cognitiveservices:Account::openai-account",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:cognitiveservices:Account::openai-account",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.CognitiveServices/accounts/openai-account04f52bbd",
                     "type": "azure-native:cognitiveservices:Account",
@@ -2756,8 +2756,8 @@
                         },
                         "type": "Microsoft.CognitiveServices/accounts"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "kind": [],
                         "location": [],
@@ -2801,7 +2801,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:storage:Queue::staging-ocr-queue",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:storage:Queue::staging-ocr-queue",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Storage/storageAccounts/stagingpvstorage/queueServices/default/queues/ocr-queue",
                     "type": "azure-native:storage:Queue",
@@ -2819,14 +2819,14 @@
                         "name": "ocr-queue",
                         "type": "Microsoft.Storage/storageAccounts/queueServices/queues"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "accountName": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage"
                         ],
                         "queueName": [],
                         "resourceGroupName": []
@@ -2867,7 +2867,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:storage:BlobContainer::staging-uploads",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:storage:BlobContainer::staging-uploads",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Storage/storageAccounts/stagingpvstorage/blobServices/default/containers/uploads",
                     "type": "azure-native:storage:BlobContainer",
@@ -2899,14 +2899,14 @@
                         "remainingRetentionDays": 0,
                         "type": "Microsoft.Storage/storageAccounts/blobServices/containers"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "accountName": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage"
                         ],
                         "containerName": [],
                         "publicAccess": [],
@@ -2948,7 +2948,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:storage:BlobContainer::staging-deployments",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:storage:BlobContainer::staging-deployments",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Storage/storageAccounts/stagingpvstorage/blobServices/default/containers/staging-deployments",
                     "type": "azure-native:storage:BlobContainer",
@@ -2980,14 +2980,14 @@
                         "remainingRetentionDays": 0,
                         "type": "Microsoft.Storage/storageAccounts/blobServices/containers"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "accountName": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage"
                         ],
                         "containerName": [],
                         "publicAccess": [],
@@ -3029,7 +3029,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:storage:Queue::staging-ai-mapping-queue",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:storage:Queue::staging-ai-mapping-queue",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Storage/storageAccounts/stagingpvstorage/queueServices/default/queues/ai-mapping-queue",
                     "type": "azure-native:storage:Queue",
@@ -3047,14 +3047,14 @@
                         "name": "ai-mapping-queue",
                         "type": "Microsoft.Storage/storageAccounts/queueServices/queues"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "accountName": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage"
                         ],
                         "queueName": [],
                         "resourceGroupName": []
@@ -3095,7 +3095,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::pulumi:providers:command::default_1_1_3",
+                    "urn": "urn:pulumi:staging::profitforge-ai::pulumi:providers:command::default_1_1_3",
                     "custom": true,
                     "id": "efd660f3-a2a4-48ac-94a8-b18d6169b47c",
                     "type": "pulumi:providers:command",
@@ -3112,7 +3112,7 @@
                     "modified": "2026-02-10T15:36:26.264105646Z"
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::command:local:Command::wait-for-db",
+                    "urn": "urn:pulumi:staging::profitforge-ai::command:local:Command::wait-for-db",
                     "custom": true,
                     "id": "wait-for-dbf7d484b7",
                     "type": "command:local:Command",
@@ -3124,11 +3124,11 @@
                         "stderr": "",
                         "stdout": ""
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:sql:Database::staging-vvocr-db"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:sql:Database::staging-vvocr-db"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:command::default_1_1_3::efd660f3-a2a4-48ac-94a8-b18d6169b47c",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:command::default_1_1_3::efd660f3-a2a4-48ac-94a8-b18d6169b47c",
                     "propertyDependencies": {
                         "create": []
                     },
@@ -3171,7 +3171,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:cognitiveservices:Deployment::gpt4o",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:cognitiveservices:Deployment::gpt4o",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.CognitiveServices/accounts/openai-account04f52bbd/deployments/gpt-4o",
                     "type": "azure-native:cognitiveservices:Deployment",
@@ -3243,14 +3243,14 @@
                         },
                         "type": "Microsoft.CognitiveServices/accounts/deployments"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:cognitiveservices:Account::openai-account"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:cognitiveservices:Account::openai-account"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "accountName": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:cognitiveservices:Account::openai-account"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:cognitiveservices:Account::openai-account"
                         ],
                         "deploymentName": [],
                         "properties": [],
@@ -3293,7 +3293,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:applicationinsights:Component::staging-vvocr-insights",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:applicationinsights:Component::staging-vvocr-insights",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/microsoft.insights/components/staging-vvocr-insights358917ba",
                     "type": "azure-native:applicationinsights:Component",
@@ -3335,11 +3335,11 @@
                         "type": "microsoft.insights/components",
                         "workspaceResourceId": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.OperationalInsights/workspaces/staging-vvocr-log-analytics1df4fbc1"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:operationalinsights:Workspace::staging-vvocr-log-analytics"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:operationalinsights:Workspace::staging-vvocr-log-analytics"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "applicationType": [],
                         "flowType": [],
@@ -3349,7 +3349,7 @@
                         "requestSource": [],
                         "resourceGroupName": [],
                         "workspaceResourceId": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:operationalinsights:Workspace::staging-vvocr-log-analytics"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:operationalinsights:Workspace::staging-vvocr-log-analytics"
                         ]
                     },
                     "created": "2026-02-10T15:29:34.635370711Z",
@@ -3388,7 +3388,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::pulumi:providers:mssql::mssql-provider",
+                    "urn": "urn:pulumi:staging::profitforge-ai::pulumi:providers:mssql::mssql-provider",
                     "custom": true,
                     "id": "4c3eb1b5-0bc1-42e5-9dc0-fb11a05b1e9e",
                     "type": "pulumi:providers:mssql",
@@ -3413,14 +3413,14 @@
                         },
                         "version": "0.1.0"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::command:local:Command::wait-for-db",
-                        "urn:pulumi:staging::ai-pipeline::azure-native:sql:Server::staging-vvocr-sql"
+                        "urn:pulumi:staging::profitforge-ai::command:local:Command::wait-for-db",
+                        "urn:pulumi:staging::profitforge-ai::azure-native:sql:Server::staging-vvocr-sql"
                     ],
                     "propertyDependencies": {
                         "hostname": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:sql:Server::staging-vvocr-sql"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:sql:Server::staging-vvocr-sql"
                         ],
                         "port": [],
                         "sqlAuth": []
@@ -3464,7 +3464,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::mssql:index/script:Script::deploy-schema",
+                    "urn": "urn:pulumi:staging::profitforge-ai::mssql:index/script:Script::deploy-schema",
                     "custom": true,
                     "id": "script",
                     "type": "mssql:index/script:Script",
@@ -3485,14 +3485,14 @@
                         },
                         "updateScript": "-- =============================================\n-- VVOCR SCHEMA - Document Processing POC\n-- Matches client's expected schema for isolated POC work\n-- Last updated: 2026-02-07 (removed calculated fields and moved large data to blob)\n-- =============================================\n\n-- Create schema if it doesn't exist\nIF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'vvocr')\nBEGIN\n    EXEC('CREATE SCHEMA vvocr');\nEND\n\n-- =============================================\n-- 1. Document Processing Results\n-- Main table for storing OCR/AI processing outputs\n-- Note: Large data (extracted text, structured data) stored in blob storage\n-- =============================================\nIF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'document_processing_results' AND schema_id = SCHEMA_ID('vvocr'))\nBEGIN\n    CREATE TABLE vvocr.document_processing_results (\n        result_id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n        \n        -- Document metadata\n        document_name NVARCHAR(500) NOT NULL,\n        document_path NVARCHAR(1000),\n        document_size_bytes BIGINT,\n        document_type NVARCHAR(50), -- PDF, Excel, CSV, etc.\n        uploaded_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        -- Processing status\n        processing_status NVARCHAR(50) DEFAULT 'pending', -- pending, ocr_complete, completed, failed\n        processing_started_at DATETIME2 NULL,\n        processing_completed_at DATETIME2 NULL,\n        \n        -- Document Intelligence (Azure Form Recognizer) results\n        -- Note: Large OCR data (extracted_text, structured_data) stored in blob at <vendor_name>/ocr.json\n        doc_intel_confidence_score DECIMAL(5,4) NULL,\n        doc_intel_prompt_used NVARCHAR(MAX) NULL, -- Prompt used for schema inspection (future use)\n        doc_intel_cost_usd DECIMAL(10,6) NULL,\n        \n        -- AI Model results (GPT-4o, Llama, Mistral, etc.)\n        ai_model_requested NVARCHAR(100) NULL, -- User-requested model for this run\n        ai_prompt_requested NVARCHAR(MAX) NULL, -- User-requested custom prompt (max 10k chars enforced by app)\n        ai_model_used NVARCHAR(100) NULL, -- e.g., 'gpt-4o', 'llama-3-1-405b'\n        ai_mapping_result NVARCHAR(MAX) NULL, -- Product mapping JSON result\n        ai_prompt_used NVARCHAR(MAX) NULL, -- Exact prompt sent to LLM\n        ai_confidence_score DECIMAL(5,2) NULL, -- Overall confidence score (0-100)\n        ai_completeness_score DECIMAL(5,2) NULL, -- Data completeness score (0-100)\n        ai_prompt_tokens INT NULL,\n        ai_completion_tokens INT NULL,\n        ai_model_cost_usd DECIMAL(10,6) NULL,\n        \n        -- Validation\n        requires_manual_review BIT DEFAULT 0,\n        manual_review_reason NVARCHAR(500) NULL,\n        reviewed_by NVARCHAR(100) NULL,\n        reviewed_at DATETIME2 NULL,\n        \n        -- Vendor information\n        vendor_name NVARCHAR(200) NOT NULL,\n        \n        -- Export status\n        export_status NVARCHAR(50) DEFAULT 'not_exported', -- not_exported, confirmed, exported, rejected\n        exported_at DATETIME2 NULL,\n        \n        -- Metadata\n        error_message NVARCHAR(MAX) NULL,\n        created_at DATETIME2 DEFAULT GETUTCDATE(),\n        updated_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        -- Indexes\n        INDEX IX_document_processing_status (processing_status),\n        INDEX IX_document_uploaded_at (uploaded_at),\n        INDEX IX_document_requires_review (requires_manual_review),\n        INDEX IX_document_vendor_name (vendor_name),\n        INDEX IX_document_path (document_path)\n    );\nEND\n\n-- =============================================\n-- 6. Vendor Products (Production Table)\n-- Confirmed/exported product catalog data\n-- =============================================\nIF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'vendor_products' AND schema_id = SCHEMA_ID('vvocr'))\nBEGIN\n    CREATE TABLE vvocr.vendor_products (\n        id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),\n        vendor_id NVARCHAR(100) NOT NULL,\n        vendor_name NVARCHAR(200) NOT NULL,\n        \n        -- Product information (minimal required schema)\n        product_name NVARCHAR(500),\n        sku NVARCHAR(200),\n        price DECIMAL(18,4),\n        unit NVARCHAR(100),\n        description NVARCHAR(MAX),\n        \n        -- Source tracking\n        source_document_id UNIQUEIDENTIFIER NOT NULL,\n        source_document_name NVARCHAR(500),\n        \n        -- Metadata\n        created_at DATETIME2 DEFAULT GETUTCDATE(),\n        updated_at DATETIME2 DEFAULT GETUTCDATE(),\n        \n        INDEX IX_vendor_products_vendor_id (vendor_id),\n        INDEX IX_vendor_products_sku (sku),\n        INDEX IX_vendor_products_source_doc (source_document_id)\n    );\nEND\n\n-- Add ai_model_requested column (stores user's requested model)\nIF NOT EXISTS (\n    SELECT * FROM sys.columns \n    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') \n    AND name = 'ai_model_requested'\n)\nBEGIN\n    ALTER TABLE vvocr.document_processing_results\n    ADD ai_model_requested NVARCHAR(100) NULL;\n    \n    PRINT 'Added column: ai_model_requested';\nEND\nELSE\nBEGIN\n    PRINT 'Column ai_model_requested already exists';\nEND\n\n-- Add ai_prompt_requested column (stores user's custom prompt, max enforced by app at 10k chars)\nIF NOT EXISTS (\n    SELECT * FROM sys.columns \n    WHERE object_id = OBJECT_ID('vvocr.document_processing_results') \n    AND name = 'ai_prompt_requested'\n)\nBEGIN\n    ALTER TABLE vvocr.document_processing_results\n    ADD ai_prompt_requested NVARCHAR(MAX) NULL;\n    \n    PRINT 'Added column: ai_prompt_requested';\nEND\nELSE\nBEGIN\n    PRINT 'Column ai_prompt_requested already exists';\nEND\n\nPRINT 'VVOCR tables created successfully!';\n\n"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:sql:Database::staging-vvocr-db"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:sql:Database::staging-vvocr-db"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:mssql::mssql-provider::4c3eb1b5-0bc1-42e5-9dc0-fb11a05b1e9e",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:mssql::mssql-provider::4c3eb1b5-0bc1-42e5-9dc0-fb11a05b1e9e",
                     "propertyDependencies": {
                         "databaseId": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:sql:Database::staging-vvocr-db"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:sql:Database::staging-vvocr-db"
                         ],
                         "readScript": [],
                         "state": [],
@@ -3534,7 +3534,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:storage:Blob::staging-functions-zip",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:storage:Blob::staging-functions-zip",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Storage/storageAccounts/stagingpvstorage/blobServices/default/containers/staging-deployments/blobs/staging-functions.zip",
                     "type": "azure-native:storage:Blob",
@@ -3563,19 +3563,19 @@
                         "type": "Block",
                         "url": "https://stagingpvstorage.blob.core.windows.net/staging-deployments/staging-functions.zip"
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage",
-                        "urn:pulumi:staging::ai-pipeline::azure-native:storage:BlobContainer::staging-deployments"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage",
+                        "urn:pulumi:staging::profitforge-ai::azure-native:storage:BlobContainer::staging-deployments"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "accountName": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage"
                         ],
                         "blobName": [],
                         "containerName": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:storage:BlobContainer::staging-deployments"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:storage:BlobContainer::staging-deployments"
                         ],
                         "resourceGroupName": [],
                         "source": [],
@@ -3617,7 +3617,7 @@
                     ]
                 },
                 {
-                    "urn": "urn:pulumi:staging::ai-pipeline::azure-native:web:WebApp::staging-function-app",
+                    "urn": "urn:pulumi:staging::profitforge-ai::azure-native:web:WebApp::staging-function-app",
                     "custom": true,
                     "id": "/subscriptions/211fc1c2-ed86-429b-bc55-552964347a8d/resourceGroups/dragonfruit-dev-3P-Meir-rg/providers/Microsoft.Web/sites/staging-vvocr-functions",
                     "type": "azure-native:web:WebApp",
@@ -3702,18 +3702,18 @@
                         "vnetImagePullEnabled": false,
                         "vnetRouteAllEnabled": false
                     },
-                    "parent": "urn:pulumi:staging::ai-pipeline::pulumi:pulumi:Stack::ai-pipeline-staging",
+                    "parent": "urn:pulumi:staging::profitforge-ai::pulumi:pulumi:Stack::profitforge-ai-staging",
                     "dependencies": [
-                        "urn:pulumi:staging::ai-pipeline::azure-native:storage:BlobContainer::staging-deployments",
-                        "urn:pulumi:staging::ai-pipeline::azure-native:storage:Blob::staging-functions-zip",
-                        "urn:pulumi:staging::ai-pipeline::azure-native:applicationinsights:Component::staging-vvocr-insights",
-                        "urn:pulumi:staging::ai-pipeline::azure-native:sql:Server::staging-vvocr-sql",
-                        "urn:pulumi:staging::ai-pipeline::azure-native:sql:Database::staging-vvocr-db",
-                        "urn:pulumi:staging::ai-pipeline::azure-native:cognitiveservices:Account::openai-account",
-                        "urn:pulumi:staging::ai-pipeline::azure-native:web:AppServicePlan::staging-function-plan",
-                        "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage"
+                        "urn:pulumi:staging::profitforge-ai::azure-native:storage:BlobContainer::staging-deployments",
+                        "urn:pulumi:staging::profitforge-ai::azure-native:storage:Blob::staging-functions-zip",
+                        "urn:pulumi:staging::profitforge-ai::azure-native:applicationinsights:Component::staging-vvocr-insights",
+                        "urn:pulumi:staging::profitforge-ai::azure-native:sql:Server::staging-vvocr-sql",
+                        "urn:pulumi:staging::profitforge-ai::azure-native:sql:Database::staging-vvocr-db",
+                        "urn:pulumi:staging::profitforge-ai::azure-native:cognitiveservices:Account::openai-account",
+                        "urn:pulumi:staging::profitforge-ai::azure-native:web:AppServicePlan::staging-function-plan",
+                        "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage"
                     ],
-                    "provider": "urn:pulumi:staging::ai-pipeline::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
+                    "provider": "urn:pulumi:staging::profitforge-ai::pulumi:providers:azure-native::default_3_12_0::f4979b7a-7404-468c-b649-57b6623b8ef2",
                     "propertyDependencies": {
                         "hyperV": [],
                         "isXenon": [],
@@ -3724,16 +3724,16 @@
                         "resourceGroupName": [],
                         "scmSiteAlsoStopped": [],
                         "serverFarmId": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:web:AppServicePlan::staging-function-plan"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:web:AppServicePlan::staging-function-plan"
                         ],
                         "siteConfig": [
-                            "urn:pulumi:staging::ai-pipeline::azure-native:storage:Blob::staging-functions-zip",
-                            "urn:pulumi:staging::ai-pipeline::azure-native:applicationinsights:Component::staging-vvocr-insights",
-                            "urn:pulumi:staging::ai-pipeline::azure-native:sql:Server::staging-vvocr-sql",
-                            "urn:pulumi:staging::ai-pipeline::azure-native:sql:Database::staging-vvocr-db",
-                            "urn:pulumi:staging::ai-pipeline::azure-native:cognitiveservices:Account::openai-account",
-                            "urn:pulumi:staging::ai-pipeline::azure-native:storage:StorageAccount::staging-blobstorage",
-                            "urn:pulumi:staging::ai-pipeline::azure-native:storage:BlobContainer::staging-deployments"
+                            "urn:pulumi:staging::profitforge-ai::azure-native:storage:Blob::staging-functions-zip",
+                            "urn:pulumi:staging::profitforge-ai::azure-native:applicationinsights:Component::staging-vvocr-insights",
+                            "urn:pulumi:staging::profitforge-ai::azure-native:sql:Server::staging-vvocr-sql",
+                            "urn:pulumi:staging::profitforge-ai::azure-native:sql:Database::staging-vvocr-db",
+                            "urn:pulumi:staging::profitforge-ai::azure-native:cognitiveservices:Account::openai-account",
+                            "urn:pulumi:staging::profitforge-ai::azure-native:storage:StorageAccount::staging-blobstorage",
+                            "urn:pulumi:staging::profitforge-ai::azure-native:storage:BlobContainer::staging-deployments"
                         ]
                     },
                     "created": "2026-02-10T16:11:48.228323031Z",
