@@ -15,3 +15,7 @@ docs/*/
 # .pulumi/stacks must stay tracked
 .pulumi/history/
 .pulumi/backups/
+.pulumi/locks/
+# Pulumi local state - only keep staging
+.pulumi/stacks/ai-pipeline/demo*
+.pulumi/stacks/ai-pipeline/dev*
