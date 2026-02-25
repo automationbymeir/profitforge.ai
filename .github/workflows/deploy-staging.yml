@@ -52,7 +52,7 @@ jobs:
       - name: Deploy infrastructure with Pulumi
         uses: pulumi/actions@v5
         with:
-          command: destroy
+          command: up
           stack-name: ${{ env.PULUMI_STACK }}
           work-dir: .
         env:
