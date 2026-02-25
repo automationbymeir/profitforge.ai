@@ -49,6 +49,10 @@ jobs:
       - name: Install Pulumi CLI
         uses: pulumi/actions@v5
 
+      - name: get current pulumi staging passphrase
+        run: |
+          echo ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
       - name: Deploy infrastructure with Pulumi
         uses: pulumi/actions@v5
         with:
