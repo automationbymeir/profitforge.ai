@@ -1,6 +1,13 @@
 import * as azurenative from '@pulumi/azure-native';
 import * as pulumi from '@pulumi/pulumi';
-import { getAppLocation, getResourceGroup, isDemoMode } from './config';
+import { getResourceGroup, isDemoMode } from './config';
+
+const demoVars = [
+  { name: 'MAX_DAILY_UPLOADS', value: '50' },
+  { name: 'MAX_FILE_SIZE_MB', value: '10' },
+  { name: 'MAX_UPLOADS_PER_IP_PER_HOUR', value: '10' },
+  { name: 'DEMO_API_KEY', value: 'demo-key-change-me' },
+];
 
 export interface FunctionAppResources {
   functionApp: azurenative.web.WebApp;
@@ -17,7 +24,8 @@ export function createFunctionAppResources(
   aiProjectKey: pulumi.Input<string>,
   sqlConnectionString: pulumi.Input<string>,
   appInsightsConnectionString: pulumi.Input<string>,
-  stack: string
+  stack: string,
+  location: string
 ): FunctionAppResources {
   // --- Create Function App Infrastructure ---
 
@@ -40,7 +48,7 @@ export function createFunctionAppResources(
   // Create App Service Plan with stack-specific configuration
   const appServicePlan = new azurenative.web.AppServicePlan(`${stack}-function-plan`, {
     resourceGroupName: getResourceGroup(),
-    location: getAppLocation(),
+    location,
     name: `${stack}-function-plan`,
     kind: 'functionapp',
     sku: {
@@ -54,7 +62,7 @@ export function createFunctionAppResources(
   // Create/manage the Function App with proper plan linkage (matching working example)
   const functionApp = new azurenative.web.WebApp(`${stack}-function-app`, {
     resourceGroupName: getResourceGroup(),
-    location: getAppLocation(), // MUST match App Service Plan location
+    location, // MUST match App Service Plan location
     name: `${stack}-vvocr-functions`,
     serverFarmId: appServicePlan.id, // Link to the App Service Plan
     kind: 'functionapp',
@@ -69,7 +77,7 @@ export function createFunctionAppResources(
 
         // Application Insights (Monitoring)
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString },
-        { name: 'APPINSIGHTS_SAMPLING_PERCENTAGE', value: stack === 'staging' ? '100' : '20' }, // Sample 20% to reduce costs
+        { name: 'APPINSIGHTS_SAMPLING_PERCENTAGE', value: '20' }, // Sample 20% to reduce costs
 
         // Storage settings for blob trigger and upload
         { name: 'STORAGE_CONNECTION_STRING', value: storageConnectionString },
@@ -90,10 +98,7 @@ export function createFunctionAppResources(
         // Default: 0 (disabled) for client deployments
         // Demo: Set via 'pulumi config set demoMode true'
         { name: 'IS_DEMO_MODE', value: '' + isDemoMode },
-        { name: 'MAX_DAILY_UPLOADS', value: isDemoMode ? '50' : '0' },
-        { name: 'MAX_FILE_SIZE_MB', value: isDemoMode ? '10' : '0' },
-        { name: 'MAX_UPLOADS_PER_IP_PER_HOUR', value: isDemoMode ? '10' : '0' },
-        { name: 'DEMO_API_KEY', value: isDemoMode ? 'demo-key-change-me' : '' },
+        ...(isDemoMode ? demoVars : []),
         { name: 'USAGE_RETENTION_DAYS', value: '30' },
 
         // Function App URL (required for config validation and client links)

@@ -9,9 +9,11 @@ export interface ApplicationInsightsResources {
 export function createApplicationInsightsResources(
   resourceGroupName: pulumi.Input<string>,
   location: string = 'eastus',
-  stack?: string
+  stack: string,
+  isDemoMode: boolean = false
 ): ApplicationInsightsResources {
-  const resourcePrefix = stack ? `${stack}-vvocr` : 'vvocr';
+  const resourcePrefix = `${stack}-vvocr`;
+  const retentionDays = isDemoMode ? 7 : 30; // Shorter retention for demo to save costs
 
   // Create Log Analytics Workspace (now required for App Insights)
   const logAnalyticsWorkspace = new azurenative.operationalinsights.Workspace(
@@ -22,7 +24,7 @@ export function createApplicationInsightsResources(
       sku: {
         name: 'PerGB2018',
       },
-      retentionInDays: 30,
+      retentionInDays: retentionDays,
     }
   );
 
@@ -35,6 +37,17 @@ export function createApplicationInsightsResources(
     workspaceResourceId: logAnalyticsWorkspace.id,
     ingestionMode: 'LogAnalytics',
   });
+
+  // Log cost monitoring recommendation for demo mode
+  if (isDemoMode && stack) {
+    pulumi.log.info(
+      `Demo mode enabled. Please configure cost alerts in Azure Portal:\n` +
+        `1. Navigate to Cost Management + Billing > Budgets\n` +
+        `2. Create budget for resource group: ${resourceGroupName}\n` +
+        `3. Recommended monthly budget: $20-30 for demo stack\n` +
+        `4. Set alert at 80% and 100% thresholds`
+    );
+  }
 
   return {
     appInsights,

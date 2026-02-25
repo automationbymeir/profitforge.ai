@@ -41,7 +41,7 @@ export async function uploadDocument(vendorName: string, pdfPath: string) {
   // (e.g., 204 No Content, 404 errors) without throwing "Unexpected end of JSON input"
   const text = await response.text();
   const res = text ? JSON.parse(text) : null;
-  // console.log('res:', res);
+
   return {
     status: response.status,
     data: res,

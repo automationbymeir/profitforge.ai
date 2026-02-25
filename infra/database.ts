@@ -18,7 +18,8 @@ export function createDatabaseResources(
   location: string,
   stack: string,
   adminUsername: string,
-  adminPassword: pulumi.Output<string>
+  adminPassword: pulumi.Output<string>,
+  isDemoMode: boolean = false
 ): DatabaseResources {
   // Create SQL Server
   const sqlServer = new azurenative.sql.Server(`${stack}-vvocr-sql`, {
@@ -39,7 +40,7 @@ export function createDatabaseResources(
     endIpAddress: '255.255.255.255',
   });
 
-  // Create Serverless Database
+  // Create Serverless Database with demo-optimized settings
   const sqlDatabase = new azurenative.sql.Database(`${stack}-vvocr-db`, {
     resourceGroupName: resourceGroupName,
     serverName: sqlServer.name,
@@ -48,11 +49,11 @@ export function createDatabaseResources(
       name: 'GP_S_Gen5',
       tier: 'GeneralPurpose',
       family: 'Gen5',
-      capacity: 1, // 1 vCore
+      capacity: isDemoMode ? 0.5 : 1, // Demo: 0.5 vCore, otherwise 1 vCore
     },
-    autoPauseDelay: 60, // Auto-pause after 60 minutes of inactivity
+    autoPauseDelay: isDemoMode ? 15 : 60, // Demo: 15min, otherwise 60min
     minCapacity: 0.5, // Minimum 0.5 vCore
-    maxSizeBytes: 2147483648, // 2GB
+    maxSizeBytes: isDemoMode ? 1073741824 : 2147483648, // Demo: 1GB, otherwise 2GB
   });
 
   // Wait for database to be fully "ready" for connections (Azure SQL Serverless warmup)

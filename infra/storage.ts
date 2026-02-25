@@ -19,6 +19,7 @@ export function createStorageResources(
   stack: string
 ): StorageResources {
   // Blob Storage Account for uploads
+  // Use subscription prefix to ensure global uniqueness across Azure
   const blobStorage = new azurenative.storage.StorageAccount(`${stack}-blobstorage`, {
     resourceGroupName,
     accountName: `${stack}pvstorage`,

@@ -6,7 +6,7 @@ import * as pulumi from '@pulumi/pulumi';
  * No hardcoded values - everything is stack-specific
  */
 
-const config = new pulumi.Config('profitforge-ai');
+const config = new pulumi.Config('ai-pipeline');
 const azureConfig = new pulumi.Config('azure-native');
 
 // Demo mode configuration
@@ -19,25 +19,25 @@ export function getResourceGroup(): string {
 
 // Get Azure location from provider config (defaults to provider's location)
 export function getLocation(): string {
-  return azureConfig.get('location') || 'eastus';
+  return azureConfig.require('location');
 }
 
 // Get Azure location from provider config (defaults to provider's location)
-export function getAppLocation(): string {
-  return azureConfig.get('appLocation') || 'israelcentral';
+export function getServerLocation(): string {
+  return azureConfig.get('serverLocation') || azureConfig.require('location');
 }
 
 // Get existing resource names from Pulumi config
 export function getCognitiveServicesName(): string {
-  return config.require('cognitiveServicesName');
+  return config.get('cognitiveServicesName') || '';
 }
 
 export function getAIHubName(): string {
-  return config.require('aiHubName');
+  return config.get('aiHubName') || '';
 }
 
 export function getAIProjectName(): string {
-  return config.require('aiProjectName');
+  return config.get('aiProjectName') || '';
 }
 
 export function getSqlServerHost(): string {

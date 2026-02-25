@@ -1,13 +1,13 @@
 import * as pulumi from '@pulumi/pulumi';
-import { createAIFoundryResources } from './infra/aiFoundry';
 import { createApplicationInsightsResources } from './infra/applicationInsights';
 import { createCognitiveServices } from './infra/cognitiveServices';
-import { getAIHubName, getAIProjectName, getLocation, getResourceGroup } from './infra/config';
+import { getLocation, getResourceGroup, getServerLocation, isDemoMode } from './infra/config';
 import { createDatabaseResources } from './infra/database';
 import { createFunctionAppResources } from './infra/functions';
 import { createStorageResources } from './infra/storage';
 // Unused resources commented out:
 // import { createKeyVaultResources } from "./infra/keyVault";
+// import { createAIFoundryResources } from './infra/aiFoundry'; // Not used by application
 
 // Get Pulumi configuration and stack
 const config = new pulumi.Config();
@@ -20,14 +20,16 @@ const adminUsername = 'sqladmin';
 // Use existing resource group
 const resourceGroup = getResourceGroup();
 const location = getLocation();
+const appLocation = getServerLocation();
 
 // --- SQL Infrastructure ---
 const databaseResources = createDatabaseResources(
   resourceGroup,
-  location,
+  appLocation,
   stack,
   adminUsername,
-  adminPassword
+  adminPassword,
+  isDemoMode
 );
 
 // --- Storage Infrastructure ---
@@ -39,17 +41,17 @@ const {
 } = createStorageResources(resourceGroup, location, stack);
 
 // --- Application Insights (Monitoring) ---
-const appInsightsResources = createApplicationInsightsResources(resourceGroup, location, stack);
-
-// --- AI Services (Document Intelligence + OpenAI) ---
-const cognitiveServices = createCognitiveServices(resourceGroup, location);
-
-// --- AI Foundry (Hub + Project + GPT-4o Deployment) ---
-const _aiFoundry = createAIFoundryResources(
+const appInsightsResources = createApplicationInsightsResources(
   resourceGroup,
   location,
-  cognitiveServices.openAiAccountName
+  stack,
+  isDemoMode
 );
+
+const cognitiveServicesLocation = location === 'israelcentral' ? 'uaenorth' : location;
+
+// --- AI Services (Document Intelligence + OpenAI) ---
+const cognitiveServices = createCognitiveServices(resourceGroup, cognitiveServicesLocation, stack);
 
 // --- Azure Functions Infrastructure ---
 const functionAppResources = createFunctionAppResources(
@@ -62,12 +64,14 @@ const functionAppResources = createFunctionAppResources(
   cognitiveServices.openAiPrimaryKey,
   databaseResources.connectionString,
   appInsightsResources.appInsights.connectionString,
-  stack
+  stack,
+  appLocation
 );
 
 // Export outputs
 export const stage = stack;
 export const outputLocation = location;
+export const outputAppLocation = appLocation;
 export const storageAccountName = blobStorage.name;
 export const sqlServerName = databaseResources.sqlServer.name;
 export const sqlServerFqdn = databaseResources.sqlServer.fullyQualifiedDomainName;
@@ -75,14 +79,12 @@ export const sqlDatabaseName = databaseResources.sqlDatabase.name;
 
 // --- Azure Functions Infrastructure ---
 export const functionAppName = functionAppResources.functionApp.name;
-export const functionAppEndpoint = pulumi.interpolate`https://${functionAppResources.functionApp.defaultHostName}`;
+export const functionAppEndpoint = pulumi.interpolate`https://${functionAppResources.functionApp.defaultHostName}/api/client/index.html`;
 
 // --- AI Services Outputs ---
 export const docIntelAccountName = cognitiveServices.docIntelAccountName;
 export const docIntelEndpoint = cognitiveServices.docIntelEndpoint;
 export const openAiAccountName = cognitiveServices.openAiAccountName;
-export const aiHubName = pulumi.output(getAIHubName());
-export const aiProjectName = pulumi.output(getAIProjectName());
 
 // --- Monitoring Outputs ---
 export const appInsightsName = appInsightsResources.appInsights.name;

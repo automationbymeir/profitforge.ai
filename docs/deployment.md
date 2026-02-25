@@ -27,11 +27,10 @@ pulumi stack ls
 
 # 3. Configure - see pulumi.staging.yaml for reference
 pulumi config set azure-native:location eastus
-pulumi config set azure-native:subscriptionId "your-sub-id"
 
 # 4. Generate secrets
 SQLPWD=$(openssl rand -base64 24)
-pulumi config set --secret profitforge-ai:sqlAdminPassword "$SQLPWD"
+pulumi config set --secret ai-pipeline:sqlAdminPassword "$SQLPWD"
 
 # 5. Create Document Intelligence resource - or use existing one
 az group create --name profitforge-staging-rg --location eastus
@@ -49,7 +48,7 @@ DOCINTEL_KEY=$(az cognitiveservices account keys list \
   --resource-group profitforge-staging-rg \
   --query "key1" -o tsv)
 
-pulumi config set --secret profitforge-ai:documentIntelligenceKey "$DOCINTEL_KEY"
+pulumi config set --secret ai-pipeline:documentIntelligenceKey "$DOCINTEL_KEY"
 
 # 7. build project
 cd code && npm run build
@@ -107,12 +106,12 @@ infra/
 
 **Required:**
 
-- `profitforge-ai:sqlAdminPassword` - SQL admin password (auto-generated)
-- `profitforge-ai:documentIntelligenceKey` - Doc Intelligence API key
+- `ai-pipeline:sqlAdminPassword` - SQL admin password (auto-generated)
+- `ai-pipeline:documentIntelligenceKey` - Doc Intelligence API key
 
 **Optional:**
 
-- `profitforge-ai:aiProjectKey` - AI Foundry key (if using GPT-4o)
+- `ai-pipeline:aiProjectKey` - AI Foundry key (if using GPT-4o)
 
 ## Post-Deployment
 

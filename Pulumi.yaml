@@ -1,4 +1,4 @@
-name: profitforge-ai
+name: ai-pipeline
 description: AI Data Collection & Transformation System for Azure
 runtime:
   name: nodejs

@@ -1,0 +1,8 @@
+encryptionsalt: v1:F1a2EIIidKk=:v1:wsnXpeI+69arlN1V:z5jsVzdlhzVfeVpHDqRBEst94HCKmw==
+config:
+  azure-native:location: eastus
+  azure-native:serverLocation: israelcentral
+  ai-pipeline:sqlAdminPassword:
+    secure: v1:zowXaz7axvSXEy54:YVlTrOFCv4RlZu5syEhxe5AAEDWOtsCj5eZfcSg8mrNCPIZ35ivuHWy/TFDxK5gK
+  ai-pipeline:resourceGroup: ai-pipeline-demo-rg
+  ai-pipeline:demoMode: true

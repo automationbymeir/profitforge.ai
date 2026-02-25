@@ -15,9 +15,9 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { getPrismaConnectionString } from '../utils/config.js';
 import { RETRY_CONFIG } from '../utils/constants.js';
 import { isTransientError } from '../utils/typeGuards.js';
-import { getPrismaConnectionString } from '../utils/config.js';
 
 // Global singleton instance
 let globalPrisma: PrismaClient | null = null;

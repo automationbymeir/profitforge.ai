@@ -1,6 +1,6 @@
 import * as azurenative from '@pulumi/azure-native';
 import * as pulumi from '@pulumi/pulumi';
-import { getAIHubName, getAIProjectName } from './config';
+import { getAIHubName, getAIProjectName, isDemoMode } from './config';
 
 export interface AIFoundryResources {
   aiHub: pulumi.Output<azurenative.machinelearningservices.GetWorkspaceResult>;
@@ -9,59 +9,74 @@ export interface AIFoundryResources {
 
 export function createAIFoundryResources(
   resourceGroupName: string,
-  _location: string = 'eastus',
-  openaiAccountName: pulumi.Input<string>
+  location: string,
+  stack: string,
+  storageAccountId: pulumi.Input<string>,
+  appInsightsId: pulumi.Input<string>
 ): AIFoundryResources {
-  // Reference existing AI Hub
-  const aiHub = azurenative.machinelearningservices.getWorkspaceOutput({
-    resourceGroupName,
-    workspaceName: getAIHubName(),
-  });
-
-  // Reference existing AI Project
-  const aiProject = azurenative.machinelearningservices.getWorkspaceOutput({
-    resourceGroupName,
-    workspaceName: getAIProjectName(),
-  });
-
-  // GPT-4o Deployment in the Project (OpenAI Account sub-resource)
-  const _gpt4oDeployment = new azurenative.cognitiveservices.Deployment('gpt4o', {
-    deploymentName: 'gpt-4o',
-    accountName: openaiAccountName,
-    resourceGroupName: resourceGroupName,
-    properties: {
-      model: {
-        format: 'OpenAI',
-        name: 'gpt-4o',
-        version: '2024-05-13',
+  if (isDemoMode) {
+    // Create new AI Hub for demo
+    const aiHubResource = new azurenative.machinelearningservices.Workspace(`${stack}-ai-hub`, {
+      resourceGroupName,
+      workspaceName: `${stack}-ai-hub`,
+      location,
+      kind: 'Hub',
+      sku: {
+        name: 'Basic',
+        tier: 'Basic',
       },
-    },
-    sku: {
-      name: 'GlobalStandard',
-      capacity: 10, // 10k TPM
-    },
-  });
-
-  // GPT-4o-mini Deployment (for testing with higher rate limits)
-  const _gpt4oMiniDeployment = new azurenative.cognitiveservices.Deployment('gpt4oMini', {
-    deploymentName: 'gpt-4o-mini',
-    accountName: openaiAccountName,
-    resourceGroupName: resourceGroupName,
-    properties: {
-      model: {
-        format: 'OpenAI',
-        name: 'gpt-4o-mini',
-        version: '2024-07-18', // Latest stable version
+      identity: {
+        type: azurenative.machinelearningservices.ResourceIdentityType.SystemAssigned,
       },
-    },
-    sku: {
-      name: 'GlobalStandard',
-      capacity: 50, // Higher capacity for testing - 50k TPM
-    },
-  });
+      storageAccount: storageAccountId,
+      applicationInsights: appInsightsId,
+      publicNetworkAccess: azurenative.machinelearningservices.PublicNetworkAccessType.Enabled,
+    });
 
-  return {
-    aiHub,
-    aiProject,
-  };
+    // Create AI Project within the Hub
+    const aiProjectResource = new azurenative.machinelearningservices.Workspace(
+      `${stack}-ai-project`,
+      {
+        resourceGroupName,
+        workspaceName: `${stack}-ai-project`,
+        location,
+        kind: 'Project',
+        hubResourceId: aiHubResource.id,
+        sku: {
+          name: 'Basic',
+          tier: 'Basic',
+        },
+        identity: {
+          type: azurenative.machinelearningservices.ResourceIdentityType.SystemAssigned,
+        },
+        publicNetworkAccess: azurenative.machinelearningservices.PublicNetworkAccessType.Enabled,
+      },
+      { dependsOn: [aiHubResource] }
+    );
+
+    const aiHub = azurenative.machinelearningservices.getWorkspaceOutput({
+      resourceGroupName,
+      workspaceName: aiHubResource.name,
+    });
+
+    const aiProject = azurenative.machinelearningservices.getWorkspaceOutput({
+      resourceGroupName,
+      workspaceName: aiProjectResource.name,
+    });
+
+    return { aiHub, aiProject };
+  } else {
+    // Reference existing AI Hub and Project
+    const aiHub = azurenative.machinelearningservices.getWorkspaceOutput({
+      resourceGroupName,
+      workspaceName: getAIHubName(),
+    });
+
+    const aiProject = azurenative.machinelearningservices.getWorkspaceOutput({
+      resourceGroupName,
+      workspaceName: getAIProjectName(),
+    });
+
+    return { aiHub, aiProject };
+  }
 }

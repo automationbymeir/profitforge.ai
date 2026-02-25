@@ -1,6 +1,6 @@
 import * as azurenative from '@pulumi/azure-native';
 import * as pulumi from '@pulumi/pulumi';
-import { getCognitiveServicesName } from './config';
+import { isDemoMode } from './config';
 
 export interface CognitiveServicesResources {
   docIntelAccountName: pulumi.Output<string>;
@@ -12,27 +12,45 @@ export interface CognitiveServicesResources {
 
 export function createCognitiveServices(
   resourceGroupName: pulumi.Input<string>,
-  _location: string = 'eastus' // AIServices requires specific regions (not israelcentral)
+  location: string,
+  stack: string
 ): CognitiveServicesResources {
-  // 1. Reference existing Document Intelligence (FormRecognizer) account
-  const docIntel = azurenative.cognitiveservices.getAccountOutput({
+  // Determine if we should create new resources or reference existing ones
+  const sku = isDemoMode ? 'F0' : 'S0'; // F0 = free tier for demo
+  // Deployment capacities based on demo mode
+  const gpt4oCapacity = isDemoMode ? 5 : 10; // 5k TPM for demo, 10k for prod
+  const gpt4oMiniCapacity = isDemoMode ? 20 : 50; // 20k TPM for demo, 50k for prod
+  const docIntelAccount = new azurenative.cognitiveservices.Account(`${stack}-doc-intel`, {
     resourceGroupName,
-    accountName: getCognitiveServicesName(),
+    location,
+    kind: 'FormRecognizer',
+    sku: {
+      name: sku,
+    },
+    properties: {
+      publicNetworkAccess: 'Enabled',
+    },
   });
 
   const docIntelKeys = azurenative.cognitiveservices.listAccountKeysOutput({
     resourceGroupName,
-    accountName: getCognitiveServicesName(),
+    accountName: docIntelAccount.name,
   });
 
-  // 2. Create a new AIServices account for OpenAI (since existing is FormRecognizer)
-  // NOTE: AIServices not available in israelcentral - using eastus (closest region with full AI services)
-  const openAiAccount = new azurenative.cognitiveservices.Account('openai-account', {
+  const docIntelAccountName = docIntelAccount.name;
+  const docIntel = azurenative.cognitiveservices.getAccountOutput({
     resourceGroupName,
-    location: 'eastus', // Explicitly use eastus - AIServices has limited regional availability
+    accountName: docIntelAccount.name,
+  });
+
+  // Create a new AIServices account for OpenAI
+  // NOTE: AIServices not available in israelcentral - using eastus2 for best availability
+  const openAiAccount = new azurenative.cognitiveservices.Account(`${stack}-openai-account`, {
+    resourceGroupName,
+    location,
     kind: 'AIServices',
     sku: {
-      name: 'S0',
+      name: sku,
     },
     properties: {
       publicNetworkAccess: 'Enabled',
@@ -44,8 +62,73 @@ export function createCognitiveServices(
     accountName: openAiAccount.name,
   });
 
+  // Deploy models based on environment
+  if (isDemoMode) {
+    // Demo: Only deploy cost-efficient gpt-4o-mini
+    const _gpt4oMiniDeployment = new azurenative.cognitiveservices.Deployment(
+      `${stack}-gpt4oMini`,
+      {
+        deploymentName: 'gpt-4o-mini',
+        accountName: openAiAccount.name,
+        resourceGroupName: resourceGroupName,
+        properties: {
+          model: {
+            format: 'OpenAI',
+            name: 'gpt-4o-mini',
+            version: '2024-07-18',
+          },
+        },
+        sku: {
+          name: 'GlobalStandard',
+          capacity: gpt4oMiniCapacity,
+        },
+      }
+    );
+  } else {
+    // Production: Deploy both gpt-4o and gpt-4o-mini
+    const _gpt4oDeployment = new azurenative.cognitiveservices.Deployment(`${stack}-gpt4o`, {
+      deploymentName: 'gpt-4o',
+      accountName: openAiAccount.name,
+      resourceGroupName: resourceGroupName,
+      properties: {
+        model: {
+          format: 'OpenAI',
+          name: 'gpt-4o',
+          version: '2024-05-13',
+        },
+      },
+      sku: {
+        name: 'GlobalStandard',
+        capacity: gpt4oCapacity,
+      },
+    });
+
+    const _gpt4oMiniDeployment = new azurenative.cognitiveservices.Deployment(
+      `${stack}-gpt4oMini`,
+      {
+        deploymentName: 'gpt-4o-mini',
+        accountName: openAiAccount.name,
+        resourceGroupName: resourceGroupName,
+        properties: {
+          model: {
+            format: 'OpenAI',
+            name: 'gpt-4o-mini',
+            version: '2024-07-18',
+          },
+        },
+        sku: {
+          name: 'GlobalStandard',
+          capacity: gpt4oMiniCapacity,
+        },
+      },
+      {
+        dependsOn: [_gpt4oDeployment], // Deploy sequentially to avoid conflicts
+      }
+    );
+  }
+
   return {
-    docIntelAccountName: pulumi.output(getCognitiveServicesName()),
+    docIntelAccountName,
     docIntelEndpoint: docIntel.apply((a) => a.properties?.endpoint ?? ''),
     docIntelPrimaryKey: docIntelKeys.apply((k) => k.key1 ?? ''),
     openAiAccountName: openAiAccount.name,

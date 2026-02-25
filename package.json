@@ -1,5 +1,5 @@
 {
-  "name": "profitforge-ai",
+  "name": "ai-pipeline",
   "main": "index.ts",
   "workspaces": [
     "packages/*"

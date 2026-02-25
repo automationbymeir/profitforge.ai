@@ -5,11 +5,13 @@ dist/
 
 # Ignore everything inside .github
 .github/*
-
 # Except workflows directory
 !.github/workflows/
-
 # And everything inside workflows
 !.github/workflows/**
 
 docs/*/
+
+# .pulumi/stacks must stay tracked
+.pulumi/history/
+.pulumi/backups/
