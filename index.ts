@@ -47,10 +47,10 @@ const {
 //   isDemoMode
 // );
 
-const cognitiveServicesLocation = location === 'israelcentral' ? 'uaenorth' : location;
+// const cognitiveServicesLocation = location === 'israelcentral' ? 'uaenorth' : location;
 
 // --- AI Services (Document Intelligence + OpenAI) ---
-const cognitiveServices = createCognitiveServices(resourceGroup, cognitiveServicesLocation, stack);
+const cognitiveServices = createCognitiveServices(resourceGroup, 'eastus', stack);
 
 // --- Azure Functions Infrastructure ---
 const functionAppResources = createFunctionAppResources(

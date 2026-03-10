@@ -1,16 +1,8 @@
 encryptionsalt: v1:OLm6EMbWxY4=:v1:7ml0JJaRI1gp5Zi0:P8kL8xHnCtIExEt68w1ZEAC+Fh7FYw==
 config:
-  # azure-native:subscriptionId: 211fc1c2-ed86-429b-bc55-552964347a8d
   azure-native:location: eastus
   #serverless instances for app and sql unavailable in eastus, so using israelcentral.
   azure-native:serverLocation: israelcentral
   ai-pipeline:sqlAdminPassword:
     secure: v1:AdjLqyZD5HADnNvb:MmfD5PIlhSOm4xbhlb7Gpb5JR8AHnPIMAsRIXhDwmW+FaIXfneCPlGlrWs2uuRHi
-  # ai-pipeline:documentIntelligenceKey:
-  #   secure: v1:gyvdQGNi0SASp1xI:V0te2fQMUiRqqJERprWa8a8MJFK6aBI7USB4flZkM9GP5JaONTWaZDDkRdAo6rwkXNNHLSNchWB0ppT3vlzyv96QZAaWtF5X8POZzRHM3Js7UgJO2dgfNe/7+mdos+uk4T7wqQ==
-  # # Resource Group
   ai-pipeline:resourceGroup: dragonfruit-dev-3P-Meir-rg
-  # Existing Resource Names (to reference)
-  # ai-pipeline:cognitiveServicesName: dragonfruit-dev-3P-Meir-docintel
-  # ai-pipeline:aiHubName: dragonfruit-dev-3P-Meir-aihub
-  # ai-pipeline:aiProjectName: dragonfruit-dev-3P-Meir-project

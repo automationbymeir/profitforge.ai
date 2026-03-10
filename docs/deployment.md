@@ -155,7 +155,6 @@ Functions automatically configured with:
 ```bash
 FUNCTIONS_WORKER_RUNTIME=node
 AzureWebJobsFeatureFlags=EnableWorkerIndexing
-AzureWebJobsStorage=<storage-connection-string>
 SQL_CONNECTION_STRING=<sql-connection-string>
 STORAGE_CONNECTION_STRING=<storage-connection-string>
 DOCUMENT_INTELLIGENCE_ENDPOINT=<doc-intel-endpoint>
