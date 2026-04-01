@@ -1,0 +1,1380 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ProfitForge.ai - Sprint Dashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: #f0f2f5;
+      }
+
+      /* ── Navigation ───────────────────────────────────────── */
+      .nav {
+        background: #0078d4;
+        padding: 15px 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .nav-inner {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .nav-brand {
+        color: white;
+        font-weight: 700;
+        font-size: 1.1em;
+        text-decoration: none;
+        margin-right: 10px;
+      }
+
+      .nav-inner a {
+        color: white;
+        text-decoration: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        transition: background 0.2s;
+        font-size: 0.95em;
+      }
+
+      .nav-inner a:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .nav-inner a.active {
+        background: rgba(255, 255, 255, 0.3);
+        font-weight: 600;
+      }
+
+      /* ── Page layout ──────────────────────────────────────── */
+      .page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 30px 20px 60px;
+      }
+
+      .page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+
+      .page-header h1 {
+        color: #0078d4;
+        font-size: 1.9em;
+        border-bottom: 3px solid #0078d4;
+        padding-bottom: 8px;
+      }
+
+      .page-header p {
+        color: #666;
+        margin-top: 6px;
+        font-size: 0.95em;
+      }
+
+      .sprint-badge {
+        background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+        color: white;
+        padding: 10px 22px;
+        border-radius: 24px;
+        font-weight: 700;
+        font-size: 1em;
+        white-space: nowrap;
+        box-shadow: 0 4px 12px rgba(0, 120, 212, 0.35);
+      }
+
+      /* ── Cards / Sections ─────────────────────────────────── */
+      .card {
+        background: white;
+        border-radius: 10px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 24px;
+      }
+
+      .card h2 {
+        color: #0078d4;
+        font-size: 1.15em;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid #e8eaf0;
+        padding-bottom: 12px;
+      }
+
+      /* ── Sprint stats row ─────────────────────────────────── */
+      .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-top: 4px solid transparent;
+        transition: transform 0.2s;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-2px);
+      }
+
+      .stat-card.blue {
+        border-top-color: #0078d4;
+      }
+      .stat-card.green {
+        border-top-color: #28a745;
+      }
+      .stat-card.orange {
+        border-top-color: #fd7e14;
+      }
+      .stat-card.purple {
+        border-top-color: #6f42c1;
+      }
+      .stat-card.teal {
+        border-top-color: #20c997;
+      }
+
+      .stat-number {
+        font-size: 2.4em;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 6px;
+      }
+
+      .stat-card.blue .stat-number {
+        color: #0078d4;
+      }
+      .stat-card.green .stat-number {
+        color: #28a745;
+      }
+      .stat-card.orange .stat-number {
+        color: #fd7e14;
+      }
+      .stat-card.purple .stat-number {
+        color: #6f42c1;
+      }
+      .stat-card.teal .stat-number {
+        color: #20c997;
+      }
+
+      .stat-label {
+        font-size: 0.82em;
+        color: #666;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* ── Sprint info bar ──────────────────────────────────── */
+      .sprint-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+
+      .info-item {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .info-item .label {
+        font-size: 0.78em;
+        color: #888;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 3px;
+      }
+
+      .info-item .value {
+        font-size: 1em;
+        color: #222;
+        font-weight: 600;
+      }
+
+      /* ── Progress / Burndown ──────────────────────────────── */
+      .progress-section {
+        margin-top: 16px;
+      }
+
+      .progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.88em;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: #444;
+      }
+
+      .progress-bar-outer {
+        background: #e9ecef;
+        border-radius: 8px;
+        height: 14px;
+        overflow: hidden;
+        margin-bottom: 14px;
+      }
+
+      .progress-bar-inner {
+        height: 100%;
+        border-radius: 8px;
+        transition: width 0.6s ease;
+      }
+
+      .progress-bar-inner.blue {
+        background: linear-gradient(90deg, #0078d4, #005a9e);
+      }
+      .progress-bar-inner.green {
+        background: linear-gradient(90deg, #28a745, #1e7e34);
+      }
+      .progress-bar-inner.orange {
+        background: linear-gradient(90deg, #fd7e14, #d96a00);
+      }
+
+      /* ── Burndown Chart ───────────────────────────────────── */
+      .burndown-chart {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 16px;
+        overflow-x: auto;
+      }
+
+      .burndown-svg {
+        display: block;
+        min-width: 500px;
+        width: 100%;
+        height: 200px;
+      }
+
+      /* ── Kanban Board ─────────────────────────────────────── */
+      .kanban-board {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      @media (max-width: 900px) {
+        .kanban-board {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 500px) {
+        .kanban-board {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .kanban-column {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 16px;
+        min-height: 200px;
+      }
+
+      .kanban-column-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid transparent;
+      }
+
+      .kanban-column-header h3 {
+        font-size: 0.9em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+      }
+
+      .col-backlog .kanban-column-header {
+        border-bottom-color: #adb5bd;
+      }
+      .col-backlog .kanban-column-header h3 {
+        color: #6c757d;
+      }
+
+      .col-inprogress .kanban-column-header {
+        border-bottom-color: #0078d4;
+      }
+      .col-inprogress .kanban-column-header h3 {
+        color: #0078d4;
+      }
+
+      .col-review .kanban-column-header {
+        border-bottom-color: #fd7e14;
+      }
+      .col-review .kanban-column-header h3 {
+        color: #fd7e14;
+      }
+
+      .col-done .kanban-column-header {
+        border-bottom-color: #28a745;
+      }
+      .col-done .kanban-column-header h3 {
+        color: #28a745;
+      }
+
+      .col-count {
+        background: #dee2e6;
+        color: #495057;
+        font-size: 0.8em;
+        font-weight: 700;
+        border-radius: 12px;
+        padding: 2px 10px;
+        min-width: 26px;
+        text-align: center;
+      }
+
+      .col-inprogress .col-count {
+        background: #cce5ff;
+        color: #004085;
+      }
+      .col-review .col-count {
+        background: #ffe5d0;
+        color: #7d3900;
+      }
+      .col-done .col-count {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      /* ── Story cards ──────────────────────────────────────── */
+      .story-card {
+        background: white;
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid transparent;
+        cursor: default;
+        transition:
+          box-shadow 0.2s,
+          transform 0.15s;
+      }
+
+      .story-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+        transform: translateY(-1px);
+      }
+
+      .story-card.feature {
+        border-left-color: #0078d4;
+      }
+      .story-card.bug {
+        border-left-color: #dc3545;
+      }
+      .story-card.chore {
+        border-left-color: #6c757d;
+      }
+      .story-card.improvement {
+        border-left-color: #6f42c1;
+      }
+
+      .story-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+
+      .story-id {
+        font-size: 0.72em;
+        color: #888;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .story-title {
+        font-size: 0.88em;
+        font-weight: 600;
+        color: #222;
+        line-height: 1.4;
+        flex: 1;
+      }
+
+      .story-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+      }
+
+      .tag {
+        font-size: 0.72em;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 600;
+      }
+
+      .tag.feature {
+        background: #cce5ff;
+        color: #004085;
+      }
+      .tag.bug {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .tag.chore {
+        background: #e2e3e5;
+        color: #383d41;
+      }
+      .tag.improvement {
+        background: #e8d5f5;
+        color: #4c1d95;
+      }
+
+      .points-badge {
+        font-size: 0.72em;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 2px 8px;
+        font-weight: 700;
+        color: #495057;
+      }
+
+      .assignee {
+        font-size: 0.72em;
+        color: #888;
+        margin-left: auto;
+      }
+
+      /* ── Velocity chart ───────────────────────────────────── */
+      .velocity-chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 16px;
+        height: 140px;
+        padding: 0 8px;
+        margin-top: 16px;
+      }
+
+      .velocity-bar-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        gap: 6px;
+      }
+
+      .velocity-bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        width: 100%;
+        height: 110px;
+      }
+
+      .velocity-bar {
+        flex: 1;
+        border-radius: 4px 4px 0 0;
+        min-width: 18px;
+        position: relative;
+        transition: opacity 0.2s;
+      }
+
+      .velocity-bar:hover {
+        opacity: 0.85;
+      }
+
+      .velocity-bar.committed {
+        background: #cce5ff;
+        border: 2px solid #0078d4;
+      }
+      .velocity-bar.completed {
+        background: #0078d4;
+      }
+
+      .velocity-bar-label {
+        font-size: 0.75em;
+        color: #666;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .velocity-legend {
+        display: flex;
+        gap: 16px;
+        margin-top: 10px;
+        font-size: 0.78em;
+        color: #666;
+      }
+
+      .velocity-legend span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+
+      /* ── Team section ─────────────────────────────────────── */
+      .team-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        margin-top: 4px;
+      }
+
+      .team-member {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+      }
+
+      .member-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4em;
+        font-weight: 700;
+        margin: 0 auto 10px;
+      }
+
+      .member-name {
+        font-size: 0.9em;
+        font-weight: 700;
+        color: #222;
+        margin-bottom: 2px;
+      }
+
+      .member-role {
+        font-size: 0.78em;
+        color: #888;
+        margin-bottom: 8px;
+      }
+
+      .capacity-bar-outer {
+        background: #e9ecef;
+        border-radius: 6px;
+        height: 8px;
+        overflow: hidden;
+        margin-top: 6px;
+      }
+
+      .capacity-bar-inner {
+        height: 100%;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #0078d4, #20c997);
+      }
+
+      .capacity-label {
+        font-size: 0.76em;
+        color: #666;
+        margin-top: 4px;
+      }
+
+      /* ── Blockers ─────────────────────────────────────────── */
+      .blocker-item {
+        background: #fff8e1;
+        border-left: 4px solid #ffc107;
+        border-radius: 0 8px 8px 0;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+      }
+
+      .blocker-item.risk {
+        background: #fff3e0;
+        border-left-color: #fd7e14;
+      }
+
+      .blocker-item.info {
+        background: #e3f2fd;
+        border-left-color: #0078d4;
+      }
+
+      .blocker-title {
+        font-size: 0.9em;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 4px;
+      }
+
+      .blocker-desc {
+        font-size: 0.83em;
+        color: #555;
+      }
+
+      .blocker-owner {
+        font-size: 0.78em;
+        color: #888;
+        margin-top: 6px;
+        font-style: italic;
+      }
+
+      /* ── Two-column layout ────────────────────────────────── */
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+
+      @media (max-width: 768px) {
+        .two-col {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ── Last updated footer ──────────────────────────────── */
+      .page-footer {
+        text-align: center;
+        font-size: 0.82em;
+        color: #aaa;
+        margin-top: 40px;
+      }
+
+      /* ── Tooltip ──────────────────────────────────────────── */
+      [data-tooltip] {
+        position: relative;
+        cursor: help;
+      }
+
+      [data-tooltip]::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 110%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.78em;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+        z-index: 99;
+      }
+
+      [data-tooltip]:hover::after {
+        opacity: 1;
+      }
+
+      /* ── Sprint selector ──────────────────────────────────── */
+      .sprint-selector {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+
+      .sprint-selector label {
+        font-weight: 600;
+        color: #444;
+        font-size: 0.9em;
+      }
+
+      .sprint-selector select {
+        padding: 8px 14px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 0.9em;
+        background: white;
+        cursor: pointer;
+      }
+
+      .sprint-selector select:focus {
+        outline: none;
+        border-color: #0078d4;
+      }
+
+      .sprint-selector .last-updated {
+        margin-left: auto;
+        font-size: 0.82em;
+        color: #888;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Navigation -->
+    <nav class="nav">
+      <div class="nav-inner">
+        <a href="index.html" class="nav-brand">🚀 ProfitForge.ai</a>
+        <a href="index.html">Home</a>
+        <a href="test-client.html">Upload</a>
+        <a href="results-viewer.html">Results</a>
+        <a href="sprint-dashboard.html" class="active">Sprint Dashboard</a>
+      </div>
+    </nav>
+
+    <div class="page">
+      <!-- Page header -->
+      <div class="page-header">
+        <div>
+          <h1>📋 Sprint Dashboard</h1>
+          <p>Track progress, stories, and team velocity for the ProfitForge.ai development sprint.</p>
+        </div>
+        <div class="sprint-badge" id="sprint-badge">Sprint 3 · Active</div>
+      </div>
+
+      <!-- Sprint selector -->
+      <div class="sprint-selector">
+        <label for="sprint-select">View Sprint:</label>
+        <select id="sprint-select" onchange="loadSprint(this.value)">
+          <option value="3">Sprint 3 (Current) — Mar 24 – Apr 4, 2026</option>
+          <option value="2">Sprint 2 — Mar 10 – Mar 21, 2026</option>
+          <option value="1">Sprint 1 — Feb 24 – Mar 7, 2026</option>
+        </select>
+        <span class="last-updated" id="last-updated">Updated: Apr 1, 2026 at 07:50</span>
+      </div>
+
+      <!-- ── Sprint info card ─────────────────────────────── -->
+      <div class="card" id="sprint-info-card">
+        <h2>🗓️ Sprint Overview</h2>
+        <div class="sprint-info" id="sprint-info">
+          <div class="info-item">
+            <span class="label">Sprint</span>
+            <span class="value" id="info-sprint">Sprint 3</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Start Date</span>
+            <span class="value" id="info-start">March 24, 2026</span>
+          </div>
+          <div class="info-item">
+            <span class="label">End Date</span>
+            <span class="value" id="info-end">April 4, 2026</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Days Remaining</span>
+            <span class="value" id="info-days">3 days</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Sprint Goal</span>
+            <span class="value" id="info-goal">Production Readiness: Auth, Rate Limiting & Monitoring</span>
+          </div>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-label">
+            <span>Sprint Completion</span>
+            <span id="progress-pct">75%</span>
+          </div>
+          <div class="progress-bar-outer">
+            <div class="progress-bar-inner blue" id="progress-bar" style="width: 75%"></div>
+          </div>
+
+          <div class="progress-label">
+            <span>Story Points Completed</span>
+            <span id="points-pct">30 / 40 pts</span>
+          </div>
+          <div class="progress-bar-outer">
+            <div class="progress-bar-inner green" id="points-bar" style="width: 75%"></div>
+          </div>
+
+          <div class="progress-label">
+            <span>Time Elapsed</span>
+            <span id="time-pct">78% (7 / 9 days)</span>
+          </div>
+          <div class="progress-bar-outer">
+            <div class="progress-bar-inner orange" id="time-bar" style="width: 78%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Stats row ────────────────────────────────────── -->
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card blue" data-tooltip="Total story points committed this sprint">
+          <div class="stat-number" id="stat-committed">40</div>
+          <div class="stat-label">Points Committed</div>
+        </div>
+        <div class="stat-card green" data-tooltip="Story points accepted / done">
+          <div class="stat-number" id="stat-done">30</div>
+          <div class="stat-label">Points Done</div>
+        </div>
+        <div class="stat-card orange" data-tooltip="Story points actively being worked on">
+          <div class="stat-number" id="stat-inprogress">6</div>
+          <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-card purple" data-tooltip="Story points pending review or QA">
+          <div class="stat-number" id="stat-review">4</div>
+          <div class="stat-label">In Review</div>
+        </div>
+        <div class="stat-card teal" data-tooltip="Total user stories in this sprint">
+          <div class="stat-number" id="stat-stories">12</div>
+          <div class="stat-label">User Stories</div>
+        </div>
+      </div>
+
+      <!-- ── Burndown + Velocity side-by-side ─────────────── -->
+      <div class="two-col">
+        <div class="card">
+          <h2>📉 Burndown Chart</h2>
+          <div class="burndown-chart">
+            <svg class="burndown-svg" viewBox="0 0 500 180" preserveAspectRatio="none">
+              <!-- Grid lines -->
+              <line x1="50" y1="10" x2="50" y2="155" stroke="#e0e0e0" stroke-width="1"/>
+              <line x1="50" y1="155" x2="490" y2="155" stroke="#e0e0e0" stroke-width="1"/>
+              <!-- Y-axis labels -->
+              <text x="44" y="14" text-anchor="end" font-size="10" fill="#888">40</text>
+              <text x="44" y="54" text-anchor="end" font-size="10" fill="#888">30</text>
+              <text x="44" y="94" text-anchor="end" font-size="10" fill="#888">20</text>
+              <text x="44" y="134" text-anchor="end" font-size="10" fill="#888">10</text>
+              <text x="44" y="158" text-anchor="end" font-size="10" fill="#888">0</text>
+              <!-- Horizontal grid -->
+              <line x1="50" y1="14" x2="490" y2="14" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="54" x2="490" y2="54" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="94" x2="490" y2="94" stroke="#f0f0f0" stroke-width="1"/>
+              <line x1="50" y1="134" x2="490" y2="134" stroke="#f0f0f0" stroke-width="1"/>
+              <!-- Ideal burndown (straight line from top-left to bottom-right) -->
+              <line x1="50" y1="14" x2="490" y2="155" stroke="#adb5bd" stroke-width="1.5" stroke-dasharray="6,4"/>
+              <!-- Actual burndown points (day 1–7 done, days 8–9 projected) -->
+              <!-- Days: 1=50,2=94,3=138,4=182,5=226,6=270,7=314,8=358,9=402,10=446 approx -->
+              <!-- Remaining: 40,38,35,30,24,18,10,10,10 -->
+              <polyline
+                points="50,14 99,22 148,36 197,54 246,78 295,102 344,142 393,142 490,155"
+                fill="none"
+                stroke="#0078d4"
+                stroke-width="2.5"
+                stroke-linejoin="round"
+              />
+              <!-- Actual dots (solid = actual, open = projected) -->
+              <circle cx="50"  cy="14"  r="4" fill="#0078d4"/>
+              <circle cx="99"  cy="22"  r="4" fill="#0078d4"/>
+              <circle cx="148" cy="36"  r="4" fill="#0078d4"/>
+              <circle cx="197" cy="54"  r="4" fill="#0078d4"/>
+              <circle cx="246" cy="78"  r="4" fill="#0078d4"/>
+              <circle cx="295" cy="102" r="4" fill="#0078d4"/>
+              <circle cx="344" cy="142" r="4" fill="#0078d4"/>
+              <circle cx="393" cy="142" r="4" fill="#0078d4" fill-opacity="0.4" stroke="#0078d4" stroke-width="1.5"/>
+              <circle cx="490" cy="155" r="4" fill="#0078d4" fill-opacity="0.4" stroke="#0078d4" stroke-width="1.5"/>
+              <!-- X-axis day labels -->
+              <text x="50"  y="170" text-anchor="middle" font-size="9" fill="#888">D1</text>
+              <text x="99"  y="170" text-anchor="middle" font-size="9" fill="#888">D2</text>
+              <text x="148" y="170" text-anchor="middle" font-size="9" fill="#888">D3</text>
+              <text x="197" y="170" text-anchor="middle" font-size="9" fill="#888">D4</text>
+              <text x="246" y="170" text-anchor="middle" font-size="9" fill="#888">D5</text>
+              <text x="295" y="170" text-anchor="middle" font-size="9" fill="#888">D6</text>
+              <text x="344" y="170" text-anchor="middle" font-size="9" fill="#888">D7</text>
+              <text x="393" y="170" text-anchor="middle" font-size="9" fill="#888">D8</text>
+              <text x="442" y="170" text-anchor="middle" font-size="9" fill="#888">D9</text>
+              <!-- Legend -->
+              <line x1="60" y1="178" x2="80" y2="178" stroke="#0078d4" stroke-width="2"/>
+              <text x="83" y="181" font-size="9" fill="#555">Actual</text>
+              <line x1="120" y1="178" x2="140" y2="178" stroke="#adb5bd" stroke-width="1.5" stroke-dasharray="4,3"/>
+              <text x="143" y="181" font-size="9" fill="#555">Ideal</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>⚡ Team Velocity</h2>
+          <div class="velocity-chart" id="velocity-chart">
+            <!-- Sprint 1 -->
+            <div class="velocity-bar-group">
+              <div class="velocity-bars">
+                <div class="velocity-bar committed" style="height: 82px" data-tooltip="35 pts committed"></div>
+                <div class="velocity-bar completed" style="height: 70px" data-tooltip="30 pts completed"></div>
+              </div>
+              <div class="velocity-bar-label">Sprint 1</div>
+            </div>
+            <!-- Sprint 2 -->
+            <div class="velocity-bar-group">
+              <div class="velocity-bars">
+                <div class="velocity-bar committed" style="height: 88px" data-tooltip="38 pts committed"></div>
+                <div class="velocity-bar completed" style="height: 82px" data-tooltip="35 pts completed"></div>
+              </div>
+              <div class="velocity-bar-label">Sprint 2</div>
+            </div>
+            <!-- Sprint 3 (current, partial) -->
+            <div class="velocity-bar-group">
+              <div class="velocity-bars">
+                <div class="velocity-bar committed" style="height: 94px" data-tooltip="40 pts committed"></div>
+                <div class="velocity-bar completed" style="height: 70px" data-tooltip="30 pts done so far"></div>
+              </div>
+              <div class="velocity-bar-label">Sprint 3 ⬤</div>
+            </div>
+          </div>
+          <div class="velocity-legend">
+            <span><span class="legend-dot" style="background:#cce5ff;border:2px solid #0078d4;"></span> Committed</span>
+            <span><span class="legend-dot" style="background:#0078d4;"></span> Completed</span>
+          </div>
+          <div style="margin-top:16px; background:#f8f9fa; border-radius:8px; padding:14px;">
+            <div style="font-size:0.85em; color:#444; margin-bottom:4px; font-weight:600;">Average Velocity</div>
+            <div style="font-size:2em; font-weight:700; color:#0078d4;">32 <span style="font-size:0.5em; color:#888; font-weight:400">pts / sprint</span></div>
+            <div style="font-size:0.78em; color:#888; margin-top:4px;">Based on last 2 completed sprints</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Kanban Board ──────────────────────────────────── -->
+      <div class="card">
+        <h2>🗂️ Story Board</h2>
+        <div class="kanban-board" id="kanban-board">
+
+          <!-- Backlog -->
+          <div class="kanban-column col-backlog">
+            <div class="kanban-column-header">
+              <h3>Backlog</h3>
+              <span class="col-count" id="count-backlog">2</span>
+            </div>
+
+            <div class="story-card chore">
+              <div class="story-header">
+                <span class="story-id">PF-031</span>
+              </div>
+              <div class="story-title">Bulk document upload endpoint supporting ZIP archives</div>
+              <div class="story-meta">
+                <span class="tag chore">chore</span>
+                <span class="points-badge">5 pts</span>
+                <span class="assignee">—</span>
+              </div>
+            </div>
+
+            <div class="story-card feature">
+              <div class="story-header">
+                <span class="story-id">PF-032</span>
+              </div>
+              <div class="story-title">Email notifications on document processing completion</div>
+              <div class="story-meta">
+                <span class="tag feature">feature</span>
+                <span class="points-badge">3 pts</span>
+                <span class="assignee">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- In Progress -->
+          <div class="kanban-column col-inprogress">
+            <div class="kanban-column-header">
+              <h3>In Progress</h3>
+              <span class="col-count" id="count-inprogress">3</span>
+            </div>
+
+            <div class="story-card feature">
+              <div class="story-header">
+                <span class="story-id">PF-026</span>
+              </div>
+              <div class="story-title">Rate limiting middleware — per-IP sliding window</div>
+              <div class="story-meta">
+                <span class="tag feature">feature</span>
+                <span class="points-badge">3 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+
+            <div class="story-card improvement">
+              <div class="story-header">
+                <span class="story-id">PF-028</span>
+              </div>
+              <div class="story-title">Application Insights telemetry integration for OCR runs</div>
+              <div class="story-meta">
+                <span class="tag improvement">improvement</span>
+                <span class="points-badge">2 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+
+            <div class="story-card bug">
+              <div class="story-header">
+                <span class="story-id">PF-030</span>
+              </div>
+              <div class="story-title">Fix race condition in concurrent blob-trigger run creation</div>
+              <div class="story-meta">
+                <span class="tag bug">bug</span>
+                <span class="points-badge">1 pt</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- In Review -->
+          <div class="kanban-column col-review">
+            <div class="kanban-column-header">
+              <h3>In Review</h3>
+              <span class="col-count" id="count-review">2</span>
+            </div>
+
+            <div class="story-card feature">
+              <div class="story-header">
+                <span class="story-id">PF-024</span>
+              </div>
+              <div class="story-title">Sprint dashboard HTML page (this PR)</div>
+              <div class="story-meta">
+                <span class="tag feature">feature</span>
+                <span class="points-badge">2 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+
+            <div class="story-card improvement">
+              <div class="story-header">
+                <span class="story-id">PF-025</span>
+              </div>
+              <div class="story-title">API docs update — new /runs and /vendors endpoints</div>
+              <div class="story-meta">
+                <span class="tag improvement">improvement</span>
+                <span class="points-badge">2 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Done -->
+          <div class="kanban-column col-done">
+            <div class="kanban-column-header">
+              <h3>Done ✓</h3>
+              <span class="col-count" id="count-done">7</span>
+            </div>
+
+            <div class="story-card feature">
+              <div class="story-header">
+                <span class="story-id">PF-015</span>
+              </div>
+              <div class="story-title">Run-based processing model with full audit trail</div>
+              <div class="story-meta">
+                <span class="tag feature">feature</span>
+                <span class="points-badge">8 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+
+            <div class="story-card feature">
+              <div class="story-header">
+                <span class="story-id">PF-016</span>
+              </div>
+              <div class="story-title">OCR result caching — skip re-extraction when JSON exists</div>
+              <div class="story-meta">
+                <span class="tag feature">feature</span>
+                <span class="points-badge">5 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+
+            <div class="story-card feature">
+              <div class="story-header">
+                <span class="story-id">PF-018</span>
+              </div>
+              <div class="story-title">Quality metrics modal with field-level population rates</div>
+              <div class="story-meta">
+                <span class="tag feature">feature</span>
+                <span class="points-badge">5 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+
+            <div class="story-card improvement">
+              <div class="story-header">
+                <span class="story-id">PF-019</span>
+              </div>
+              <div class="story-title">Results viewer — vendor grouping and run history tabs</div>
+              <div class="story-meta">
+                <span class="tag improvement">improvement</span>
+                <span class="points-badge">3 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+
+            <div class="story-card chore">
+              <div class="story-header">
+                <span class="story-id">PF-021</span>
+              </div>
+              <div class="story-title">Migrate infra to Pulumi staging stack with B1 App Service</div>
+              <div class="story-meta">
+                <span class="tag chore">chore</span>
+                <span class="points-badge">3 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+
+            <div class="story-card bug">
+              <div class="story-header">
+                <span class="story-id">PF-022</span>
+              </div>
+              <div class="story-title">Fix vendorName URL encoding in multi-word vendor names</div>
+              <div class="story-meta">
+                <span class="tag bug">bug</span>
+                <span class="points-badge">2 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+
+            <div class="story-card improvement">
+              <div class="story-header">
+                <span class="story-id">PF-023</span>
+              </div>
+              <div class="story-title">Benchmark service — accuracy scoring against ground truth</div>
+              <div class="story-meta">
+                <span class="tag improvement">improvement</span>
+                <span class="points-badge">4 pts</span>
+                <span class="assignee">@meir</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Team Capacity + Blockers side-by-side ─────────── -->
+      <div class="two-col">
+        <div class="card">
+          <h2>👥 Team Capacity</h2>
+          <div class="team-grid">
+            <div class="team-member">
+              <div class="member-avatar">M</div>
+              <div class="member-name">Meir</div>
+              <div class="member-role">Full-stack / Lead</div>
+              <div class="capacity-bar-outer">
+                <div class="capacity-bar-inner" style="width: 80%"></div>
+              </div>
+              <div class="capacity-label">8 / 10 days available</div>
+            </div>
+            <div class="team-member">
+              <div class="member-avatar" style="background: linear-gradient(135deg, #6f42c1, #4c1d95)">A</div>
+              <div class="member-name">Azure Copilot</div>
+              <div class="member-role">AI Pair Programmer</div>
+              <div class="capacity-bar-outer">
+                <div class="capacity-bar-inner" style="width: 100%; background: linear-gradient(90deg, #6f42c1, #20c997)"></div>
+              </div>
+              <div class="capacity-label">Always available</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🚧 Blockers &amp; Risks</h2>
+
+          <div class="blocker-item">
+            <div class="blocker-title">⚠️ Azure B1 SKU quota — staging deployment</div>
+            <div class="blocker-desc">
+              App Service B1 plan quota may need to be raised in the Azure subscription
+              before the next production deployment window.
+            </div>
+            <div class="blocker-owner">Owner: @meir · Due: Apr 3</div>
+          </div>
+
+          <div class="blocker-item risk">
+            <div class="blocker-title">🔶 GPT-4o token limits on large catalogues</div>
+            <div class="blocker-desc">
+              Vendor catalogues with &gt;500 products hit the context window limit.
+              Chunking strategy needs to be finalized before Sprint 4.
+            </div>
+            <div class="blocker-owner">Owner: @meir · Due: Apr 4</div>
+          </div>
+
+          <div class="blocker-item info">
+            <div class="blocker-title">ℹ️ Prisma schema migration needed for new run fields</div>
+            <div class="blocker-desc">
+              Adding <code>telemetryEnabled</code> and <code>rateLimitGroup</code> columns
+              requires a coordinated migration on the staging SQL instance.
+            </div>
+            <div class="blocker-owner">Owner: @meir · Due: Apr 2</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Sprint Goal / Acceptance Criteria ─────────────── -->
+      <div class="card">
+        <h2>🎯 Sprint Goal &amp; Acceptance Criteria</h2>
+        <p style="color:#444; font-size:0.92em; margin-bottom:16px;">
+          <strong>Goal:</strong> Ship production-readiness improvements — authentication hardening,
+          per-IP rate limiting, Application Insights telemetry, and sprint dashboard tooling — 
+          so the team can confidently onboard the first external vendor.
+        </p>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:12px;">
+          <div style="background:#d4edda; border-radius:8px; padding:14px;">
+            <div style="font-weight:700; color:#155724; margin-bottom:8px;">✅ Done</div>
+            <ul style="font-size:0.85em; color:#333; padding-left:18px; line-height:2;">
+              <li>Run model fully operational with audit log</li>
+              <li>OCR caching reduces re-processing costs by ~60%</li>
+              <li>Quality metrics visible per-run in the UI</li>
+              <li>Benchmark service scoring implemented</li>
+              <li>Staging infra deployed via Pulumi</li>
+            </ul>
+          </div>
+          <div style="background:#fff3cd; border-radius:8px; padding:14px;">
+            <div style="font-weight:700; color:#856404; margin-bottom:8px;">🔄 In Progress</div>
+            <ul style="font-size:0.85em; color:#333; padding-left:18px; line-height:2;">
+              <li>Rate limiting middleware (final config)</li>
+              <li>App Insights telemetry wired up</li>
+              <li>Race condition fix for blob triggers</li>
+            </ul>
+          </div>
+          <div style="background:#cce5ff; border-radius:8px; padding:14px;">
+            <div style="font-weight:700; color:#004085; margin-bottom:8px;">📌 Next Sprint</div>
+            <ul style="font-size:0.85em; color:#333; padding-left:18px; line-height:2;">
+              <li>Bulk upload via ZIP archives</li>
+              <li>Email notifications on completion</li>
+              <li>GPT-4o chunking for large catalogues</li>
+              <li>Mobile-responsive client UI</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-footer" id="page-footer">
+        ProfitForge.ai Sprint Dashboard · Auto-refreshes every 5 minutes ·
+        <span id="footer-sprint">Sprint 3 (Mar 24 – Apr 4, 2026)</span>
+      </div>
+    </div>
+
+    <script>
+      // ── Sprint data ──────────────────────────────────────────
+      const SPRINTS = {
+        1: {
+          label: 'Sprint 1',
+          start: 'February 24, 2026',
+          end: 'March 7, 2026',
+          goal: 'Core Pipeline: OCR → AI mapping → Database storage',
+          committed: 35,
+          done: 30,
+          inProgress: 0,
+          review: 0,
+          stories: 9,
+          footerLabel: 'Sprint 1 (Feb 24 – Mar 7, 2026)',
+          daysTotal: 9,
+          daysElapsed: 9,
+          progressPct: 100,
+          pointsPct: 86,
+          timePct: 100,
+          badge: 'Sprint 1 · Completed',
+        },
+        2: {
+          label: 'Sprint 2',
+          start: 'March 10, 2026',
+          end: 'March 21, 2026',
+          goal: 'UI & Data Quality: Results viewer, grading, and field-mapper service',
+          committed: 38,
+          done: 35,
+          inProgress: 0,
+          review: 0,
+          stories: 10,
+          footerLabel: 'Sprint 2 (Mar 10 – Mar 21, 2026)',
+          daysTotal: 9,
+          daysElapsed: 9,
+          progressPct: 100,
+          pointsPct: 92,
+          timePct: 100,
+          badge: 'Sprint 2 · Completed',
+        },
+        3: {
+          label: 'Sprint 3',
+          start: 'March 24, 2026',
+          end: 'April 4, 2026',
+          goal: 'Production Readiness: Auth, Rate Limiting & Monitoring',
+          committed: 40,
+          done: 30,
+          inProgress: 6,
+          review: 4,
+          stories: 12,
+          footerLabel: 'Sprint 3 (Mar 24 – Apr 4, 2026)',
+          daysTotal: 9,
+          daysElapsed: 7,
+          progressPct: 75,
+          pointsPct: 75,
+          timePct: 78,
+          badge: 'Sprint 3 · Active',
+        },
+      };
+
+      function loadSprint(sprintNumber) {
+        const s = SPRINTS[sprintNumber];
+        if (!s) return;
+
+        // Badge
+        document.getElementById('sprint-badge').textContent = s.badge;
+
+        // Info
+        document.getElementById('info-sprint').textContent = s.label;
+        document.getElementById('info-start').textContent = s.start;
+        document.getElementById('info-end').textContent = s.end;
+        document.getElementById('info-goal').textContent = s.goal;
+
+        const remaining = s.daysTotal - s.daysElapsed;
+        document.getElementById('info-days').textContent =
+          remaining > 0 ? `${remaining} days` : 'Sprint ended';
+
+        // Progress bars
+        document.getElementById('progress-pct').textContent = `${s.progressPct}%`;
+        document.getElementById('progress-bar').style.width = `${s.progressPct}%`;
+
+        document.getElementById('points-pct').textContent = `${s.done} / ${s.committed} pts`;
+        document.getElementById('points-bar').style.width = `${s.pointsPct}%`;
+
+        document.getElementById('time-pct').textContent =
+          `${s.timePct}% (${s.daysElapsed} / ${s.daysTotal} days)`;
+        document.getElementById('time-bar').style.width = `${s.timePct}%`;
+
+        // Stats
+        document.getElementById('stat-committed').textContent = s.committed;
+        document.getElementById('stat-done').textContent = s.done;
+        document.getElementById('stat-inprogress').textContent = s.inProgress;
+        document.getElementById('stat-review').textContent = s.review;
+        document.getElementById('stat-stories').textContent = s.stories;
+
+        // Footer
+        document.getElementById('footer-sprint').textContent = s.footerLabel;
+
+        // Show/hide the kanban board only for current sprint
+        const kanban = document.getElementById('kanban-board').parentElement;
+        kanban.style.display = parseInt(sprintNumber) === 3 ? '' : 'none';
+      }
+
+      // ── Auto-refresh timestamp ──────────────────────────────
+      function updateTimestamp() {
+        const now = new Date();
+        const formatted = now.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }) + ' at ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('last-updated').textContent = `Updated: ${formatted}`;
+      }
+
+      // ── Init ────────────────────────────────────────────────
+      document.addEventListener('DOMContentLoaded', () => {
+        loadSprint(3);
+        updateTimestamp();
+        // Auto-refresh every 5 minutes
+        setInterval(updateTimestamp, 5 * 60 * 1000);
+      });
+    </script>
+  </body>
+</html>
